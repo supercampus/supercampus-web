@@ -1,0 +1,120 @@
+export type Persona = 'hosteller' | 'dayscholar';
+
+export type NavId =
+  | 'home' | 'attendance' | 'exams' | 'timetable'
+  | 'gatepass' | 'qr' | 'fees' | 'hostel' | 'transport'
+  | 'library' | 'placement' | 'documents' | 'profile';
+
+export interface Student {
+  name: string;
+  initials: string;
+  roll: string;
+  college: string;
+  dept: string;
+  year: string;
+}
+
+export interface FeeComponent {
+  key: string;
+  name: string;
+  amount: number;
+  due: string;
+  paid: boolean;
+}
+
+export interface PaymentRecord {
+  id: string;
+  date: string;
+  desc: string;
+  amount: string;
+  mode: string;
+  status: 'Success' | 'Failed' | 'Pending';
+}
+
+export interface GatePassRecord {
+  date: string;
+  type: string;
+  status: string;
+  color: string;
+  reason?: string;
+}
+
+export interface Book {
+  title: string;
+  author: string;
+  due: string;
+  days: number;
+}
+
+export interface PlacementDrive {
+  company: string;
+  role: string;
+  ctc: string;
+  date: string;
+  eligible: boolean;
+  reason?: string;
+}
+
+export interface DocRequest {
+  id: string;
+  type: string;
+  on: string;
+  status: string;
+}
+
+export interface HostelTicket {
+  id: string;
+  cat: string;
+  text: string;
+  status: string;
+}
+
+export interface QRScan {
+  time: string;
+  loc: string;
+  purpose: string;
+  status: 'Success' | 'Flagged' | 'Denied';
+}
+
+export interface SummaryCard {
+  label: string;
+  big: string;
+  sub: string;
+  color: string;
+  mod: NavId;
+}
+
+export interface AppState {
+  persona: Persona;
+  active: NavId;
+  notifOpen: boolean;
+  toast: string | null;
+  countdown: number;
+  // gate pass
+  gp: { status: 'none' | 'pending' | 'approved'; type: string | null; early: boolean; step: number };
+  // fees
+  paid: { tuition: boolean; hostel: boolean; transport: boolean; exam: boolean };
+  pay: { comp: string | null; step: number; plan: string | null; mode: string | null };
+  refunds: Record<string, string>;
+  // attendance
+  condonation: 'none' | 'pending' | 'approved';
+  // exams
+  examReg: number;
+  reval: Record<string, string>;
+  asg: { a3: string };
+  // timetable
+  changeNotice: boolean;
+  // hostel
+  mess: boolean;
+  hostelLeave: number;
+  hostelTickets: HostelTicket[];
+  // transport
+  tripStep: number;
+  breakdown: boolean;
+  // documents
+  docReq: DocRequest[];
+  // placement
+  placeApp: number;
+  // feedback
+  feedback: number;
+}
