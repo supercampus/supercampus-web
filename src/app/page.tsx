@@ -18,9 +18,15 @@ import PlacementPage from '@/components/modules/PlacementPage';
 import DocumentsPage from '@/components/modules/DocumentsPage';
 import ProfilePage from '@/components/modules/ProfilePage';
 import QRPage from '@/components/modules/QRPage';
+import LoginPage from '@/components/auth/LoginPage';
 
 function DashboardContent() {
-  const { state } = useApp();
+  const { state, authStatus } = useApp();
+
+  if (authStatus === 'checking') {
+    return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">✦</div><span>Securing your workspace…</span></div>;
+  }
+  if (authStatus === 'unauthenticated') return <LoginPage />;
 
   const renderActiveModule = () => {
     switch (state.active) {

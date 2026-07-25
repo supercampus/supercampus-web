@@ -71,7 +71,7 @@ export default function ExamsPage() {
                 <div style={{ fontSize: 11, color: '#9096a4' }}>{a.due}</div>
               </div>
               <span style={{ fontWeight: 700, fontSize: 11, color: a.color }}>{a.status}</span>
-              {(a as any).open && (
+              {'open' in a && a.open && (
                 <button className="sc-btn sc-btn--small" onClick={() => { dispatch({ type: 'SUBMIT_ASG' }); toast('Assignment submitted'); }}>Submit</button>
               )}
             </div>

@@ -1,63 +1,37 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect } from 'react';
-import type { AppState, NavId, Persona } from '@/lib/types';
+import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect, useMemo, useState } from 'react';
+import type { AppState, AuthStatus, AuthStudent, BackendStatus, LoginCredentials, NavId, PersistedAppState } from '@/lib/types';
+import { ApiRequestError, getAppState, getSession, login as loginRequest, logout as logoutRequest, saveAppState, toPersistedState } from '@/lib/api';
 
 const initialState: AppState = {
-  persona: 'hosteller',
-  active: 'home',
-  notifOpen: false,
-  toast: null,
-  countdown: 5048,
+  persona: 'hosteller', active: 'home', notifOpen: false, toast: null, countdown: 5048,
   gp: { status: 'pending', type: 'Weekend Leave', early: true, step: 2 },
   paid: { tuition: true, hostel: false, transport: true, exam: false },
-  pay: { comp: null, step: 0, plan: null, mode: null },
-  refunds: {},
-  condonation: 'none',
-  examReg: 0,
-  reval: {},
-  asg: { a3: 'none' },
-  changeNotice: true,
-  mess: true,
-  hostelLeave: 0,
+  pay: { comp: null, step: 0, plan: null, mode: null }, refunds: {}, condonation: 'none',
+  examReg: 0, reval: {}, asg: { a3: 'none' }, changeNotice: true, mess: true, hostelLeave: 0,
   hostelTickets: [{ id: 'HST-2291', cat: 'Electrical', text: 'Tube light not working in Room B-214', status: 'In Progress' }],
-  tripStep: 1,
-  breakdown: true,
+  tripStep: 1, breakdown: true,
   docReq: [{ id: 'DOC-4410', type: 'Bonafide Certificate', on: '18 Jul', status: 'Ready' }],
-  placeApp: 0,
-  feedback: 0,
+  placeApp: 0, feedback: 0,
 };
 
 type Action =
-  | { type: 'SET_ACTIVE'; id: NavId }
-  | { type: 'TOGGLE_NOTIF' }
-  | { type: 'SET_TOAST'; msg: string | null }
-  | { type: 'TICK' }
-  | { type: 'TOGGLE_PERSONA' }
-  | { type: 'GP_APPLY'; gpType: string; early: boolean }
-  | { type: 'GP_ADVANCE' }
-  | { type: 'GP_RESET' }
-  | { type: 'PAY_START'; comp: string }
-  | { type: 'PAY_SET'; key: string; value: string }
-  | { type: 'PAY_CONFIRM_SUCCESS' }
-  | { type: 'PAY_CLOSE' }
-  | { type: 'REQ_REFUND'; id: string }
-  | { type: 'SET_CONDONATION'; val: 'none' | 'pending' | 'approved' }
-  | { type: 'SET_EXAM_REG'; val: number }
-  | { type: 'SUBMIT_ASG' }
-  | { type: 'REQ_REVAL'; subj: string }
-  | { type: 'TOGGLE_MESS' }
-  | { type: 'ADVANCE_LEAVE' }
-  | { type: 'RESOLVE_TICKET' }
-  | { type: 'ADVANCE_TRIP' }
-  | { type: 'SET_BREAKDOWN'; val: boolean }
-  | { type: 'REQUEST_DOC'; docType: string }
-  | { type: 'APPLY_DRIVE' }
-  | { type: 'SUBMIT_FEEDBACK' }
-  | { type: 'SET_CHANGE_NOTICE'; val: boolean };
+  | { type: 'SET_ACTIVE'; id: NavId } | { type: 'TOGGLE_NOTIF' } | { type: 'SET_TOAST'; msg: string | null }
+  | { type: 'TICK' } | { type: 'TOGGLE_PERSONA' } | { type: 'GP_APPLY'; gpType: string; early: boolean }
+  | { type: 'GP_ADVANCE' } | { type: 'GP_RESET' } | { type: 'PAY_START'; comp: string }
+  | { type: 'PAY_SET'; key: string; value: string } | { type: 'PAY_CONFIRM_SUCCESS' } | { type: 'PAY_CLOSE' }
+  | { type: 'REQ_REFUND'; id: string } | { type: 'SET_CONDONATION'; val: 'none' | 'pending' | 'approved' }
+  | { type: 'SET_EXAM_REG'; val: number } | { type: 'SUBMIT_ASG' } | { type: 'REQ_REVAL'; subj: string }
+  | { type: 'TOGGLE_MESS' } | { type: 'ADVANCE_LEAVE' } | { type: 'RESOLVE_TICKET' }
+  | { type: 'ADVANCE_TRIP' } | { type: 'SET_BREAKDOWN'; val: boolean } | { type: 'REQUEST_DOC'; docType: string }
+  | { type: 'APPLY_DRIVE' } | { type: 'SUBMIT_FEEDBACK' } | { type: 'SET_CHANGE_NOTICE'; val: boolean }
+  | { type: 'HYDRATE'; state: PersistedAppState } | { type: 'RESET' };
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case 'RESET': return initialState;
+    case 'HYDRATE': return { ...state, ...action.state };
     case 'SET_ACTIVE': return { ...state, active: action.id, notifOpen: false };
     case 'TOGGLE_NOTIF': return { ...state, notifOpen: !state.notifOpen };
     case 'SET_TOAST': return { ...state, toast: action.msg };
@@ -67,16 +41,12 @@ function reducer(state: AppState, action: Action): AppState {
     case 'GP_ADVANCE': {
       const steps = state.gp.early ? ['Student', 'Class Incharge', 'HOD', 'Security', 'Exit'] : ['Auto-approved', 'Exit QR ready'];
       const nextStep = Math.min(state.gp.step + 1, steps.length - 1);
-      const approved = nextStep === steps.length - 1;
-      return { ...state, gp: { ...state.gp, step: nextStep, status: approved ? 'approved' : 'pending' } };
+      return { ...state, gp: { ...state.gp, step: nextStep, status: nextStep === steps.length - 1 ? 'approved' : 'pending' } };
     }
     case 'GP_RESET': return { ...state, gp: { status: 'none', type: null, early: false, step: 0 } };
     case 'PAY_START': return { ...state, pay: { comp: action.comp, step: 1, plan: null, mode: null } };
     case 'PAY_SET': return { ...state, pay: { ...state.pay, [action.key]: action.value, step: state.pay.step + 1 } };
-    case 'PAY_CONFIRM_SUCCESS': {
-      const comp = state.pay.comp!;
-      return { ...state, pay: { ...state.pay, step: 5 }, paid: { ...state.paid, [comp]: true } };
-    }
+    case 'PAY_CONFIRM_SUCCESS': return { ...state, pay: { ...state.pay, step: 5 }, paid: { ...state.paid, [state.pay.comp!]: true } };
     case 'PAY_CLOSE': return { ...state, pay: { comp: null, step: 0, plan: null, mode: null } };
     case 'REQ_REFUND': return { ...state, refunds: { ...state.refunds, [action.id]: 'Pending Review' } };
     case 'SET_CONDONATION': return { ...state, condonation: action.val };
@@ -85,11 +55,11 @@ function reducer(state: AppState, action: Action): AppState {
     case 'REQ_REVAL': return { ...state, reval: { ...state.reval, [action.subj]: 'Requested' } };
     case 'TOGGLE_MESS': return { ...state, mess: !state.mess };
     case 'ADVANCE_LEAVE': return { ...state, hostelLeave: Math.min(4, state.hostelLeave + 1) };
-    case 'RESOLVE_TICKET': return { ...state, hostelTickets: state.hostelTickets.map(t => ({ ...t, status: 'Resolved' })) };
+    case 'RESOLVE_TICKET': return { ...state, hostelTickets: state.hostelTickets.map((ticket) => ({ ...ticket, status: 'Resolved' })) };
     case 'ADVANCE_TRIP': return { ...state, tripStep: Math.min(3, state.tripStep + 1) };
     case 'SET_BREAKDOWN': return { ...state, breakdown: action.val };
     case 'REQUEST_DOC': {
-      const id = 'DOC-' + (4411 + state.docReq.length);
+      const id = `DOC-${4411 + state.docReq.length}`;
       return { ...state, docReq: [{ id, type: action.docType, on: '24 Jul', status: 'Requested' }, ...state.docReq] };
     }
     case 'APPLY_DRIVE': return { ...state, placeApp: Math.max(state.placeApp, 1) };
@@ -101,41 +71,113 @@ function reducer(state: AppState, action: Action): AppState {
 
 interface AppContextValue {
   state: AppState;
+  student: AuthStudent | null;
+  authStatus: AuthStatus;
+  backendStatus: BackendStatus;
   nav: (id: NavId) => void;
   toast: (msg: string) => void;
   dispatch: React.Dispatch<Action>;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => Promise<void>;
 }
-
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, baseDispatch] = useReducer(reducer, initialState);
+  const [student, setStudent] = useState<AuthStudent | null>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('checking');
+  const [backendStatus, setBackendStatus] = useState<BackendStatus>('connecting');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hydrated = useRef(false);
+  const skipNextSave = useRef(false);
+  const lastAction = useRef<string | undefined>(undefined);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally excludes transient fields
+  const persistentState = useMemo(() => toPersistedState(state), [
+    state.persona, state.gp, state.paid, state.pay, state.refunds, state.condonation, state.examReg,
+    state.reval, state.asg, state.changeNotice, state.mess, state.hostelLeave, state.hostelTickets,
+    state.tripStep, state.breakdown, state.docReq, state.placeApp, state.feedback,
+  ]);
+
+  const hydrateStudentState = useCallback(async () => {
+    const { data } = await getAppState();
+    skipNextSave.current = true;
+    baseDispatch({ type: 'HYDRATE', state: data.state });
+    hydrated.current = true;
+  }, []);
 
   useEffect(() => {
-    const tick = setInterval(() => dispatch({ type: 'TICK' }), 1000);
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await getSession();
+        if (cancelled) return;
+        setStudent(data.student);
+        await hydrateStudentState();
+        if (cancelled) return;
+        setAuthStatus('authenticated'); setBackendStatus('online');
+      } catch (error) {
+        if (cancelled) return;
+        setStudent(null); setAuthStatus('unauthenticated');
+        setBackendStatus(error instanceof ApiRequestError ? 'online' : 'offline');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [hydrateStudentState]);
+
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    const { data } = await loginRequest(credentials);
+    setStudent(data.student);
+    await hydrateStudentState();
+    setAuthStatus('authenticated'); setBackendStatus('online');
+  }, [hydrateStudentState]);
+
+  const logout = useCallback(async () => {
+    try { await logoutRequest(); setBackendStatus('online'); }
+    finally {
+      hydrated.current = false; setStudent(null); setAuthStatus('unauthenticated');
+      lastAction.current = undefined; baseDispatch({ type: 'RESET' });
+    }
+  }, []);
+
+  const dispatch = useCallback<React.Dispatch<Action>>((action) => {
+    if (!['SET_ACTIVE', 'TOGGLE_NOTIF', 'SET_TOAST', 'TICK', 'HYDRATE', 'RESET'].includes(action.type)) lastAction.current = action.type;
+    baseDispatch(action);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated.current || authStatus !== 'authenticated') return;
+    if (skipNextSave.current) { skipNextSave.current = false; return; }
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      setBackendStatus('saving');
+      try { await saveAppState(persistentState, lastAction.current); lastAction.current = undefined; setBackendStatus('online'); }
+      catch (error) {
+        setBackendStatus('offline');
+        if (error instanceof ApiRequestError && error.status === 401) { setStudent(null); setAuthStatus('unauthenticated'); }
+      }
+    }, 350);
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+  }, [authStatus, persistentState]);
+
+  useEffect(() => {
+    const tick = setInterval(() => baseDispatch({ type: 'TICK' }), 1000);
     return () => clearInterval(tick);
   }, []);
 
-  const nav = useCallback((id: NavId) => {
-    dispatch({ type: 'SET_ACTIVE', id });
-  }, []);
-
+  const nav = useCallback((id: NavId) => baseDispatch({ type: 'SET_ACTIVE', id }), []);
   const showToast = useCallback((msg: string) => {
-    dispatch({ type: 'SET_TOAST', msg });
+    baseDispatch({ type: 'SET_TOAST', msg });
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => dispatch({ type: 'SET_TOAST', msg: null }), 2600);
+    toastTimer.current = setTimeout(() => baseDispatch({ type: 'SET_TOAST', msg: null }), 2600);
   }, []);
 
-  return (
-    <AppContext.Provider value={{ state, nav, toast: showToast, dispatch }}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={{ state, student, authStatus, backendStatus, nav, toast: showToast, dispatch, login, logout }}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useApp must be used within AppProvider');
-  return ctx;
+  const context = useContext(AppContext);
+  if (!context) throw new Error('useApp must be used within AppProvider');
+  return context;
 }

@@ -118,3 +118,24 @@ export interface AppState {
   // feedback
   feedback: number;
 }
+
+export type PersistedAppState = Omit<AppState, 'active' | 'notifOpen' | 'toast' | 'countdown'>;
+export type BackendStatus = 'connecting' | 'online' | 'offline' | 'saving';
+
+export interface Tenant {
+  id: string;
+  code: string;
+  name: string;
+  city: string;
+}
+
+export interface AuthStudent extends Student {
+  id: string;
+  tenantId: string;
+  email: string;
+  fullCollege: string;
+  tenant: Tenant;
+}
+
+export type AuthStatus = 'checking' | 'authenticated' | 'unauthenticated';
+export interface LoginCredentials { email: string; password: string }

@@ -4,10 +4,10 @@ import React from 'react';
 import { useApp } from '@/lib/context';
 import { STUDENT, TITLES, duesTotal } from '@/lib/data';
 import { Icon } from '@/components/ui/primitives';
-import type { NavId } from '@/lib/types';
 
 export default function TopBar() {
-  const { state, nav, dispatch, toast } = useApp();
+  const { state, nav, dispatch, toast, backendStatus, student, logout } = useApp();
+  const currentStudent = student ?? STUDENT;
   const hosteller = state.persona === 'hosteller';
   const dues = duesTotal(state.paid);
 
@@ -26,6 +26,10 @@ export default function TopBar() {
     <header className="sc-topbar">
       <div className="sc-topbar__title">{state.active === 'home' ? 'Dashboard' : TITLES[state.active]}</div>
       <div style={{ flex: 1 }} />
+      <div className={`sc-sync-status sc-sync-status--${backendStatus}`} title="Backend connection status">
+        <span className="sc-sync-status__dot" />
+        <span>{backendStatus === 'online' ? 'Synced' : backendStatus === 'saving' ? 'Saving' : backendStatus === 'connecting' ? 'Connecting' : 'Offline mode'}</span>
+      </div>
       <div className="sc-topbar__search">
         <svg style={{ position: 'absolute', left: 11, top: 9 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9096a4" strokeWidth="2">
           <circle cx="11" cy="11" r="7" /><path d="M21 21l-4-4" />
@@ -80,11 +84,15 @@ export default function TopBar() {
           </div>
         )}
       </div>
+      <button className="sc-topbar__logout" onClick={() => logout()} title="Sign out">
+        <Icon path="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" size={17} color="#6c7280" />
+        <span>Logout</span>
+      </button>
       <button className="sc-topbar__profile" onClick={() => nav('profile')}>
-        <div className="sc-topbar__avatar">{STUDENT.initials}</div>
+        <div className="sc-topbar__avatar">{currentStudent.initials}</div>
         <div>
-          <div className="sc-topbar__profile-name">{STUDENT.name}</div>
-          <div className="sc-topbar__profile-sub">{STUDENT.roll} · {STUDENT.college}</div>
+          <div className="sc-topbar__profile-name">{currentStudent.name}</div>
+          <div className="sc-topbar__profile-sub">{currentStudent.roll} · {currentStudent.college}</div>
         </div>
       </button>
     </header>
