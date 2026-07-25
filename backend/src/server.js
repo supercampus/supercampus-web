@@ -13,6 +13,7 @@ import { loginSchema, stateUpdateSchema } from './schemas.js';
 const app = express();
 
 app.disable('x-powered-by');
+if (config.nodeEnv === 'production') app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: config.frontendOrigin, credentials: true }));
 app.use(express.json({ limit: '128kb' }));

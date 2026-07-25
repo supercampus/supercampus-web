@@ -7,10 +7,11 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "db:migrate": "node src/migrate.js",
+    "db:verify": "node src/verify-db.js",
     "test": "node --test"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.9.0"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

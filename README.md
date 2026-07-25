@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Super Campus
 
-## Getting Started
+Tenant-aware student portal built with Next.js 16, Express 5 and PostgreSQL.
 
-First, run the development server:
+## Requirements
+
+- Node.js 20.9 or newer
+- npm
+- PostgreSQL database
+
+## Fresh clone setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/supercampus/supercampus-web.git
+cd supercampus-web
+npm run setup
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create the backend environment file:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp backend/.env.example backend/.env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+On Windows PowerShell:
 
-## Learn More
+```powershell
+Copy-Item backend/.env.example backend/.env
+```
 
-To learn more about Next.js, take a look at the following resources:
+Update `backend/.env` with a valid `DATABASE_URL`, a unique `JWT_SECRET` of at least 32 characters, and the frontend origin. The frontend defaults to `http://localhost:4000/api`; copy `.env.local.example` to `.env.local` only when using a different API URL.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Prepare and verify the database:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run db:migrate
+npm run db:verify
+npm run doctor
+```
 
-## Deploy on Vercel
+Start the two services in separate terminals:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run dev:api
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev:web
+```
+
+Open `http://localhost:3000`.
+
+## Validation
+
+```bash
+npm run verify
+```
+
+## Production deployment
+
+Use the root production `Dockerfile` to run the Next.js frontend and Express API in one container. See [DOKPLOY.md](./DOKPLOY.md) for exact Dokploy, DNS, environment, health-check and deployment settings.
+
+## Project structure
+
+- `src/` — Next.js frontend
+- `backend/` — Express API, authentication and PostgreSQL migrations
+- `Dockerfile` — combined Next.js and Express production image
+- `scripts/start-production.mjs` — runs migrations, the API and the frontend

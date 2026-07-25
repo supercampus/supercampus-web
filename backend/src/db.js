@@ -8,7 +8,9 @@ export const pool = new Pool({
   max: config.poolMax,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
-  ssl: config.nodeEnv === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: config.databaseSsl === 'disable'
+    ? false
+    : { rejectUnauthorized: config.databaseSsl === 'verify-full' },
 });
 
 pool.on('error', (error) => {

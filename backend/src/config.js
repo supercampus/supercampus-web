@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 const port = Number.parseInt(process.env.PORT ?? '4000', 10);
 const poolMax = Number.parseInt(process.env.PGPOOL_MAX ?? '10', 10);
+const databaseSsl = process.env.DATABASE_SSL ?? 'disable';
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('PORT must be a valid TCP port');
@@ -9,6 +10,10 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is required. Copy .env.example to .env and update it.');
+}
+
+if (!['disable', 'require', 'verify-full'].includes(databaseSsl)) {
+  throw new Error('DATABASE_SSL must be disable, require, or verify-full.');
 }
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
@@ -22,4 +27,5 @@ export const config = {
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000',
   poolMax: Number.isInteger(poolMax) && poolMax > 0 ? poolMax : 10,
   jwtSecret: process.env.JWT_SECRET,
+  databaseSsl,
 };
