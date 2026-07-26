@@ -17,7 +17,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:backend": "npm --prefix backend test",
-    "verify": "npm run lint && npm run build && npm run test:backend"
+    "verify": "npm run lint && npm run build && npm run test:backend && npm run test:auth",
+    "test:auth": "node --test test/auth-boundary.test.mjs"
   },
   "dependencies": {
     "next": "16.2.11",

@@ -1,17 +1,22 @@
 import type { AppState, AuthStudent, LoginCredentials, PersistedAppState, Tenant } from './types';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api').replace(/\/$/, '');
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? '/api').replace(/\/$/, '');
 
 export class ApiRequestError extends Error {
   constructor(message: string, public status: number) { super(message); }
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...init,
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...init?.headers },
+    });
+  } catch {
+    throw new ApiRequestError('Authentication service is unavailable. Please try again later.', 503);
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new ApiRequestError(body?.error ?? `API request failed (${response.status})`, response.status);

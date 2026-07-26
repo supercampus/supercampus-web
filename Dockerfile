@@ -13,6 +13,7 @@ WORKDIR /app
 COPY --from=frontend-deps /app/node_modules ./node_modules
 COPY . .
 ARG NEXT_PUBLIC_API_URL=/api
+ENV NODE_ENV=production
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build

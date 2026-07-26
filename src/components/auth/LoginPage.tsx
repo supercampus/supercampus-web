@@ -5,8 +5,8 @@ import { useApp } from '@/lib/context';
 
 export default function LoginPage() {
   const { login, backendStatus } = useApp();
-  const [email, setEmail] = useState('arun.kumar@svce.edu.in');
-  const [password, setPassword] = useState('Student@123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);

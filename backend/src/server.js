@@ -13,11 +13,16 @@ import { loginSchema, stateUpdateSchema } from './schemas.js';
 const app = express();
 
 app.disable('x-powered-by');
-if (config.nodeEnv === 'production') app.set('trust proxy', 1);
+if (config.nodeEnv === 'production') app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 app.use(helmet());
 app.use(cors({ origin: config.frontendOrigin, credentials: true }));
 app.use(express.json({ limit: '128kb' }));
 app.use(cookieParser());
+app.use('/api', (_request, response, next) => {
+  response.set('Cache-Control', 'no-store');
+  response.set('Pragma', 'no-cache');
+  next();
+});
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -174,7 +179,9 @@ app.use((error, _request, response, _next) => {
   response.status(status).json({ error: status === 500 ? 'Internal server error' : error.message });
 });
 
-const server = app.listen(config.port, () => console.log(`Super Campus API listening on http://localhost:${config.port}`));
+const server = app.listen(config.port, config.apiHost, () => {
+  console.log(`Super Campus API listening on http://${config.apiHost}:${config.port}`);
+});
 async function shutdown(signal) {
   console.log(`${signal} received, shutting down`);
   server.close(async () => { await pool.end(); process.exit(0); });
