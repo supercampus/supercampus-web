@@ -1,6 +1,6 @@
 import type { AppState, AuthStudent, LoginCredentials, PersistedAppState, Tenant } from './types';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? '/api').replace(/\/$/, '');
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'https://api.supercampus.ai/api').replace(/\/$/, '');
 
 export class ApiRequestError extends Error {
   constructor(message: string, public status: number) { super(message); }
