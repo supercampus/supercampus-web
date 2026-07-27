@@ -17,9 +17,6 @@ const nextConfig: NextConfig = {
     if (process.env.NODE_ENV !== "production") return [];
     return [{ source: "/:path*", headers: productionSecurityHeaders }];
   },
-  async rewrites() {
-    return [{ source: "/api/:path*", destination: `${apiProxyTarget}/:path*` }];
-  },
 };
 
 export default nextConfig;
