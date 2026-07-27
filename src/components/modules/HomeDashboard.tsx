@@ -33,18 +33,18 @@ export default function HomeDashboard() {
   const hosteller = state.persona === 'hosteller';
   const dues = duesTotal(state.paid);
   const fmtDuesStr = fmtDues(state.paid);
-  const attPct = 63;
+  const attPct = 0;
   const pending = state.gp.status === 'pending' ? 1 : 0;
 
   const statCards = [
-    { label: 'Attendance', value: attPct + '%', tone: 'red', delta: '12% below the 75% minimum', dir: 'down' as const, icon: ICONS.attendance, mod: 'attendance' as NavId },
-    { label: 'Outstanding Fees', value: dues > 0 ? fmtDuesStr : '₹0', tone: dues > 0 ? 'amber' : 'green', delta: dues > 0 ? 'Due 02 Aug 2026' : 'All cleared', dir: dues > 0 ? 'down' as const : 'up' as const, icon: ICONS.fees, mod: 'fees' as NavId },
+    { label: 'Attendance', value: attPct + '%', tone: 'red', delta: 'Data Unavailable', dir: 'down' as const, icon: ICONS.attendance, mod: 'attendance' as NavId },
+    { label: 'Outstanding Fees', value: dues > 0 ? fmtDuesStr : '₹0', tone: dues > 0 ? 'amber' : 'green', delta: dues > 0 ? 'Data Unavailable' : 'Data Unavailable', dir: dues > 0 ? 'down' as const : 'up' as const, icon: ICONS.fees, mod: 'fees' as NavId },
     { label: 'Pending Approvals', value: String(pending), tone: 'purple', delta: pending > 0 ? 'Gate pass awaiting' : 'Nothing pending', dir: 'up' as const, icon: ICONS.gatepass, mod: 'gatepass' as NavId },
-    { label: 'CGPA', value: CGPA.toFixed(2), tone: 'green', delta: 'VII Sem · SGPA 7.8', dir: 'up' as const, icon: ICONS.exams, mod: 'exams' as NavId },
+    { label: 'CGPA', value: CGPA.toFixed(2), tone: 'green', delta: 'Data Unavailable', dir: 'up' as const, icon: ICONS.exams, mod: 'exams' as NavId },
   ];
 
   const R = 52; const circ = 2 * Math.PI * R;
-  const semP = 68;
+  const semP = 0;
   const semGauge = { pct: semP, circ: circ.toFixed(1), offset: (circ * (1 - semP / 100)).toFixed(1) };
 
   const homeModules = [
@@ -159,7 +159,7 @@ export default function HomeDashboard() {
               <div className="sc-donut__sub">completed</div>
             </div>
           </div>
-          <div className="sc-empty__sub">VII Sem · 12 of 18 weeks done</div>
+          <div className="sc-empty__sub">Data Unavailable</div>
         </Card>
 
         {/* Quick Actions */}
@@ -206,7 +206,7 @@ export default function HomeDashboard() {
             <Icon path="M12 8v4l3 2M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" size={15} color="#fff" />
             <span>Next class in</span>
           </div>
-          <div className="sc-countdown-card__val">{/* countdown handled by layout */}01:24:08</div>
+          <div className="sc-countdown-card__val">Data Unavailable</div>
           <div className="sc-countdown-card__sub">{NEXT_CLASS.subject} · {NEXT_CLASS.time}</div>
           <div className="sc-countdown-card__room">
             <Icon path="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0zM12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" size={13} color="#fff" />
