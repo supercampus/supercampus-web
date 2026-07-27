@@ -25,10 +25,10 @@ export default function HostelPage() {
       <div className="sc-grid-2col">
         <Card>
           <div className="sc-card__title" style={{ marginBottom: 16 }}>Room allotment</div>
-          <div style={{ fontWeight: 800, fontSize: 26, fontFamily: "'JetBrains Mono'", color: '#776cf5' }}>B-214</div>
-          <div style={{ fontSize: 11, color: '#9096a4', fontWeight: 600 }}>Block B · Bed 2</div>
+          <div style={{ fontWeight: 800, fontSize: 26, fontFamily: "'JetBrains Mono'", color: '#776cf5' }}>Data Unavailable</div>
+          <div style={{ fontSize: 11, color: '#9096a4', fontWeight: 600 }}>Data Unavailable</div>
           <div style={{ fontSize: 11, color: '#9096a4', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 16, marginBottom: 8 }}>Roommates</div>
-          {['Karthik R · 22EC118', 'Sanjay M · 22EC127'].map(r => (
+          {['Data Unavailable'].map(r => (
             <div key={r} style={{ fontSize: 13, color: '#3a3d4a', padding: '4px 0' }}>{r}</div>
           ))}
         </Card>
@@ -42,7 +42,7 @@ export default function HostelPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(25,20,60,.07)' }}>
             <div>
               <div style={{ fontWeight: 600, fontSize: 13 }}>Mess opt-in</div>
-              <div style={{ fontSize: 11, color: '#9096a4' }}>Today: Idli · Rice · Chapati</div>
+              <div style={{ fontSize: 11, color: '#9096a4' }}>Data Unavailable</div>
             </div>
             <button
               onClick={() => { dispatch({ type: 'TOGGLE_MESS' }); toast('Mess preference updated'); }}

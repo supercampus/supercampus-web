@@ -22,13 +22,7 @@ export default function FeesPage() {
 
   // Fines breakdown
   const finesBreakdown = [
-    { name: 'Tuition Fee', amount: 16000, color: '#ef4444' },
-    { name: 'Hostel Fee', amount: 18000, color: '#ef4444' },
-    { name: 'Food/Mess Fee', amount: 6000, color: '#d97706' },
-    { name: 'Examination Fee', amount: 1800, color: '#d97706' },
-    { name: 'Library Fee', amount: 500, color: '#d97706' },
-    { name: 'Miscellaneous Fee', amount: 1500, color: '#d97706' },
-    { name: 'Fines', amount: 20, color: '#ef4444' },
+    { name: 'Data Unavailable', amount: 0, color: '#c3c6d0' },
   ];
 
   function startPay(key: string) { dispatch({ type: 'PAY_START', comp: key }); }
@@ -91,19 +85,19 @@ export default function FeesPage() {
           <summary style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', listStyle: 'none', fontSize: 13, fontWeight: 600, color: '#141527' }}>
             <span style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(239,68,68,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', fontSize: 16 }}>!</span>
             <span style={{ flex: 1 }}>
-              <span style={{ display: 'block' }}>Library overdue fine</span>
-              <span style={{ display: 'block', fontSize: 11, color: '#9096a4', fontWeight: 500, marginTop: 3 }}>Microwave Engineering · 4 days overdue</span>
+              <span style={{ display: 'block' }}>Data Unavailable</span>
+              <span style={{ display: 'block', fontSize: 11, color: '#9096a4', fontWeight: 500, marginTop: 3 }}>Data Unavailable</span>
             </span>
-            <span style={{ fontWeight: 700, fontSize: 13, fontFamily: "'JetBrains Mono'", color: '#ef4444' }}>₹20</span>
+            <span style={{ fontWeight: 700, fontSize: 13, fontFamily: "'JetBrains Mono'", color: '#ef4444' }}>₹0</span>
           </summary>
           <div style={{ margin: '10px 0 2px 42px', padding: '11px 13px', background: '#fff8f8', borderLeft: '3px solid #ef4444', borderRadius: '0 8px 8px 0', fontSize: 11.5, color: '#6c7280', lineHeight: 1.55 }}>
-            <b style={{ color: '#3a3d4a' }}>Reason for fine</b><br />
-            The book was returned 4 days after its due date (20 Jul 2026). Library policy applies a ₹5 charge per overdue day. Pay this fine from the Fees payment flow.
+            <b style={{ color: '#3a3d4a' }}>Data Unavailable</b><br />
+            Data Unavailable
           </div>
         </details>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0 8px', fontSize: 11, color: '#9096a4' }}>
-          <span>1 imposed fine</span>
-          <b style={{ fontFamily: "'JetBrains Mono'", color: '#ef4444' }}>₹20 pending</b>
+          <span>0 imposed fines</span>
+          <b style={{ fontFamily: "'JetBrains Mono'", color: '#ef4444' }}>₹0 pending</b>
         </div>
       </Card>
 

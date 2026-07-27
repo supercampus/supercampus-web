@@ -38,7 +38,7 @@ export default function AttendancePage() {
             </svg>
             <div className="sc-donut__center">
               <div className="sc-donut__val" style={{ color: attColor }}>{pct}%</div>
-              <div className="sc-donut__sub">428 classes</div>
+              <div className="sc-donut__sub">0 classes</div>
             </div>
           </div>
           <div className="sc-badge" style={{ background: attColor + '22', color: attColor, fontWeight: 700, fontSize: 12, padding: '5px 13px', borderRadius: 20 }}>{attLabel}</div>
@@ -81,7 +81,7 @@ export default function AttendancePage() {
       {/* Calendar */}
       <Card style={{ marginTop: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-          <div className="sc-card__title">July 2026</div>
+          <div className="sc-card__title">Data Unavailable</div>
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: 16, fontSize: 11.5, fontWeight: 600 }}>
             <span style={{ color: '#10b981' }}>● Present</span>

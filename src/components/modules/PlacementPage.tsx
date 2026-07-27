@@ -33,7 +33,7 @@ export default function PlacementPage() {
 
       {state.placeApp > 0 && (
         <Card style={{ marginTop: 18 }}>
-          <div className="sc-card__title" style={{ marginBottom: 18 }}>Application — Zoho</div>
+          <div className="sc-card__title" style={{ marginBottom: 18 }}>Data Unavailable</div>
           <div style={{ display: 'flex', gap: 30, alignItems: 'flex-start' }}>
             {placeStepper.map((s, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
@@ -51,23 +51,21 @@ export default function PlacementPage() {
             <path d="M9 3h6l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
           </svg>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: 13 }}>Arun_Kumar_Resume_v3.pdf</div>
-            <div style={{ fontSize: 11, color: '#9096a4' }}>Updated 12 Jul 2026</div>
+            <div style={{ fontWeight: 600, fontSize: 13 }}>Data Unavailable</div>
+            <div style={{ fontSize: 11, color: '#9096a4' }}>Data Unavailable</div>
           </div>
-          <span style={{ fontWeight: 600, fontSize: 11, color: '#9096a4' }}>v3 · latest</span>
+          <span style={{ fontWeight: 600, fontSize: 11, color: '#9096a4' }}>Data Unavailable</span>
         </Card>
         <Card>
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Training schedule</div>
           <div style={{ fontSize: 12.5, color: '#6c7280', lineHeight: 1.9 }}>
-            Aptitude mock · 26 Jul<br />
-            Technical mock interview · 30 Jul<br />
-            Group discussion prep · 01 Aug
+            Data Unavailable
           </div>
         </Card>
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-        <button className="sc-btn sc-btn--primary" onClick={() => { dispatch({ type: 'APPLY_DRIVE' }); toast('Application submitted'); }}>Apply to Zoho</button>
+        <button className="sc-btn sc-btn--primary" onClick={() => { dispatch({ type: 'APPLY_DRIVE' }); toast('Application submitted'); }}>Data Unavailable</button>
       </div>
     </div>
   );

@@ -49,7 +49,7 @@ export default function QRPage() {
       </div>
 
       {/* Scans Today */}
-      <SectionTitle>Scans Today (6)</SectionTitle>
+      <SectionTitle>Scans Today (0)</SectionTitle>
       <Card style={{ overflow: 'hidden', marginBottom: 18 }}>
         {QR_TODAY.map((s, i) => (
           <div key={i} className="sc-list-row">

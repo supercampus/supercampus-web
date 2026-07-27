@@ -13,11 +13,11 @@ export default function ProfilePage() {
   const hosteller = state.persona === 'hosteller';
   const dues = duesTotal(state.paid);
   const summaryCards = [
-    { label: 'Academic', big: CGPA.toFixed(2), sub: 'CGPA · VII Sem', color: '#776cf5', mod: 'exams' as NavId },
-    { label: 'Attendance', big: `${attPct()}%`, sub: 'Below 75% minimum', color: '#ef4444', mod: 'attendance' as NavId },
-    { label: 'Fees', big: fmtDues(state.paid), sub: dues > 0 ? 'Outstanding' : 'All cleared', color: dues > 0 ? '#ef4444' : '#10b981', mod: 'fees' as NavId },
-    { label: hosteller ? 'Hostel' : 'Transport', big: hosteller ? 'B-214' : '12A', sub: hosteller ? 'Block B · Bed 2' : 'Tambaram stop', color: '#3b82f6', mod: hosteller ? 'hostel' as NavId : 'transport' as NavId },
-    { label: 'Placement', big: state.placeApp > 0 ? '1' : '0', sub: 'Active applications', color: '#10b981', mod: 'placement' as NavId },
+    { label: 'Academic', big: CGPA.toFixed(2), sub: 'Data Unavailable', color: '#776cf5', mod: 'exams' as NavId },
+    { label: 'Attendance', big: `${attPct()}%`, sub: 'Data Unavailable', color: '#ef4444', mod: 'attendance' as NavId },
+    { label: 'Fees', big: fmtDues(state.paid), sub: dues > 0 ? 'Data Unavailable' : 'Data Unavailable', color: dues > 0 ? '#ef4444' : '#10b981', mod: 'fees' as NavId },
+    { label: hosteller ? 'Hostel' : 'Transport', big: hosteller ? 'Data Unavailable' : 'Data Unavailable', sub: hosteller ? 'Data Unavailable' : 'Data Unavailable', color: '#3b82f6', mod: hosteller ? 'hostel' as NavId : 'transport' as NavId },
+    { label: 'Placement', big: state.placeApp > 0 ? '1' : '0', sub: 'Data Unavailable', color: '#10b981', mod: 'placement' as NavId },
     { label: 'Documents', big: String(state.docReq.length), sub: 'Requests', color: '#d97706', mod: 'documents' as NavId },
   ];
 

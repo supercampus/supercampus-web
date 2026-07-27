@@ -17,9 +17,7 @@ export default function ExamsPage() {
   const stepItems = stepper(['Submitted', 'Verified', 'Approved'], examReg > 0 ? examReg - 1 : -1);
 
   const assignments = [
-    { title: 'DSP — Assignment 2', due: 'Due 20 Jul', status: 'Submitted', color: '#10b981' },
-    { title: 'VLSI — Lab Record', due: 'Due 22 Jul', status: 'Late Submission', color: '#d97706' },
-    { title: 'Antennas — Assignment 3', due: 'Due 28 Jul', status: state.asg.a3 === 'Submitted' ? 'Submitted' : 'Not Submitted', color: state.asg.a3 === 'Submitted' ? '#10b981' : '#ef4444', open: state.asg.a3 !== 'Submitted' },
+    { title: 'Data Unavailable', due: 'Data Unavailable', status: 'Data Unavailable', color: '#c3c6d0' },
   ];
 
   function registerExam() {
@@ -49,8 +47,8 @@ export default function ExamsPage() {
       <Card style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 18 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, color: '#9096a4', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.05em' }}>Upcoming</div>
-          <div style={{ fontWeight: 800, fontSize: 18, marginTop: 3 }}>End Semester — VII Sem</div>
-          <div style={{ fontSize: 12.5, color: '#6c7280', marginTop: 2 }}>Begins 12 Aug 2026 · in 19 days</div>
+          <div style={{ fontWeight: 800, fontSize: 18, marginTop: 3 }}>Data Unavailable</div>
+          <div style={{ fontSize: 12.5, color: '#6c7280', marginTop: 2 }}>Data Unavailable</div>
         </div>
         {examReg > 0 ? (
           <Stepper steps={stepItems} direction="horizontal" />
@@ -71,9 +69,6 @@ export default function ExamsPage() {
                 <div style={{ fontSize: 11, color: '#9096a4' }}>{a.due}</div>
               </div>
               <span style={{ fontWeight: 700, fontSize: 11, color: a.color }}>{a.status}</span>
-              {'open' in a && a.open && (
-                <button className="sc-btn sc-btn--small" onClick={() => { dispatch({ type: 'SUBMIT_ASG' }); toast('Assignment submitted'); }}>Submit</button>
-              )}
             </div>
           ))}
         </Card>
@@ -94,7 +89,7 @@ export default function ExamsPage() {
 
       <Card style={{ marginTop: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-          <div className="sc-card__title">Results — VI Sem</div>
+          <div className="sc-card__title">Results</div>
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: 20 }}>
             <div style={{ textAlign: 'right' }}>

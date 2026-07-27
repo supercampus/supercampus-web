@@ -15,7 +15,7 @@ export default function TimetablePage() {
             <circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" />
           </svg>
           <div style={{ flex: 1, fontSize: 12.5, color: '#3a3d4a' }}>
-            <b>Timetable updated:</b> Friday 14:00 Antennas slot cancelled this week.
+            <b>Timetable updated:</b> Data Unavailable
           </div>
           <button onClick={() => dispatch({ type: 'SET_CHANGE_NOTICE', val: false })} style={{ background: 'none', border: 'none', color: '#9096a4', cursor: 'pointer', fontSize: 18 }}>×</button>
         </div>

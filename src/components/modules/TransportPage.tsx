@@ -25,16 +25,16 @@ export default function TransportPage() {
       {state.breakdown && (
         <div className="sc-alert sc-alert--red" style={{ marginBottom: 18 }}>
           <span className="sc-alert__dot" style={{ background: '#ef4444' }} />
-          <div style={{ flex: 1, fontSize: 12.5, color: '#3a3d4a' }}><b>Route 12A delay:</b> running ~15 min late near Tambaram bypass.</div>
+          <div style={{ flex: 1, fontSize: 12.5, color: '#3a3d4a' }}><b>Data Unavailable</b></div>
           <button onClick={() => dispatch({ type: 'SET_BREAKDOWN', val: false })} style={{ background: 'none', border: 'none', color: '#9096a4', cursor: 'pointer', fontSize: 18 }}>×</button>
         </div>
       )}
       <div className="sc-grid-2col">
         <Card>
           <div className="sc-card__title" style={{ marginBottom: 14 }}>Current booking</div>
-          <div style={{ fontWeight: 800, fontSize: 22, fontFamily: "'JetBrains Mono'", color: '#3b82f6' }}>Route 12A</div>
-          <div style={{ fontSize: 12.5, color: '#3a3d4a', marginTop: 6 }}>Boarding: Tambaram Sanatorium</div>
-          <div style={{ fontSize: 11.5, color: '#9096a4', marginTop: 2 }}>Valid till 31 Dec 2026</div>
+          <div style={{ fontWeight: 800, fontSize: 22, fontFamily: "'JetBrains Mono'", color: '#3b82f6' }}>Data Unavailable</div>
+          <div style={{ fontSize: 12.5, color: '#3a3d4a', marginTop: 6 }}>Data Unavailable</div>
+          <div style={{ fontSize: 11.5, color: '#9096a4', marginTop: 2 }}>Data Unavailable</div>
         </Card>
         <Card>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
@@ -42,7 +42,7 @@ export default function TransportPage() {
             <span className="sc-badge" style={{ marginLeft: 'auto', color: '#10b981', background: 'rgba(52,211,153,.12)' }}>● Active</span>
           </div>
           <div style={{ fontSize: 12.5, color: '#6c7280' }}>ETA at your stop</div>
-          <div style={{ fontWeight: 800, fontSize: 30, fontFamily: "'JetBrains Mono'", color: '#10b981', marginTop: 2 }}>15 min</div>
+          <div style={{ fontWeight: 800, fontSize: 30, fontFamily: "'JetBrains Mono'", color: '#10b981', marginTop: 2 }}>Data Unavailable</div>
         </Card>
       </div>
       <Card style={{ marginTop: 18 }}>

@@ -48,12 +48,12 @@ export default function HomeDashboard() {
   const semGauge = { pct: semP, circ: circ.toFixed(1), offset: (circ * (1 - semP / 100)).toFixed(1) };
 
   const homeModules = [
-    { id: 'attendance', label: 'Attendance', meta: '63% · critical', c: '#ef4444' },
-    { id: 'fees', label: 'Fees', meta: dues > 0 ? fmtDuesStr + ' due' : 'Cleared', c: '#f59e0b' },
-    { id: 'exams', label: 'Exams', meta: 'Reg opens soon', c: '#10b981' },
-    { id: 'timetable', label: 'Timetable', meta: '5 classes today', c: '#3b82f6' },
-    hosteller ? { id: 'hostel', label: 'Hostel', meta: 'Room B-214', c: '#8b5cf6' } : { id: 'transport', label: 'Transport', meta: 'Route 12A', c: '#8b5cf6' },
-    { id: 'library', label: 'Library', meta: '1 due soon', c: '#ec4899' },
+    { id: 'attendance', label: 'Attendance', meta: 'Data Unavailable', c: '#ef4444' },
+    { id: 'fees', label: 'Fees', meta: dues > 0 ? fmtDuesStr + ' due' : 'Data Unavailable', c: '#f59e0b' },
+    { id: 'exams', label: 'Exams', meta: 'Data Unavailable', c: '#10b981' },
+    { id: 'timetable', label: 'Timetable', meta: 'Data Unavailable', c: '#3b82f6' },
+    hosteller ? { id: 'hostel', label: 'Hostel', meta: 'Data Unavailable', c: '#8b5cf6' } : { id: 'transport', label: 'Transport', meta: 'Data Unavailable', c: '#8b5cf6' },
+    { id: 'library', label: 'Library', meta: 'Data Unavailable', c: '#ec4899' },
   ] as const;
 
   return (
