@@ -1,34 +1,24 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 
 const root = process.cwd();
 const required = [
-  ['Frontend dependencies', existsSync(resolve(root, 'node_modules', 'next'))],
-  ['Backend dependencies', existsSync(resolve(root, 'backend', 'node_modules', 'express'))],
-  ['Backend environment', existsSync(resolve(root, 'backend', '.env'))],
+  ["Workspace dependencies", existsSync(resolve(root, "node_modules", "next"))],
+  ["Platform application", existsSync(resolve(root, "apps", "platform", "package.json"))],
+  ["CRM module", existsSync(resolve(root, "modules", "crm", "module.manifest.json"))],
 ];
-const frontendEnv = existsSync(resolve(root, '.env.local'));
-const [major, minor] = process.versions.node.split('.').map(Number);
+const frontendEnv = existsSync(resolve(root, "apps", "platform", ".env.local"));
+const [major, minor] = process.versions.node.split(".").map(Number);
 const nodeSupported = major > 20 || (major === 20 && minor >= 9);
 
-console.log(`Node.js ${process.versions.node} ${nodeSupported ? '✓' : '✗ (requires 20.9+)'}\n`);
-for (const [label, ready] of required) console.log(`${ready ? '✓' : '✗'} ${label}`);
-console.log(`${frontendEnv ? '✓' : '•'} Frontend environment ${frontendEnv ? '' : '(optional; defaults to http://localhost:4000/api)'}`);
+console.log(`Node.js ${process.versions.node} ${nodeSupported ? "OK" : "UNSUPPORTED (requires 20.9+)"}\n`);
+for (const [label, ready] of required) console.log(`${ready ? "OK" : "MISSING"} ${label}`);
+console.log(`${frontendEnv ? "OK" : "OPTIONAL"} Platform environment${frontendEnv ? "" : " (defaults to same-origin /api)"}`);
 
-const backendEnvPath = resolve(root, 'backend', '.env');
-let backendVariablesReady = false;
-if (existsSync(backendEnvPath)) {
-  const env = readFileSync(backendEnvPath, 'utf8');
-  const variables = ['DATABASE_URL', 'JWT_SECRET', 'FRONTEND_ORIGIN'];
-  const results = variables.map((key) => [key, new RegExp(`^${key}=.+$`, 'm').test(env)]);
-  for (const [key, ready] of results) console.log(`${ready ? '✓' : '✗'} backend/.env: ${key}`);
-  backendVariablesReady = results.every(([, ready]) => ready);
-}
-
-const ready = nodeSupported && required.every(([, present]) => present) && backendVariablesReady;
+const ready = nodeSupported && required.every(([, present]) => present);
 if (!ready) {
-  console.log('\nSetup is incomplete. Follow README.md → Fresh clone setup.');
+  console.log("\nSetup is incomplete. Follow README.md -> Fresh clone setup.");
   process.exitCode = 1;
 } else {
-  console.log('\nLocal project prerequisites are present.');
+  console.log("\nLocal frontend workspace prerequisites are present.");
 }

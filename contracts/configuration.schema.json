@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Tenant configuration",
+  "type": "object",
+  "required": ["tenantId", "namespace", "version", "value"],
+  "properties": {
+    "tenantId": { "type": "string", "minLength": 1 },
+    "namespace": { "type": "string", "minLength": 1 },
+    "version": { "type": "integer", "minimum": 1 },
+    "value": { "type": "object" }
+  },
+  "additionalProperties": false
+}

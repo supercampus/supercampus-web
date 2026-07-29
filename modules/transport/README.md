@@ -1,0 +1,3 @@
+# Transport frontend module
+
+This package owns Transport navigation, permissions, runtime registration, screens, and configuration adapters. Shared platform code belongs in packages.

@@ -1,0 +1,22 @@
+{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "placement",
+    "name":  "Placement",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "placement.read",
+                        "placement.create",
+                        "placement.update",
+                        "placement.configure",
+                        "placement.reports.read"
+                    ],
+    "capabilities":  [
+                         "employers",
+                         "drives",
+                         "jobs",
+                         "applications",
+                         "offers",
+                         "reports"
+                     ]
+}

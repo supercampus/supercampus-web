@@ -1,68 +1,59 @@
-# Super Campus
+# SuperCampus web
 
-Tenant-aware student portal built with Next.js 16, Express 5 and PostgreSQL.
+Next.js 16 and React 19 frontend workspace for the configuration-driven
+SuperCampus platform. The platform shell loads independently bounded modules for
+CRM, Admissions, Academics, Attendance, Documents, Examinations, Fees, Gate Pass,
+Hostel, Library, Placement, and Transport.
 
 ## Requirements
 
 - Node.js 20.9 or newer
-- npm
-- PostgreSQL database
+- npm 11 or newer
 
 ## Fresh clone setup
 
 ```bash
 git clone https://github.com/supercampus/supercampus-web.git
 cd supercampus-web
-npm run setup
+npm install
+cp .env.local.example apps/platform/.env.local
+npm run dev
 ```
 
-Create the backend environment file:
+On Windows, use `Copy-Item .env.local.example apps/platform/.env.local`.
+The environment file is optional for local development; same-origin `/api`
+requests proxy to `http://127.0.0.1:4000/api` by default. Open
+`http://localhost:3000` after the development server starts.
 
-```bash
-cp backend/.env.example backend/.env
-```
+## Commands
 
-On Windows PowerShell:
+- `npm run dev` — run the platform app.
+- `npm run validate:modules` — validate all module manifests and directories.
+- `npm run typecheck:packages` — check shared packages and every module package.
+- `npm run lint` — lint the platform app.
+- `npm run build` — create the production standalone build.
+- `npm run test` — run workspace tests.
+- `npm run verify` — run all validation gates.
 
-```powershell
-Copy-Item backend/.env.example backend/.env
-```
+## Repository structure
 
-Update `backend/.env` with a valid `DATABASE_URL`, a unique `JWT_SECRET` of at least 32 characters, and the frontend origin. The frontend defaults to `http://localhost:4000/api`; copy `.env.local.example` to `.env.local` only when using a different API URL.
+- `apps/platform` — Next.js App Router shell, routes, layouts, and bootstrap.
+- `packages/api-client` — typed HTTP transport.
+- `packages/contracts` — shared TypeScript runtime contracts.
+- `packages/module-sdk` — frontend module registration contract.
+- `packages/runtime` — dynamic form/view/workflow/report renderers and permissions.
+- `packages/state` — framework-light shared state utilities.
+- `packages/testing` — shared fixtures and test helpers.
+- `packages/ui` — reusable UI foundations and design tokens.
+- `modules/*` — independently bounded domain frontend packages.
+- `contracts` — JSON Schemas for configuration, forms, workflows, and manifests.
+- `tooling` — module validation and code-generation commands.
+- `tests` — cross-workspace accessibility, contract, e2e, permission, and visual tests.
 
-Prepare and verify the database:
+Existing screens remain in `apps/platform` while they are incrementally extracted
+behind package and module contracts.
 
-```bash
-npm run db:migrate
-npm run db:verify
-npm run doctor
-```
+## Production
 
-Start the two services in separate terminals:
-
-```bash
-npm run dev:api
-```
-
-```bash
-npm run dev:web
-```
-
-Open `http://localhost:3000`.
-
-## Validation
-
-```bash
-npm run verify
-```
-
-## Production deployment
-
-Use the root production `Dockerfile` to run the Next.js frontend and Express API in one container. See [DOKPLOY.md](./DOKPLOY.md) for exact Dokploy, DNS, environment, health-check and deployment settings.
-
-## Project structure
-
-- `src/` — Next.js frontend
-- `backend/` — Express API, authentication and PostgreSQL migrations
-- `Dockerfile` — combined Next.js and Express production image
-- `scripts/start-production.mjs` — runs migrations, the API and the frontend
+The root `Dockerfile` packages the monorepo-aware Next.js standalone output. Set
+`API_PROXY_TARGET` at runtime and see `DOKPLOY.md` for deployment settings.

@@ -1,0 +1,28 @@
+{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "crm",
+    "name":  "SuperCampus CRM",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "crm.read",
+                        "crm.create",
+                        "crm.update",
+                        "crm.configure",
+                        "crm.reports.read"
+                    ],
+    "capabilities":  [
+                         "leads",
+                         "contacts",
+                         "organizations",
+                         "pipelines",
+                         "opportunities",
+                         "activities",
+                         "tasks",
+                         "communications",
+                         "campaigns",
+                         "automations",
+                         "dashboards",
+                         "reports"
+                     ]
+}

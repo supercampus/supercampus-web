@@ -1,41 +1,20 @@
 {
-  "name": "supercampus-web",
+  "name": "supercampus-web-workspace",
   "version": "0.1.0",
   "private": true,
-  "engines": {
-    "node": ">=20.9.0"
-  },
+  "workspaces": ["apps/*", "packages/*", "modules/*"],
+  "engines": { "node": ">=20.9.0" },
   "scripts": {
-    "setup": "npm install && npm --prefix backend install",
+    "setup": "npm install",
     "doctor": "node scripts/check-setup.mjs",
-    "dev": "next dev",
-    "dev:web": "next dev",
-    "dev:api": "npm --prefix backend run dev",
-    "db:migrate": "npm --prefix backend run db:migrate",
-    "db:verify": "npm --prefix backend run db:verify",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "test:backend": "npm --prefix backend test",
-    "verify": "npm run lint && npm run build && npm run test:backend && npm run test:auth",
-    "test:auth": "node --test test/auth-boundary.test.mjs"
-  },
-  "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "lucide-react": "^1.27.0",
-    "next": "16.2.11",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.11",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "dev": "npm run dev --workspace @supercampus/platform",
+    "build": "npm run build --workspace @supercampus/platform",
+    "start": "npm run start --workspace @supercampus/platform",
+    "lint": "npm run lint --workspace @supercampus/platform",
+    "test": "npm run test --workspaces --if-present",
+    "test:auth": "npm run test:auth --workspace @supercampus/platform",
+    "typecheck:packages": "tsc -p tsconfig.packages.json",
+    "validate:modules": "node tooling/validate-module/index.mjs",
+    "verify": "npm run validate:modules && npm run typecheck:packages && npm run lint && npm run build && npm run test"
   }
 }
