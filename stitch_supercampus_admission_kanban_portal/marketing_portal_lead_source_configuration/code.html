@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lead Source Management | SuperCampus</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "tertiary": "#720400",
+                        "on-secondary-container": "#fbebff",
+                        "on-tertiary-container": "#ffa798",
+                        "on-tertiary-fixed-variant": "#920600",
+                        "on-surface": "#1a1b26",
+                        "surface-container": "#eeecfc",
+                        "secondary-container": "#a600ff",
+                        "inverse-on-surface": "#f1efff",
+                        "secondary-fixed": "#f3daff",
+                        "border": "#e7ded8",
+                        "surface-container-low": "#f5f2ff",
+                        "pink-violet": "#de6cf5",
+                        "text-muted": "#6f6875",
+                        "surface-bright": "#fbf8ff",
+                        "tertiary-fixed-dim": "#ffb4a7",
+                        "outline": "#767589",
+                        "dark-panel": "#18182c",
+                        "surface-dim": "#dad8e8",
+                        "danger-pink": "#ff005c",
+                        "on-primary-container": "#b5b8ff",
+                        "outline-variant": "#c6c4db",
+                        "on-secondary-fixed": "#2f004c",
+                        "on-background": "#1a1b26",
+                        "surface-variant": "#e3e1f1",
+                        "background": "#f7f4ef",
+                        "on-surface-variant": "#454558",
+                        "primary-container": "#1400ff",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#6e00ab",
+                        "primary-fixed-dim": "#bfc1ff",
+                        "on-error-container": "#93000a",
+                        "primary": "#0b00bc",
+                        "dark-surface": "#111122",
+                        "surface-tint": "#393bff",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e3e1f1",
+                        "on-secondary": "#ffffff",
+                        "panel": "#f1ece7",
+                        "surface": "#fffaf4",
+                        "text-primary": "#161318",
+                        "secondary-fixed-dim": "#e3b5ff",
+                        "inverse-primary": "#bfc1ff",
+                        "inverse-surface": "#2f2f3b",
+                        "dark-bg": "#090914",
+                        "tertiary-fixed": "#ffdad4",
+                        "on-primary-fixed-variant": "#1200ed",
+                        "soft-blue": "#776cf5",
+                        "card": "#ffffff",
+                        "on-error": "#ffffff",
+                        "dark-card": "#1f1f35",
+                        "tertiary-container": "#9d0700",
+                        "on-primary-fixed": "#03006d",
+                        "primary-fixed": "#e1e0ff",
+                        "surface-container-high": "#e9e6f6",
+                        "secondary": "#8200c9",
+                        "on-tertiary-fixed": "#400100",
+                        "on-tertiary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "padding-compact": "8px",
+                        "gap-card": "12px",
+                        "gap-column": "16px",
+                        "padding-standard": "16px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"]
+                    },
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f7f4ef;
+        }
+        .neomorphic-card {
+            background: #ffffff;
+            box-shadow: 18px 18px 36px rgba(0, 0, 0, 0.04), -18px -18px 36px rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+        }
+        .neomorphic-inset {
+            background: #f7f4ef;
+            box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.05), inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e7ded8;
+            border-radius: 10px;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-on-surface">
+<!-- Predicted SideNavBar -->
+<aside class="w-64 h-screen flex-shrink-0 flex flex-col py-padding-standard px-4 gap-y-2 border-r border-border bg-panel">
+<div class="mb-8 px-2">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">SuperCampus</h1>
+<p class="text-label-sm font-label-sm text-text-muted">Admin Portal</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">how_to_reg</span>
+<span class="font-label-lg text-label-lg">Admissions</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-lg text-label-lg">Academics</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-lg text-label-lg">Finance</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">folder_shared</span>
+<span class="font-label-lg text-label-lg">Records</span>
+</a>
+<!-- Active State: Marketing -->
+<a class="flex items-center gap-3 px-3 py-3 bg-white text-primary rounded-lg shadow-sm font-bold transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">campaign</span>
+<span class="font-label-lg text-label-lg">Marketing</span>
+</a>
+</nav>
+<button class="mt-4 w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            New Entry
+        </button>
+<div class="mt-auto border-t border-border pt-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dark_mode</span>
+<span class="font-label-lg text-label-lg">Dark Mode</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</a>
+</div>
+</aside>
+<div class="flex-1 flex flex-col overflow-hidden">
+<!-- Predicted TopNavBar -->
+<header class="sticky top-0 z-50 flex items-center justify-between px-padding-standard w-full h-16 bg-surface shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)]">
+<div class="flex items-center gap-4">
+<div class="neomorphic-inset px-4 py-1.5 rounded-full flex items-center gap-2 w-96">
+<span class="material-symbols-outlined text-outline">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md font-body-md w-full placeholder:text-outline-variant" placeholder="Search lead sources..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors active:scale-95">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors active:scale-95">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-[1px] bg-border mx-2"></div>
+<div class="flex items-center gap-3 pl-2">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="A professional headshot of a marketing manager in a well-lit modern office. The image has a clean, airy aesthetic with soft natural lighting coming from the side. The subject is wearing a business-casual navy blue blazer over a crisp white shirt. The background shows a hint of a collaborative workspace with muted colors, perfectly fitting a professional corporate software interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbW8vAeroQRwKcWfml-vEG7vObGlitxa2qLLTQLMJuzP1GvuCrCUBeEU5StzvUcjcr9TfiSc_bqOqnOSuAsVLcGD3-3dieGbOVxEHs9JPJbucYytro4O73NRG4N_DwulFwySRqYqmoIAkwX68JJebqTI13rZuOg0YfUHS8J7h_7KNPok1R83Yp-Lmb_8wSDBaAPI0KMlbIspqpbfnSKD7CO7C9wXk1zaPC71jgCn63iiLutlHFDFgZKw"/>
+<div class="hidden lg:block text-right">
+<p class="font-label-lg text-label-lg text-primary">Alex Rivera</p>
+<p class="text-[10px] text-text-muted">Marketing Director</p>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+<!-- Page Header & Stats Summary -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+<div>
+<h2 class="font-display text-display text-text-primary">Lead Source Management</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Configure tracking parameters and monitor channel performance.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 neomorphic-card flex items-center gap-2 hover:bg-surface-container transition-all active:scale-95 font-label-lg text-label-lg text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        Export Data
+                    </button>
+<button class="px-4 py-2 bg-primary text-on-primary rounded-lg flex items-center gap-2 hover:opacity-90 transition-all active:scale-95 font-label-lg text-label-lg">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                        Add New Source
+                    </button>
+</div>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gap-column mb-10">
+<div class="neomorphic-card p-6 flex flex-col border-l-4 border-soft-blue">
+<span class="text-text-muted font-label-lg text-label-lg mb-1">Total Leads (MTD)</span>
+<div class="flex items-end gap-3">
+<span class="text-display font-display text-text-primary">2,840</span>
+<span class="text-green-600 font-label-sm text-label-sm flex items-center gap-0.5 mb-2">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> 12%
+                        </span>
+</div>
+</div>
+<div class="neomorphic-card p-6 flex flex-col border-l-4 border-pink-violet">
+<span class="text-text-muted font-label-lg text-label-lg mb-1">Avg. Conversion Rate</span>
+<div class="flex items-end gap-3">
+<span class="text-display font-display text-text-primary">4.2%</span>
+<span class="text-red-500 font-label-sm text-label-sm flex items-center gap-0.5 mb-2">
+<span class="material-symbols-outlined text-[14px]">trending_down</span> 0.8%
+                        </span>
+</div>
+</div>
+<div class="neomorphic-card p-6 flex flex-col border-l-4 border-primary">
+<span class="text-text-muted font-label-lg text-label-lg mb-1">Cost Per Lead (CPL)</span>
+<div class="flex items-end gap-3">
+<span class="text-display font-display text-text-primary">$18.50</span>
+<span class="text-green-600 font-label-sm text-label-sm flex items-center gap-0.5 mb-2">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span> 4%
+                        </span>
+</div>
+</div>
+<div class="neomorphic-card p-6 flex flex-col border-l-4 border-outline">
+<span class="text-text-muted font-label-lg text-label-lg mb-1">Active Sources</span>
+<div class="flex items-end gap-3">
+<span class="text-display font-display text-text-primary">12</span>
+<span class="text-text-muted font-label-sm text-label-sm mb-2">/ 15 Total</span>
+</div>
+</div>
+</div>
+<!-- Main Kanban/List Management -->
+<div class="flex flex-col gap-8">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-text-primary">Active Lead Channels</h3>
+<div class="flex gap-2">
+<button class="p-2 neomorphic-inset rounded-lg text-primary"><span class="material-symbols-outlined">grid_view</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant"><span class="material-symbols-outlined">list</span></button>
+</div>
+</div>
+<!-- Sources Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Source Card: Google Ads -->
+<div class="neomorphic-card p-6 border-l-4 border-soft-blue group">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-soft-blue">ads_click</span>
+</div>
+<div>
+<h4 class="font-headline-md text-[18px] text-text-primary leading-tight">Google Search Ads</h4>
+<p class="text-label-sm font-label-sm text-text-muted uppercase tracking-wider">Paid Acquisition</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-bold border border-green-200">ACTIVE</span>
+<p class="text-[10px] text-text-muted mt-1">Updated 2h ago</p>
+</div>
+</div>
+<div class="neomorphic-inset p-3 rounded-lg mb-4">
+<p class="text-label-sm font-label-sm text-text-muted mb-1">UTM Tracking Template</p>
+<code class="text-[11px] text-primary break-all">utm_source=google&amp;utm_medium=cpc&amp;utm_campaign={{campaign_id}}</code>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div>
+<p class="text-text-muted text-[11px]">Leads (MTD)</p>
+<p class="font-headline-md text-headline-md">1,240</p>
+</div>
+<div>
+<p class="text-text-muted text-[11px]">Conv. Rate</p>
+<p class="font-headline-md text-headline-md">5.8%</p>
+</div>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-border">
+<div class="flex -space-x-2">
+<span class="w-6 h-6 rounded-full bg-surface-container border border-white flex items-center justify-center text-[10px] font-bold text-on-surface-variant">API</span>
+<span class="w-6 h-6 rounded-full bg-surface-container border border-white flex items-center justify-center text-[10px] font-bold text-on-surface-variant">GTM</span>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[18px]">insights</span></button>
+</div>
+</div>
+</div>
+<!-- Source Card: Facebook Ads -->
+<div class="neomorphic-card p-6 border-l-4 border-pink-violet group">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-pink-violet">public</span>
+</div>
+<div>
+<h4 class="font-headline-md text-[18px] text-text-primary leading-tight">Facebook Social</h4>
+<p class="text-label-sm font-label-sm text-text-muted uppercase tracking-wider">Paid Social</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-bold border border-green-200">ACTIVE</span>
+<p class="text-[10px] text-text-muted mt-1">Updated 5h ago</p>
+</div>
+</div>
+<div class="neomorphic-inset p-3 rounded-lg mb-4">
+<p class="text-label-sm font-label-sm text-text-muted mb-1">UTM Tracking Template</p>
+<code class="text-[11px] text-primary break-all">utm_source=facebook&amp;utm_medium=paid_social&amp;utm_content=v1</code>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div>
+<p class="text-text-muted text-[11px]">Leads (MTD)</p>
+<p class="font-headline-md text-headline-md">842</p>
+</div>
+<div>
+<p class="text-text-muted text-[11px]">Conv. Rate</p>
+<p class="font-headline-md text-headline-md">3.2%</p>
+</div>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-border">
+<div class="flex -space-x-2">
+<span class="w-6 h-6 rounded-full bg-surface-container border border-white flex items-center justify-center text-[10px] font-bold text-on-surface-variant">FB</span>
+<span class="w-6 h-6 rounded-full bg-surface-container border border-white flex items-center justify-center text-[10px] font-bold text-on-surface-variant">API</span>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[18px]">insights</span></button>
+</div>
+</div>
+</div>
+<!-- Source Card: Web Forms -->
+<div class="neomorphic-card p-6 border-l-4 border-secondary group">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">dynamic_form</span>
+</div>
+<div>
+<h4 class="font-headline-md text-[18px] text-text-primary leading-tight">Main Web Forms</h4>
+<p class="text-label-sm font-label-sm text-text-muted uppercase tracking-wider">Organic Inbound</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-bold border border-green-200">ACTIVE</span>
+<p class="text-[10px] text-text-muted mt-1">Live Connection</p>
+</div>
+</div>
+<div class="neomorphic-inset p-3 rounded-lg mb-4">
+<p class="text-label-sm font-label-sm text-text-muted mb-1">Direct API Endpoint</p>
+<code class="text-[11px] text-primary break-all">api.supercampus.edu/v1/leads/webhook/form_id_99</code>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div>
+<p class="text-text-muted text-[11px]">Leads (MTD)</p>
+<p class="font-headline-md text-headline-md">512</p>
+</div>
+<div>
+<p class="text-text-muted text-[11px]">Conv. Rate</p>
+<p class="font-headline-md text-headline-md">12.4%</p>
+</div>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-border">
+<div class="flex -space-x-2">
+<span class="w-6 h-6 rounded-full bg-surface-container border border-white flex items-center justify-center text-[10px] font-bold text-on-surface-variant">SQL</span>
+<span class="w-6 h-6 rounded-full bg-surface-container border border-white flex items-center justify-center text-[10px] font-bold text-on-surface-variant">JS</span>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[18px]">insights</span></button>
+</div>
+</div>
+</div>
+<!-- Source Card: Offline Events -->
+<div class="neomorphic-card p-6 border-l-4 border-outline group">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-outline">event_available</span>
+</div>
+<div>
+<h4 class="font-headline-md text-[18px] text-text-primary leading-tight">Campus Open House</h4>
+<p class="text-label-sm font-label-sm text-text-muted uppercase tracking-wider">Offline Marketing</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="bg-surface-container text-text-muted px-2 py-0.5 rounded-full text-[10px] font-bold border border-outline-variant">PAUSED</span>
+<p class="text-[10px] text-text-muted mt-1">Ends Dec 12</p>
+</div>
+</div>
+<div class="neomorphic-inset p-3 rounded-lg mb-4">
+<p class="text-label-sm font-label-sm text-text-muted mb-1">Lead Collection ID</p>
+<code class="text-[11px] text-primary break-all">EVENT_CODE_OH_FALL_23</code>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div>
+<p class="text-text-muted text-[11px]">Leads (Total)</p>
+<p class="font-headline-md text-headline-md">246</p>
+</div>
+<div>
+<p class="text-text-muted text-[11px]">Conv. Rate</p>
+<p class="font-headline-md text-headline-md">8.1%</p>
+</div>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-border">
+<div class="flex -space-x-2">
+<span class="w-6 h-6 rounded-full bg-surface-container border border-white flex items-center justify-center text-[10px] font-bold text-on-surface-variant">CSV</span>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-[18px]">insights</span></button>
+</div>
+</div>
+</div>
+<!-- New Source Placeholder -->
+<div class="border-2 border-dashed border-outline-variant rounded-xl p-6 flex flex-col items-center justify-center text-center group cursor-pointer hover:bg-surface-container transition-all">
+<div class="w-12 h-12 rounded-full neomorphic-inset flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-[28px]">add</span>
+</div>
+<h4 class="font-headline-md text-[18px] text-text-primary">Configure New Channel</h4>
+<p class="text-label-sm font-label-sm text-text-muted mt-2 max-w-[200px]">Set up UTM parameters and integration webhooks.</p>
+</div>
+</div>
+</div>
+<!-- Detailed Table for Configuration -->
+<section class="mt-12">
+<div class="neomorphic-card overflow-hidden">
+<div class="p-6 border-b border-border flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-text-primary">Configuration Audit</h3>
+<button class="text-primary font-label-lg text-label-lg hover:underline">View History</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low border-b border-border">
+<tr>
+<th class="px-6 py-4 font-label-lg text-label-lg text-text-muted uppercase">Source Channel</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-text-muted uppercase">Status</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-text-muted uppercase">Primary UTM</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-text-muted uppercase">Integrations</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-text-muted uppercase text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border">
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px] text-primary">mail</span>
+</div>
+<span class="font-body-md text-body-md text-text-primary">Email Newsletter</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-green-100 text-green-700">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Connected
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<span class="neomorphic-inset px-3 py-1 rounded text-[11px] text-on-surface-variant">utm_source=hs_email</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex gap-1">
+<span class="px-2 py-0.5 bg-surface-variant rounded text-[10px] text-on-surface-variant">Hubspot</span>
+<span class="px-2 py-0.5 bg-surface-variant rounded text-[10px] text-on-surface-variant">Zapier</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px] text-primary">campaign</span>
+</div>
+<span class="font-body-md text-body-md text-text-primary">Affiliate Portal</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-700">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Testing
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<span class="neomorphic-inset px-3 py-1 rounded text-[11px] text-on-surface-variant">utm_medium=affiliate</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex gap-1">
+<span class="px-2 py-0.5 bg-surface-variant rounded text-[10px] text-on-surface-variant">PartnerStack</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Modal Overlay (Hidden by Default) -->
+<div class="fixed inset-0 z-[100] hidden flex items-center justify-center" id="new-source-modal">
+<div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+<div class="relative neomorphic-card w-full max-w-2xl mx-4 overflow-hidden bg-white rounded-[24px]">
+<div class="p-8">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-text-primary">New Lead Source</h2>
+<p class="text-body-md font-body-md text-text-muted">Fill out the details to start tracking a new channel.</p>
+</div>
+<button class="material-symbols-outlined text-text-muted hover:text-danger-pink transition-colors" onclick="toggleModal()">close</button>
+</div>
+<form class="space-y-6">
+<div class="grid grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Channel Name</label>
+<input class="w-full neomorphic-inset border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-body-md p-3" placeholder="e.g. LinkedIn Pulse" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Channel Category</label>
+<select class="w-full neomorphic-inset border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-body-md p-3">
+<option>Paid Social</option>
+<option>Organic Search</option>
+<option>Referral</option>
+<option>Direct</option>
+</select>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Base URL for Tracking</label>
+<input class="w-full neomorphic-inset border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-body-md p-3" placeholder="https://supercampus.edu/landing-page" type="url"/>
+</div>
+<div class="p-4 bg-surface-container rounded-xl">
+<h4 class="font-label-lg text-label-lg text-primary mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+                            UTM Parameter Builder
+                        </h4>
+<div class="grid grid-cols-3 gap-4">
+<input class="neomorphic-card border-none rounded-lg text-label-sm p-2" placeholder="Source" type="text"/>
+<input class="neomorphic-card border-none rounded-lg text-label-sm p-2" placeholder="Medium" type="text"/>
+<input class="neomorphic-card border-none rounded-lg text-label-sm p-2" placeholder="Campaign" type="text"/>
+</div>
+</div>
+<div class="flex justify-end gap-3 pt-4">
+<button class="px-6 py-2.5 font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors" onclick="toggleModal()" type="button">Cancel</button>
+<button class="px-8 py-2.5 bg-primary text-on-primary font-label-lg text-label-lg rounded-lg shadow-lg hover:shadow-xl active:scale-95 transition-all" type="submit">Create Source</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+<script>
+        function toggleModal() {
+            const modal = document.getElementById('new-source-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        // Add event listener to the "Add New Source" button
+        document.querySelector('button.bg-primary.text-on-primary').addEventListener('click', toggleModal);
+    </script>
+</body></html>

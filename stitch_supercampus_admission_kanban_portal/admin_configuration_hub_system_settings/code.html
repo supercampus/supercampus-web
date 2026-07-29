@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SuperCampus Admin Configuration Hub</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "pink-violet": "#de6cf5",
+                        "surface-dim": "#dad8e8",
+                        "background": "#f7f4ef",
+                        "primary": "#0b00bc",
+                        "dark-bg": "#090914",
+                        "on-tertiary-container": "#ffa798",
+                        "secondary-container": "#a600ff",
+                        "outline": "#767589",
+                        "panel": "#f1ece7",
+                        "dark-surface": "#111122",
+                        "tertiary-container": "#9d0700",
+                        "primary-fixed": "#e1e0ff",
+                        "on-primary-container": "#b5b8ff",
+                        "on-background": "#1a1b26",
+                        "on-tertiary-fixed-variant": "#920600",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#f3daff",
+                        "on-primary-fixed": "#03006d",
+                        "surface-container": "#eeecfc",
+                        "on-secondary-fixed": "#2f004c",
+                        "border": "#e7ded8",
+                        "surface-tint": "#393bff",
+                        "inverse-on-surface": "#f1efff",
+                        "on-secondary-container": "#fbebff",
+                        "inverse-primary": "#bfc1ff",
+                        "text-muted": "#6f6875",
+                        "on-error-container": "#93000a",
+                        "card": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb4a7",
+                        "inverse-surface": "#2f2f3b",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#ffdad4",
+                        "secondary-fixed-dim": "#e3b5ff",
+                        "outline-variant": "#c6c4db",
+                        "surface-variant": "#e3e1f1",
+                        "surface-container-low": "#f5f2ff",
+                        "on-surface-variant": "#454558",
+                        "on-secondary-fixed-variant": "#6e00ab",
+                        "danger-pink": "#ff005c",
+                        "surface-container-high": "#e9e6f6",
+                        "tertiary": "#720400",
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#400100",
+                        "on-primary-fixed-variant": "#1200ed",
+                        "primary-container": "#1400ff",
+                        "primary-fixed-dim": "#bfc1ff",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#1a1b26",
+                        "text-primary": "#161318",
+                        "surface-container-lowest": "#ffffff",
+                        "dark-card": "#1f1f35",
+                        "dark-panel": "#18182c",
+                        "soft-blue": "#776cf5",
+                        "surface-container-highest": "#e3e1f1",
+                        "surface": "#fffaf4",
+                        "surface-bright": "#fbf8ff",
+                        "secondary": "#8200c9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "padding-compact": "8px",
+                        "gap-column": "16px",
+                        "padding-standard": "16px",
+                        "gap-card": "12px"
+                    },
+                    "fontFamily": {
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "display": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f7f4ef; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .neomorphic-card { box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.08); border-radius: 12px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e7ded8; border-radius: 10px; }
+        .toggle-switch { width: 44px; height: 22px; background: #e7ded8; border-radius: 11px; position: relative; transition: all 0.3s ease; cursor: pointer; }
+        .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: all 0.3s ease; }
+        .toggle-active { background: #0b00bc; }
+        .toggle-active::after { left: 24px; }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col p-padding-standard border-r border-border bg-panel z-50">
+<div class="mb-8">
+<h1 class="font-headline-md text-headline-md text-primary">SuperCampus</h1>
+<p class="font-label-lg text-label-lg text-on-surface-variant opacity-70">Staff Portal</p>
+</div>
+<nav class="flex-grow space-y-1">
+<a class="flex items-center gap-padding-compact text-on-surface-variant hover:bg-surface-variant rounded-lg px-4 py-3 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="view_kanban">view_kanban</span>
+<span class="font-label-lg text-label-lg">Pipeline</span>
+</a>
+<a class="flex items-center gap-padding-compact text-on-surface-variant hover:bg-surface-variant rounded-lg px-4 py-3 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-label-lg text-label-lg">Analytics</span>
+</a>
+<a class="flex items-center gap-padding-compact text-on-surface-variant hover:bg-surface-variant rounded-lg px-4 py-3 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+<span class="font-label-lg text-label-lg">Students</span>
+</a>
+<a class="flex items-center gap-padding-compact text-on-surface-variant hover:bg-surface-variant rounded-lg px-4 py-3 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-lg text-label-lg">Inventory</span>
+</a>
+<a class="flex items-center gap-padding-compact bg-surface-container text-primary rounded-lg px-4 py-3 font-bold" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<button class="mt-4 w-full py-3 px-4 bg-primary text-white rounded-lg font-label-lg text-label-lg active:scale-95 transition-transform">
+            New Entry
+        </button>
+<div class="mt-auto pt-4 border-t border-border">
+<a class="flex items-center gap-padding-compact text-on-surface-variant hover:bg-surface-variant rounded-lg px-4 py-3 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 flex-grow">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-padding-standard h-16 sticky top-0 z-40 bg-panel shadow-sm">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface rounded-lg border-none focus:ring-2 focus:ring-primary text-body-md shadow-inner" placeholder="Search configuration..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-primary cursor-pointer" data-icon="help">help</span>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-primary-fixed">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female staff member with a friendly smile, set against a blurred office environment that maintains the warm, neutral color palette of the CRM. The image is crisp, modern, and highly professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBffC8F_0n-X_pU_xT3t709xQEA_6bjUR5GMaJDhFUyc6sZI9d4RSG2ulmmLXuYqNuAHeega2NVbiItpyX0PB8_PAJaUelNEMAiHhd1egvOuh7-8RoAfOdZ_B6PVeRrVmiuqRAn8W82hRWMGyza_sTg2kNSkXqGs2_8Q9Wec6J1VCHpulm2p2l5uv6FpvL7sXQ4A5VMO8tGAzI2mjNTFbgLzTyqFUMghc2fCjK0k0UaM2aBGtus3W8Gig"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<div class="p-padding-standard space-y-gap-column">
+<!-- Page Title Section -->
+<div class="flex justify-between items-end mb-4">
+<div>
+<h2 class="font-display text-display text-text-primary">Configuration Hub</h2>
+<p class="font-body-md text-body-md text-text-muted">Manage your institution's global settings and core operational modules.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 border border-border bg-card rounded-lg font-label-lg text-label-lg text-on-surface transition-all active:scale-95 shadow-sm">Discard Changes</button>
+<button class="px-6 py-2 bg-primary text-white rounded-lg font-label-lg text-label-lg transition-all active:scale-95 shadow-lg">Save Changes</button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-gap-column">
+<!-- User Management (Staff List) -->
+<section class="col-span-12 lg:col-span-8 bg-card neomorphic-card p-6">
+<div class="flex justify-between items-center mb-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-soft-blue" data-icon="group">group</span>
+<h3 class="font-headline-md text-headline-md">User Management</h3>
+</div>
+<button class="flex items-center gap-1 text-primary font-label-lg text-label-lg hover:underline">
+<span class="material-symbols-outlined text-[18px]" data-icon="person_add">person_add</span> Invite Staff
+                        </button>
+</div>
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="text-label-sm text-outline border-b border-border uppercase tracking-wider">
+<th class="pb-3 px-2">Member</th>
+<th class="pb-3 px-2">Role</th>
+<th class="pb-3 px-2">Department</th>
+<th class="pb-3 px-2">Status</th>
+<th class="pb-3 px-2 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border">
+<!-- Row 1 -->
+<tr class="group hover:bg-surface transition-colors">
+<td class="py-4 px-2 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-dim overflow-hidden border-2 border-white shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a male campus administrator wearing a navy blue blazer, styled with minimalist high-key lighting to match the soft-UI aesthetics. Clean, professional, and trustworthy look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqXKwWjZQzRU8KRUlDCAN4HYY-b1kNos3L_iHVoxpKEFmRxOJWiv-Lvw12iaTaftqjVToI-hzA-wRTzJpoA2zKXmBJMpM_ipfh3hi-FJi8dSzIo97jHTJNLh1tXdqS0vBq8fQdsP3YKTtKKVt12EsPgI7P0OLGb3-IUXCD-HuEecVTglcTWu7yIIApZBFahhXke_MdGE1jGHxHEP83WH3XZMkNqiTrwMwcIEmccBouv3PG71y9AKxGNA"/>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-text-primary">Marcus Holloway</p>
+<p class="text-[11px] text-text-muted">m.holloway@supercampus.edu</p>
+</div>
+</td>
+<td class="py-4 px-2">
+<span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed text-label-sm rounded-full">Super Admin</span>
+</td>
+<td class="py-4 px-2 font-body-md text-body-md text-on-surface-variant">Central Administration</td>
+<td class="py-4 px-2">
+<div class="flex items-center gap-1 text-[12px] text-green-600 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active
+                                        </div>
+</td>
+<td class="py-4 px-2 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors" data-icon="more_vert">more_vert</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-surface transition-colors">
+<td class="py-4 px-2 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-dim overflow-hidden border-2 border-white shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Professional studio portrait of an Asian female professor in a light beige sweater, radiating calm and focused academic energy. Soft ambient lighting and warm tones to match the CRM interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOpfK--cbZtczfZlhTP43lBwPKAZ9mW2NwUZcWsbrkt83kTUSRGfCtVhvgk1vCT4VmgffnDUrAs7cvCAhVcHDH8m1qQ3WplMhRu7Qar7kQlzP2Vuo8sAIt6ZalF7I4mNpneFsvPuuqtQVweu0qb0ufhun9h5u6shleqrFPB1H7xwpqKehVI5SXk8PgYL_yEa54Jw50tB0X7KSB2eY3KxnIdn_LtbuDoNsPJ-yG4NQQSO8tmflGSR5qZA"/>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-text-primary">Dr. Li Wei</p>
+<p class="text-[11px] text-text-muted">li.wei@supercampus.edu</p>
+</div>
+</td>
+<td class="py-4 px-2">
+<span class="px-2 py-1 bg-secondary-fixed text-on-secondary-fixed text-label-sm rounded-full">Registrar</span>
+</td>
+<td class="py-4 px-2 font-body-md text-body-md text-on-surface-variant">Admissions</td>
+<td class="py-4 px-2">
+<div class="flex items-center gap-1 text-[12px] text-green-600 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active
+                                        </div>
+</td>
+<td class="py-4 px-2 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors" data-icon="more_vert">more_vert</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-surface transition-colors">
+<td class="py-4 px-2 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-dim overflow-hidden border-2 border-white shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young Latinx IT specialist with glasses, wearing a simple white polo shirt. The lighting is bright and even, reinforcing the modern and accessible feel of the administrative portal." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2EHCAD9dNQQ6PmfRAcdnuqBp9fhOWIXGrfzxXfMT-giwn8dHmnUGHwWAadqaU_3sA5u-rt4YtvJeCOnkw8clxG0ma9MMH2r7vF6lcX6RCRRf1CqxNGstekX2bpvNIYTzmUu4_QCgovt8UIJzL9mjdGFGeHHKhVlnwQZJzLlN5NyCKV7Xso0t1gD3c03Oa5eXYiSIk8YvvMc_g5YfQQybwoAZKj2L-kOQI2d7c_3xOVYEbI_dvzcGJQw"/>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-text-primary">Carlos Rivera</p>
+<p class="text-[11px] text-text-muted">c.rivera@supercampus.edu</p>
+</div>
+</td>
+<td class="py-4 px-2">
+<span class="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-label-sm rounded-full">IT Manager</span>
+</td>
+<td class="py-4 px-2 font-body-md text-body-md text-on-surface-variant">Infrastructure</td>
+<td class="py-4 px-2">
+<div class="flex items-center gap-1 text-[12px] text-outline font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span> Offline
+                                        </div>
+</td>
+<td class="py-4 px-2 text-right">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors" data-icon="more_vert">more_vert</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Integration Settings (Sidebar-style card) -->
+<section class="col-span-12 lg:col-span-4 space-y-gap-column">
+<div class="bg-card neomorphic-card p-6 border-l-4 border-pink-violet">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-pink-violet" data-icon="api">api</span>
+<h3 class="font-headline-md text-headline-md">Integrations</h3>
+</div>
+<div class="space-y-4">
+<!-- Integration Item 1 -->
+<div class="p-3 bg-surface rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-primary" data-icon="mail">mail</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg">SendGrid SMTP</p>
+<p class="text-[11px] text-text-muted">Email Gateway</p>
+</div>
+</div>
+<div class="toggle-switch toggle-active" onclick="this.classList.toggle('toggle-active')"></div>
+</div>
+<!-- Integration Item 2 -->
+<div class="p-3 bg-surface rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-secondary" data-icon="sms">sms</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg">Twilio SMS</p>
+<p class="text-[11px] text-text-muted">Alert System</p>
+</div>
+</div>
+<div class="toggle-switch" onclick="this.classList.toggle('toggle-active')"></div>
+</div>
+<!-- Integration Item 3 -->
+<div class="p-3 bg-surface rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-pink-violet" data-icon="sync">sync</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg">Banner ERP</p>
+<p class="text-[11px] text-text-muted">Student Data Sync</p>
+</div>
+</div>
+<div class="toggle-switch toggle-active" onclick="this.classList.toggle('toggle-active')"></div>
+</div>
+</div>
+<button class="mt-4 w-full py-2 border-2 border-dashed border-border text-outline rounded-lg text-label-sm font-semibold hover:border-primary hover:text-primary transition-all">
+                            + Add New Connector
+                        </button>
+</div>
+<!-- Campus Stats Quick Look -->
+<div class="bg-card neomorphic-card p-6 relative overflow-hidden h-48 group">
+<div class="relative z-10">
+<h4 class="font-label-lg text-label-lg text-primary opacity-60">System Health</h4>
+<p class="font-display text-display">99.8%</p>
+<p class="text-label-sm text-green-600 flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span> All systems operational
+                            </p>
+</div>
+<!-- Embedded Shader for atmosphere -->
+<div class="absolute inset-0 opacity-20 pointer-events-none group-hover:opacity-40 transition-opacity">
+
+</div>
+</div>
+</section>
+<!-- Campus Settings -->
+<section class="col-span-12 lg:col-span-6 bg-card neomorphic-card p-6">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-secondary" data-icon="apartment">apartment</span>
+<h3 class="font-headline-md text-headline-md">Campus Configuration</h3>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-text-primary">Department Head Count</label>
+<div class="flex items-center gap-3 p-3 bg-surface rounded-xl">
+<span class="material-symbols-outlined text-outline" data-icon="calculate">calculate</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-headline-md" type="number" value="24"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-text-primary">Course Capacity Cap</label>
+<div class="flex items-center gap-3 p-3 bg-surface rounded-xl">
+<span class="material-symbols-outlined text-outline" data-icon="bolt">bolt</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-headline-md" type="number" value="120"/>
+</div>
+</div>
+</div>
+<div class="mt-6 space-y-4">
+<div class="flex items-center justify-between p-4 border border-border rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline" data-icon="event_available">event_available</span>
+<p class="font-body-md text-body-md">Enable Auto-Scheduling for Semester A</p>
+</div>
+<div class="toggle-switch toggle-active" onclick="this.classList.toggle('toggle-active')"></div>
+</div>
+<div class="flex items-center justify-between p-4 border border-border rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline" data-icon="cloud_upload">cloud_upload</span>
+<p class="font-body-md text-body-md">Centralized Faculty Resource Storage</p>
+</div>
+<div class="toggle-switch" onclick="this.classList.toggle('toggle-active')"></div>
+</div>
+</div>
+</section>
+<!-- Security & Audit -->
+<section class="col-span-12 lg:col-span-6 bg-card neomorphic-card p-6">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-danger-pink" data-icon="security">security</span>
+<h3 class="font-headline-md text-headline-md">Security &amp; Audit</h3>
+</div>
+<button class="px-3 py-1 bg-surface-container text-primary rounded text-label-sm font-bold">View Full Logs</button>
+</div>
+<div class="space-y-4">
+<!-- Audit Log Entry -->
+<div class="flex items-start gap-4 p-3 bg-surface rounded-xl border-l-4 border-outline">
+<div class="mt-1">
+<span class="material-symbols-outlined text-[20px] text-primary" data-icon="history">history</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<p class="font-label-lg text-label-lg text-text-primary">Password Policy Updated</p>
+<span class="text-[10px] text-text-muted">2 mins ago</span>
+</div>
+<p class="text-body-md text-[13px] text-on-surface-variant">Marcus Holloway changed global password complexity to 'High'.</p>
+</div>
+</div>
+<!-- Audit Log Entry -->
+<div class="flex items-start gap-4 p-3 bg-surface rounded-xl border-l-4 border-outline">
+<div class="mt-1">
+<span class="material-symbols-outlined text-[20px] text-danger-pink" data-icon="warning">warning</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<p class="font-label-lg text-label-lg text-text-primary">Failed Login Attempt</p>
+<span class="text-[10px] text-text-muted">15 mins ago</span>
+</div>
+<p class="text-body-md text-[13px] text-on-surface-variant">3 failed attempts from IP 192.168.1.104 (Carlos Rivera).</p>
+</div>
+</div>
+<div class="pt-4 border-t border-border">
+<div class="flex items-center justify-between mb-2">
+<p class="font-label-lg text-label-lg">Two-Factor Authentication (2FA)</p>
+<span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] rounded font-bold">MANDATORY</span>
+</div>
+<p class="text-body-md text-[12px] text-text-muted mb-4">Required for all users with 'Admin' or 'Super Admin' role assignments.</p>
+<button class="w-full py-2 bg-inverse-surface text-inverse-on-surface rounded-lg text-label-sm font-semibold active:scale-95 transition-all">Configure Security Rules</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Success Feedback Overlay (Hidden by default) -->
+<div class="fixed bottom-8 right-8 bg-on-surface text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 translate-y-24 opacity-0 transition-all duration-500 z-[100]" id="toast">
+<span class="material-symbols-outlined text-green-400" data-icon="check_circle">check_circle</span>
+<div>
+<p class="font-label-lg text-label-lg">Changes Applied</p>
+<p class="text-[11px] opacity-80">Global configuration has been updated successfully.</p>
+</div>
+</div>
+<script>
+        // Micro-interaction for the Save Changes button
+        document.querySelector('button.bg-primary.text-white.px-6').addEventListener('click', () => {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        });
+
+        // Toggle focus state visual for inputs
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.closest('.bg-surface')?.classList.add('ring-2', 'ring-primary/20');
+            });
+            input.addEventListener('blur', () => {
+                input.closest('.bg-surface')?.classList.remove('ring-2', 'ring-primary/20');
+            });
+        });
+    </script>
+</body></html>

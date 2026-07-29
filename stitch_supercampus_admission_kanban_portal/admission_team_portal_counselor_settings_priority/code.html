@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Counselor Settings | SuperCampus CRM</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-container": "#ffa798",
+                    "dark-card": "#1f1f35",
+                    "tertiary-fixed-dim": "#ffb4a7",
+                    "on-secondary-fixed": "#2f004c",
+                    "on-secondary-container": "#fbebff",
+                    "surface-bright": "#fbf8ff",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#f5f2ff",
+                    "tertiary-container": "#9d0700",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#e1e0ff",
+                    "primary-container": "#1400ff",
+                    "surface-tint": "#393bff",
+                    "text-primary": "#161318",
+                    "dark-panel": "#18182c",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#720400",
+                    "secondary-fixed": "#f3daff",
+                    "secondary-container": "#a600ff",
+                    "secondary-fixed-dim": "#e3b5ff",
+                    "on-primary-container": "#b5b8ff",
+                    "outline": "#767589",
+                    "on-primary-fixed": "#03006d",
+                    "on-secondary-fixed-variant": "#6e00ab",
+                    "inverse-surface": "#2f2f3b",
+                    "inverse-on-surface": "#f1efff",
+                    "surface-variant": "#e3e1f1",
+                    "dark-bg": "#090914",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#1a1b26",
+                    "primary-fixed-dim": "#bfc1ff",
+                    "on-primary-fixed-variant": "#1200ed",
+                    "secondary": "#8200c9",
+                    "on-primary": "#ffffff",
+                    "dark-surface": "#111122",
+                    "surface-container": "#eeecfc",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#dad8e8",
+                    "surface-container-highest": "#e3e1f1",
+                    "danger-pink": "#ff005c",
+                    "on-surface-variant": "#454558",
+                    "soft-blue": "#776cf5",
+                    "primary": "#0b00bc",
+                    "text-muted": "#6f6875",
+                    "surface": "#fffaf4",
+                    "outline-variant": "#c6c4db",
+                    "tertiary-fixed": "#ffdad4",
+                    "card": "#ffffff",
+                    "on-background": "#1a1b26",
+                    "border": "#e7ded8",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e9e6f6",
+                    "background": "#f7f4ef",
+                    "panel": "#f1ece7",
+                    "on-tertiary-fixed-variant": "#920600",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed": "#400100",
+                    "pink-violet": "#de6cf5",
+                    "inverse-primary": "#bfc1ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "padding-compact": "8px",
+                    "gap-column": "16px",
+                    "padding-standard": "16px",
+                    "gap-card": "12px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+                    "body-lg": ["Plus Jakarta Sans", "sans-serif"],
+                    "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+                    "label-lg": ["Plus Jakarta Sans", "sans-serif"],
+                    "body-md": ["Plus Jakarta Sans", "sans-serif"],
+                    "label-sm": ["Plus Jakarta Sans", "sans-serif"],
+                    "display": ["Plus Jakarta Sans", "sans-serif"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f7f4ef; /* theme.background */
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neomorph-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        .neomorph-card:hover {
+            box-shadow: 0 15px 40px -12px rgba(0, 0, 0, 0.12);
+        }
+        .recessed-input {
+            background: #fdfcfb;
+            border: 1px solid #e7ded8;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+        }
+        .custom-toggle:checked + .toggle-bg {
+            background-color: #0b00bc; /* primary */
+        }
+        .custom-toggle:checked + .toggle-bg .toggle-dot {
+            transform: translateX(100%);
+        }
+    </style>
+</head>
+<body class="text-on-surface antialiased">
+<!-- TopNavBar Shell -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-padding-standard bg-surface dark:bg-dark-surface h-16 shadow-sm dark:shadow-none">
+<div class="flex items-center gap-8">
+<span class="text-headline-lg font-headline-lg font-bold text-primary dark:text-primary-fixed">SuperCampus CRM</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant dark:text-outline-variant hover:bg-surface-container dark:hover:bg-inverse-surface transition-colors duration-200 px-3 py-1 rounded font-label-lg text-label-lg" href="#">Dashboard</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:bg-surface-container dark:hover:bg-inverse-surface transition-colors duration-200 px-3 py-1 rounded font-label-lg text-label-lg" href="#">Leads</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:bg-surface-container dark:hover:bg-inverse-surface transition-colors duration-200 px-3 py-1 rounded font-label-lg text-label-lg" href="#">Admissions</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:bg-surface-container dark:hover:bg-inverse-surface transition-colors duration-200 px-3 py-1 rounded font-label-lg text-label-lg" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg font-label-lg text-label-lg hover:opacity-90 active:scale-95 transition-all">Add Lead</button>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer p-2 hover:bg-surface-container rounded-full">notifications</span>
+<span class="material-symbols-outlined cursor-pointer p-2 bg-surface-container-high rounded-full text-primary border-b-2 border-primary pb-1">settings</span>
+</div>
+<img class="w-8 h-8 rounded-full border border-border object-cover" data-alt="A professional headshot of a friendly admission counselor in a corporate office setting, natural soft window lighting, warm color palette matching the off-white and soft-blue UI design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmdbidJwSynnePt5fo_62wXQhV3vNzwybE5XTMQpRmE_Iwv-Z3zgXqHWjaIJWCij6JmBlcaHNe5hSFs0aGdF2I63jDUYBVZe8YjMrIADLZpPCNYOomhwIW12CEvCgT-nNEyjLCuoegAnuDPkLYsOvuHziOUqsoEylbUgNP1e8dPdcXVhC-DMehX7l8CxEkPM6BP-efGs5rCLnNCgNrJF51zMIjMSwHUWwfwGHAMBTEHl5iXM9nguHfZw"/>
+</div>
+</header>
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 z-40 flex flex-col py-4 border-r border-border dark:border-outline-variant bg-panel dark:bg-dark-panel">
+<div class="px-6 mb-8">
+<h2 class="text-headline-md font-headline-md text-primary dark:text-primary-fixed">Admission Portal</h2>
+<p class="text-body-md font-body-md text-text-muted">Counselor Settings</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-transform hover:translate-x-1 mx-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">view_kanban</span>
+<span class="font-label-lg text-label-lg">Pipeline</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-transform hover:translate-x-1 mx-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-lg text-label-lg">Teams</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-transform hover:translate-x-1 mx-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-lg text-label-lg">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-transform hover:translate-x-1 mx-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-lg text-label-lg">Archives</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 bg-primary-container text-on-primary-container mx-2 my-1 rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-2 flex flex-col gap-1 border-t border-border pt-4">
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high mx-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-lg text-label-lg">Help</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high mx-2 rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 pb-12 px-10 min-h-screen bg-background">
+<div class="max-w-5xl mx-auto">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h1 class="text-display font-display text-primary mb-1">Configuration</h1>
+<p class="text-body-lg font-body-lg text-text-muted">Manage your counseling workflows, notification triggers, and team presence.</p>
+</div>
+<button class="bg-primary text-on-primary px-6 py-3 rounded-xl font-label-lg text-label-lg shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">save</span>
+                    Save All Changes
+                </button>
+</div>
+<div class="grid grid-cols-12 gap-8">
+<!-- Left Column: Assignment Rules -->
+<div class="col-span-12 lg:col-span-7 space-y-8">
+<!-- Lead Assignment Section -->
+<section class="neomorph-card p-padding-standard border-l-4 border-soft-blue">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-soft-blue">assignment_ind</span>
+<h3 class="text-headline-md font-headline-md">Lead Assignment Rules</h3>
+</div>
+<div class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<label class="relative flex flex-col p-4 recessed-input rounded-xl cursor-pointer hover:border-soft-blue transition-colors border-2 border-transparent" id="round-robin-option">
+<input checked="" class="absolute top-4 right-4 text-primary focus:ring-primary h-5 w-5" name="assignment_logic" type="radio" value="round_robin"/>
+<span class="font-label-lg text-label-lg text-primary mb-1">Round-Robin</span>
+<span class="text-body-md font-body-md text-text-muted leading-tight">Distribute leads equally among all active counselors sequentially.</span>
+</label>
+<label class="relative flex flex-col p-4 recessed-input rounded-xl cursor-pointer hover:border-soft-blue transition-colors border-2 border-transparent" id="priority-option">
+<input class="absolute top-4 right-4 text-primary focus:ring-primary h-5 w-5" name="assignment_logic" type="radio" value="priority"/>
+<span class="font-label-lg text-label-lg text-primary mb-1">Priority Weights</span>
+<span class="text-body-md font-body-md text-text-muted leading-tight">Route based on counselor expertise, rating, and current capacity.</span>
+</label>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center p-3 rounded-lg bg-surface-container">
+<span class="font-label-lg text-label-lg">Auto-Reassign leads after inactivity</span>
+<div class="flex items-center gap-3">
+<select class="recessed-input rounded-lg text-label-lg font-label-lg px-2 py-1 outline-none">
+<option>2 Hours</option>
+<option>4 Hours</option>
+<option>1 Day</option>
+</select>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer custom-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer toggle-bg transition-colors">
+<div class="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform toggle-dot"></div>
+</div>
+</label>
+</div>
+</div>
+<div class="flex justify-between items-center p-3 rounded-lg bg-surface-container">
+<span class="font-label-lg text-label-lg">Exclusive regional routing</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer custom-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer toggle-bg transition-colors">
+<div class="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform toggle-dot"></div>
+</div>
+</label>
+</div>
+</div>
+</div>
+</section><section class="neomorph-card p-padding-standard border-l-4 border-soft-blue mt-8">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-soft-blue">star</span>
+<h3 class="text-headline-md font-headline-md">Priority Weighting Controls</h3>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 recessed-input rounded-xl">
+<div>
+<p class="font-label-lg text-label-lg">Domestic vs International</p>
+<p class="text-label-sm font-label-sm text-text-muted">Weight distribution for regional expertise</p>
+</div>
+<div class="flex items-center gap-2">
+<input class="w-24 h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary" max="100" min="0" type="range" value="50"/>
+<span class="text-label-sm font-label-sm w-8 text-right">50/50</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 recessed-input rounded-xl">
+<div>
+<p class="font-label-lg text-label-lg">Post-Grad vs Undergrad</p>
+<p class="text-label-sm font-label-sm text-text-muted">Weight distribution for program level</p>
+</div>
+<div class="flex items-center gap-2">
+<input class="w-24 h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary" max="100" min="0" type="range" value="70"/>
+<span class="text-label-sm font-label-sm w-8 text-right">70/30</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Availability Status -->
+<section class="neomorph-card p-padding-standard border-l-4 border-pink-violet">
+<div class="flex justify-between items-center mb-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-pink-violet">calendar_today</span>
+<h3 class="text-headline-md font-headline-md">Team Availability</h3>
+</div>
+<span class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-label-sm text-label-sm flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                Currently System-Active
+                            </span>
+</div>
+<div class="grid grid-cols-7 gap-2 mb-6">
+<!-- Day Cards -->
+<div class="flex flex-col items-center p-2 rounded-lg bg-surface-container border border-border">
+<span class="text-label-sm font-label-sm text-text-muted">MON</span>
+<div class="w-2 h-2 rounded-full bg-primary mt-1"></div>
+</div>
+<div class="flex flex-col items-center p-2 rounded-lg bg-surface-container border border-border">
+<span class="text-label-sm font-label-sm text-text-muted">TUE</span>
+<div class="w-2 h-2 rounded-full bg-primary mt-1"></div>
+</div>
+<div class="flex flex-col items-center p-2 rounded-lg bg-surface-container border border-border">
+<span class="text-label-sm font-label-sm text-text-muted">WED</span>
+<div class="w-2 h-2 rounded-full bg-primary mt-1"></div>
+</div>
+<div class="flex flex-col items-center p-2 rounded-lg bg-surface-container border border-border">
+<span class="text-label-sm font-label-sm text-text-muted">THU</span>
+<div class="w-2 h-2 rounded-full bg-primary mt-1"></div>
+</div>
+<div class="flex flex-col items-center p-2 rounded-lg bg-surface-container border border-border">
+<span class="text-label-sm font-label-sm text-text-muted">FRI</span>
+<div class="w-2 h-2 rounded-full bg-primary mt-1"></div>
+</div>
+<div class="flex flex-col items-center p-2 rounded-lg bg-panel border border-border opacity-50">
+<span class="text-label-sm font-label-sm text-text-muted">SAT</span>
+</div>
+<div class="flex flex-col items-center p-2 rounded-lg bg-panel border border-border opacity-50">
+<span class="text-label-sm font-label-sm text-text-muted">SUN</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 recessed-input rounded-xl">
+<div class="flex items-center gap-4">
+<div class="bg-primary-container p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary">schedule</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-primary">Active Window</p>
+<p class="text-body-md font-body-md text-text-muted">09:00 AM — 06:00 PM (IST)</p>
+</div>
+</div>
+<button class="text-primary font-label-lg text-label-lg hover:underline">Edit Shift</button>
+</div>
+<div class="flex items-center justify-between p-4 recessed-input rounded-xl border-dashed">
+<div class="flex items-center gap-4">
+<div class="bg-secondary-fixed p-2 rounded-lg">
+<span class="material-symbols-outlined text-secondary">coffee</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-secondary">Scheduled Breaks</p>
+<p class="text-body-md font-body-md text-text-muted">1 Lunch (45m), 2 Tea (15m)</p>
+</div>
+</div>
+<button class="text-secondary font-label-lg text-label-lg hover:underline">Manage</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Notifications & Quick Actions -->
+<div class="col-span-12 lg:col-span-5 space-y-8">
+<!-- Notification Preferences -->
+<section class="neomorph-card p-padding-standard border-l-4 border-primary">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">notifications_active</span>
+<h3 class="text-headline-md font-headline-md">Notifications</h3>
+</div>
+<div class="space-y-4">
+<!-- Email -->
+<div class="flex items-center justify-between p-4 recessed-input rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-muted">mail</span>
+<div>
+<p class="font-label-lg text-label-lg">Email Alerts</p>
+<p class="text-label-sm font-label-sm text-text-muted">Daily lead digest</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer custom-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer toggle-bg transition-colors">
+<div class="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform toggle-dot"></div>
+</div>
+</label>
+</div>
+<!-- Push -->
+<div class="flex items-center justify-between p-4 recessed-input rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-muted">ad_units</span>
+<div>
+<p class="font-label-lg text-label-lg">Push Notifications</p>
+<p class="text-label-sm font-label-sm text-text-muted">Instant mobile ping</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer custom-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer toggle-bg transition-colors">
+<div class="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform toggle-dot"></div>
+</div>
+</label>
+</div>
+<!-- WhatsApp -->
+<div class="flex items-center justify-between p-4 recessed-input rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-green-600">chat</span>
+<div>
+<p class="font-label-lg text-label-lg">WhatsApp Updates</p>
+<p class="text-label-sm font-label-sm text-text-muted">High-priority leads only</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer custom-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer toggle-bg transition-colors">
+<div class="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform toggle-dot"></div>
+</div>
+</label>
+</div>
+<!-- High-Intent Lead Entry -->
+<div class="flex items-center justify-between p-4 recessed-input rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-muted">bolt</span>
+<div>
+<p class="font-label-lg text-label-lg">High-Intent Lead Entry</p>
+<p class="text-label-sm font-label-sm text-text-muted">Alert when lead score &gt; 80</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer custom-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer toggle-bg transition-colors">
+<div class="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform toggle-dot"></div>
+</div>
+</label>
+</div>
+<!-- Lead Inactivity Alerts -->
+<div class="flex items-center justify-between p-4 recessed-input rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-muted">timer_off</span>
+<div>
+<p class="font-label-lg text-label-lg">Lead Inactivity Alerts</p>
+<p class="text-label-sm font-label-sm text-text-muted">Notify if lead is untouched for 4h</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer custom-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer toggle-bg transition-colors">
+<div class="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform toggle-dot"></div>
+</div>
+</label>
+</div></div>
+<div class="mt-6 pt-6 border-t border-border">
+<p class="text-label-sm font-label-sm text-text-muted mb-3">QUIET HOURS</p>
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg">Enable DND from</span>
+<input class="recessed-input text-label-lg font-label-lg p-1 rounded" type="time" value="21:00"/>
+<span class="font-label-lg text-label-lg">to</span>
+<input class="recessed-input text-label-lg font-label-lg p-1 rounded" type="time" value="07:00"/>
+</div>
+</div>
+</section>
+<!-- Profile Quick Actions -->
+<section class="neomorph-card p-padding-standard overflow-hidden relative">
+<!-- Decorative background element -->
+<div class="absolute -right-10 -bottom-10 w-40 h-40 bg-surface-container rounded-full opacity-50 pointer-events-none"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-4 mb-6">
+<img class="w-16 h-16 rounded-xl object-cover shadow-md" data-alt="Close-up photograph of a professional laptop setup on a light oak desk, soft daylight, minimalist and clean aesthetic, symbolizing productivity and efficient admission counseling." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDU2INycfNGe1Ep2N99LNV_N0HtWPlFEAZkEf_8XpaJn4WuDS5KFkuipF9iOquBzL0rtrYTCNnfzImYMliEIv6NfssQW3Qo9drinqCUys785lc9TA6Y-x7bvupqz9YhxFhtNHTNxPm9vFL6oqGFdfqbjkYtH3gUfSbmktgFBafxHZxIvphKlYeea2-vJy85m939yokzudANFJ4Dme_WP65VBh_qgHZZKN66oT6jJmsYKUQZlriMiRH_BQ"/>
+<div>
+<h4 class="text-headline-md font-headline-md">System Profile</h4>
+<p class="text-body-md font-body-md text-text-muted">ID: SC-ADM-294</p>
+</div>
+</div>
+<div class="space-y-3">
+<button class="w-full text-left p-3 rounded-lg hover:bg-surface-container transition-colors flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">security</span>
+<span class="font-label-lg text-label-lg">Change Password</span>
+</div>
+<span class="material-symbols-outlined text-text-muted">chevron_right</span>
+</button>
+<button class="w-full text-left p-3 rounded-lg hover:bg-surface-container transition-colors flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">history</span>
+<span class="font-label-lg text-label-lg">Assignment History</span>
+</div>
+<span class="material-symbols-outlined text-text-muted">chevron_right</span>
+</button>
+<button class="w-full text-left p-3 rounded-lg hover:bg-error-container/20 transition-colors flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error group-hover:scale-110 transition-transform">report</span>
+<span class="font-label-lg text-label-lg text-error">System Diagnostic</span>
+</div>
+<span class="material-symbols-outlined text-error opacity-50">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Simple micro-interactions for the radio options
+        const roundRobin = document.getElementById('round-robin-option');
+        const priority = document.getElementById('priority-option');
+
+        roundRobin.addEventListener('click', () => {
+            roundRobin.classList.add('border-soft-blue', 'bg-surface-container');
+            priority.classList.remove('border-soft-blue', 'bg-surface-container');
+        });
+
+        priority.addEventListener('click', () => {
+            priority.classList.add('border-soft-blue', 'bg-surface-container');
+            roundRobin.classList.remove('border-soft-blue', 'bg-surface-container');
+        });
+
+        // Initialize state
+        document.addEventListener('DOMContentLoaded', () => {
+            roundRobin.classList.add('border-soft-blue', 'bg-surface-container');
+        });
+
+        // Toggle Switch Effect (Visual only)
+        const toggles = document.querySelectorAll('.custom-toggle');
+        toggles.forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const parent = this.closest('.recessed-input');
+                if(this.checked) {
+                    parent?.classList.add('ring-1', 'ring-primary/20');
+                } else {
+                    parent?.classList.remove('ring-1', 'ring-primary/20');
+                }
+            });
+        });
+    </script>
+</body></html>

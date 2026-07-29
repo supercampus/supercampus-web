@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SuperCampus | Applicant Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#e3e1f1",
+                    "inverse-on-surface": "#f1efff",
+                    "on-surface": "#1a1b26",
+                    "on-error-container": "#93000a",
+                    "dark-card": "#1f1f35",
+                    "primary-container": "#1400ff",
+                    "dark-panel": "#18182c",
+                    "secondary-fixed": "#f3daff",
+                    "secondary-container": "#a600ff",
+                    "tertiary": "#720400",
+                    "card": "#ffffff",
+                    "surface-dim": "#dad8e8",
+                    "on-background": "#1a1b26",
+                    "on-primary-fixed-variant": "#1200ed",
+                    "primary-fixed-dim": "#bfc1ff",
+                    "on-tertiary-fixed": "#400100",
+                    "on-tertiary-container": "#ffa798",
+                    "danger-pink": "#ff005c",
+                    "outline-variant": "#c6c4db",
+                    "on-error": "#ffffff",
+                    "panel": "#f1ece7",
+                    "tertiary-fixed": "#ffdad4",
+                    "on-primary-fixed": "#03006d",
+                    "surface-container-low": "#f5f2ff",
+                    "on-secondary-fixed-variant": "#6e00ab",
+                    "error-container": "#ffdad6",
+                    "surface": "#fffaf4",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#ffb4a7",
+                    "primary": "#0b00bc",
+                    "surface-bright": "#fbf8ff",
+                    "pink-violet": "#de6cf5",
+                    "inverse-primary": "#bfc1ff",
+                    "soft-blue": "#776cf5",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#e3b5ff",
+                    "surface-container-high": "#e9e6f6",
+                    "on-primary-container": "#b5b8ff",
+                    "on-tertiary": "#ffffff",
+                    "dark-bg": "#090914",
+                    "on-surface-variant": "#454558",
+                    "dark-surface": "#111122",
+                    "outline": "#767589",
+                    "border": "#e7ded8",
+                    "secondary": "#8200c9",
+                    "surface-tint": "#393bff",
+                    "text-muted": "#6f6875",
+                    "background": "#f7f4ef",
+                    "inverse-surface": "#2f2f3b",
+                    "on-tertiary-fixed-variant": "#920600",
+                    "text-primary": "#161318",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-container": "#9d0700",
+                    "primary-fixed": "#e1e0ff",
+                    "on-secondary-container": "#fbebff",
+                    "surface-container": "#eeecfc",
+                    "on-secondary-fixed": "#2f004c",
+                    "surface-variant": "#e3e1f1"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "padding-compact": "8px",
+                    "padding-standard": "16px",
+                    "gap-card": "12px",
+                    "gap-column": "16px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "display": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neomorphic-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.04), 0px 4px 8px rgba(0, 0, 0, 0.02);
+            transition: transform 0.2s ease;
+        }
+        .neomorphic-card:hover {
+            transform: translateY(-2px);
+        }
+        .step-active {
+            box-shadow: 0 0 0 4px rgba(11, 0, 188, 0.1);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1ece7;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c6c4db;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- Top Navigation Bar -->
+<nav class="flex justify-between items-center px-padding-standard w-full sticky top-0 z-50 shadow-[0px_2px_4px_rgba(0,0,0,0.05)] bg-surface dark:bg-dark-surface h-16">
+<div class="flex items-center gap-4">
+<span class="font-display text-display text-primary dark:text-primary-fixed">SuperCampus</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-6 mr-8">
+<a class="text-primary dark:text-primary-fixed font-bold border-b-2 border-primary font-body-md text-body-md py-1" href="#">Applicant Dashboard</a>
+<a class="text-on-surface-variant dark:text-outline hover:bg-surface-container-low dark:hover:bg-dark-panel transition-colors font-body-md text-body-md py-1 px-2 rounded" href="#">My Documents</a>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-primary p-2 rounded-full hover:bg-surface-container-low transition-colors">notifications</button>
+<div class="h-10 w-10 rounded-full overflow-hidden border-2 border-primary/20">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a friendly young college applicant, smiling warmly against a soft-focus campus background with warm sunset lighting. The overall aesthetic is clean, high-end, and academic, reflecting a professional but approachable student identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyuat6qz_Rumoxq11QMfOJSvDFymURzQ0TI5uaAGsIKoxl9emwaAAyPIrKmx12mU2AyvQeIxNB6RZIJGoQq4tiFL-pDTD7z5dmCu4D1whIUw8WwfQYiyDm9uBhmMhQxJJZ9-pqkxAOLNkNGs9QauuKma3BWBLNekIfyIuWCMBm1NXO726aOVtKOgQ6KQ2FF_16HOxmSRX4cofIQa0Q38jScoXSnLJxiaAOVQF2zogPgSfRtr5HH_ZMrQ"/>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="max-w-4xl mx-auto px-4 py-12">
+<!-- Header Section -->
+<header class="mb-12">
+<h1 class="font-display text-display text-text-primary mb-2">Applicant Dashboard</h1>
+<p class="font-body-lg text-body-lg text-text-muted">Welcome back, Alex. Your application for B.Sc. Computer Science is in progress.</p>
+</header>
+<!-- Step Tracker -->
+<section class="mb-12">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative">
+<!-- Line background -->
+<div class="hidden md:block absolute top-6 left-0 w-full h-1 bg-border -z-10 rounded-full"></div>
+<!-- Step 1: Completed -->
+<div class="flex md:flex-col items-center gap-4 md:w-1/4">
+<div class="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined">check</span>
+</div>
+<div class="text-left md:text-center">
+<p class="font-label-lg text-label-lg text-primary">Step 1</p>
+<p class="font-body-md text-body-md font-bold">Personal Info</p>
+</div>
+</div>
+<!-- Step 2: Active -->
+<div class="flex md:flex-col items-center gap-4 md:w-1/4">
+<div class="w-12 h-12 rounded-full bg-soft-blue text-on-primary flex items-center justify-center step-active shadow-lg">
+<span class="font-headline-md text-headline-md">2</span>
+</div>
+<div class="text-left md:text-center">
+<p class="font-label-lg text-label-lg text-soft-blue">Step 2</p>
+<p class="font-body-md text-body-md font-bold">Documents</p>
+</div>
+</div>
+<!-- Step 3: Pending -->
+<div class="flex md:flex-col items-center gap-4 md:w-1/4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest text-outline flex items-center justify-center">
+<span class="font-headline-md text-headline-md">3</span>
+</div>
+<div class="text-left md:text-center">
+<p class="font-label-lg text-label-lg text-outline">Step 3</p>
+<p class="font-body-md text-body-md">Fee Payment</p>
+</div>
+</div>
+<!-- Step 4: Pending -->
+<div class="flex md:flex-col items-center gap-4 md:w-1/4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest text-outline flex items-center justify-center">
+<span class="font-headline-md text-headline-md">4</span>
+</div>
+<div class="text-left md:text-center">
+<p class="font-label-lg text-label-lg text-outline">Step 4</p>
+<p class="font-body-md text-body-md">Admission Status</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Grid Layout for Details -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gap-column">
+<!-- Left Column: Checklist & Actions -->
+<div class="lg:col-span-2 space-y-gap-column">
+<!-- Document Checklist Card -->
+<div class="neomorphic-card p-padding-standard border-l-4 border-soft-blue">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-md text-headline-md">Document Checklist</h2>
+<span class="bg-soft-blue/10 text-soft-blue px-3 py-1 rounded-full text-label-sm font-label-sm">2 of 3 Completed</span>
+</div>
+<div class="space-y-4">
+<!-- Item 1 -->
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+<div>
+<p class="font-body-md text-body-md font-bold">10th Marksheet</p>
+<p class="font-label-sm text-label-sm text-text-muted">Verified on Oct 12, 2023</p>
+</div>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary">visibility</button>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+<div>
+<p class="font-body-md text-body-md font-bold">12th Marksheet</p>
+<p class="font-label-sm text-label-sm text-text-muted">Verified on Oct 14, 2023</p>
+</div>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary">visibility</button>
+</div>
+<!-- Item 3: Missing -->
+<div class="flex items-center justify-between p-3 rounded-lg border-2 border-dashed border-border bg-background">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-error">pending</span>
+<div>
+<p class="font-body-md text-body-md font-bold">ID Proof (Aadhar/Passport)</p>
+<p class="font-label-sm text-label-sm text-error">Action Required: Please upload</p>
+</div>
+</div>
+<button class="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg font-label-lg text-label-lg transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[18px]">upload</span>
+                                Upload
+                            </button>
+</div>
+</div>
+</div>
+<!-- Info Section -->
+<div class="neomorphic-card p-padding-standard bg-primary-container/5">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary">info</span>
+<div>
+<p class="font-body-md text-body-md font-bold text-primary">Next Steps</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Once your ID proof is verified, the 'Fee Payment' section will be unlocked. This usually takes 24-48 business hours.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Sidebar Stats -->
+<div class="space-y-gap-column">
+<!-- Fee Payment Card -->
+<div class="neomorphic-card p-padding-standard border-l-4 border-pink-violet">
+<h3 class="font-headline-md text-headline-md mb-4">Fee Payment</h3>
+<div class="bg-surface-container-low p-4 rounded-xl mb-6">
+<p class="font-label-lg text-label-lg text-text-muted uppercase tracking-wider">Amount Due</p>
+<p class="font-display text-display text-on-surface">$1,250.00</p>
+</div>
+<p class="font-label-sm text-label-sm text-text-muted mb-6">Course Registration &amp; Security Deposit for Academic Year 2024-25.</p>
+<button class="w-full bg-border text-outline cursor-not-allowed py-4 rounded-xl font-label-lg text-label-lg flex items-center justify-center gap-2" disabled="">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+                        Pay Now
+                    </button>
+<p class="mt-3 text-center font-label-sm text-label-sm text-error">Unlocks after document verification</p>
+</div>
+<!-- Help/Support Widget -->
+<div class="neomorphic-card p-padding-standard bg-panel">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-full bg-soft-blue flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+<div>
+<p class="font-body-md text-body-md font-bold">Need Help?</p>
+<p class="font-label-sm text-label-sm text-text-muted">Chat with an advisor</p>
+</div>
+</div>
+<div class="space-y-3">
+<button class="w-full bg-white border border-border py-2 px-4 rounded-lg font-label-lg text-label-lg text-on-surface hover:bg-surface transition-colors flex items-center justify-between">
+                            Message Us
+                            <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+<button class="w-full bg-white border border-border py-2 px-4 rounded-lg font-label-lg text-label-lg text-on-surface hover:bg-surface transition-colors flex items-center justify-between">
+                            View FAQs
+                            <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+</button>
+</div>
+</div>
+<!-- Campus View Placeholder -->
+<div class="rounded-xl overflow-hidden relative h-48 group">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="A cinematic, wide-angle shot of the SuperCampus main courtyard, featuring modern glass architecture mixed with classic brick academic buildings. The scene is filled with soft morning light and lush green lawns, creating a tranquil and aspirational atmosphere for prospective students. The lighting is warm and inviting, emphasizing the campus's premium and serene environment." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCXAaYdufXUBuZBSMexVLl511Fe8UyQ9qP6Oc2m2ZpdhHs8lbo31Lae5VgJEamSVCQNpGS1ReXYkJbJWsYArhTtLl-K304WOoR-cHxIyOfDszHftfiO8qJWuQ4K-jGNj9k7Ip_qSPlqX-Bq4zCSTWM6VRZjyU_HChdEhavX3uzZNNMB5xBzf3iY5nG1m2FFrFfuAe56G7kLpH_mIa1msWo3W9B7KgG7NuOe6kTBq4J1F0gTHobtXTcWzQ')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4">
+<p class="text-white font-label-lg text-label-lg">Virtual Campus Tour</p>
+<p class="text-white/80 font-label-sm text-label-sm">Explore your future home</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Help Button (Contextual Support) -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-90" id="helpButton">
+<span class="material-symbols-outlined text-[28px]">chat_bubble</span>
+</button>
+<!-- Tiny Notification Dot -->
+<div class="absolute -top-1 -right-1 w-4 h-4 bg-danger-pink border-2 border-white rounded-full"></div>
+</div>
+<!-- Micro-interaction Script -->
+<script>
+        // Simple scale and feedback interaction for help button
+        const helpBtn = document.getElementById('helpButton');
+        helpBtn.addEventListener('click', () => {
+            alert('Opening Live Support Chat...');
+        });
+
+        // Simulating document upload click
+        document.querySelectorAll('button').forEach(btn => {
+            if(btn.innerText.includes('Upload')) {
+                btn.addEventListener('click', () => {
+                    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> Uploading...';
+                    setTimeout(() => {
+                        btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check</span> Done';
+                        btn.classList.replace('bg-primary', 'bg-soft-blue');
+                    }, 2000);
+                });
+            }
+        });
+    </script>
+</body></html>

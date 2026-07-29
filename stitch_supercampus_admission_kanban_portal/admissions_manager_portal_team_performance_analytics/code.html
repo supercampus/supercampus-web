@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SuperCampus CRM | Team Performance Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "pink-violet": "#de6cf5",
+                    "surface-dim": "#dad8e8",
+                    "background": "#f7f4ef",
+                    "primary": "#0b00bc",
+                    "dark-bg": "#090914",
+                    "on-tertiary-container": "#ffa798",
+                    "secondary-container": "#a600ff",
+                    "outline": "#767589",
+                    "panel": "#f1ece7",
+                    "dark-surface": "#111122",
+                    "tertiary-container": "#9d0700",
+                    "primary-fixed": "#e1e0ff",
+                    "on-primary-container": "#b5b8ff",
+                    "on-background": "#1a1b26",
+                    "on-tertiary-fixed-variant": "#920600",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#f3daff",
+                    "on-primary-fixed": "#03006d",
+                    "surface-container": "#eeecfc",
+                    "on-secondary-fixed": "#2f004c",
+                    "border": "#e7ded8",
+                    "surface-tint": "#393bff",
+                    "inverse-on-surface": "#f1efff",
+                    "on-secondary-container": "#fbebff",
+                    "inverse-primary": "#bfc1ff",
+                    "text-muted": "#6f6875",
+                    "on-error-container": "#93000a",
+                    "card": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb4a7",
+                    "inverse-surface": "#2f2f3b",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed": "#ffdad4",
+                    "secondary-fixed-dim": "#e3b5ff",
+                    "outline-variant": "#c6c4db",
+                    "surface-variant": "#e3e1f1",
+                    "surface-container-low": "#f5f2ff",
+                    "on-surface-variant": "#454558",
+                    "on-secondary-fixed-variant": "#6e00ab",
+                    "danger-pink": "#ff005c",
+                    "surface-container-high": "#e9e6f6",
+                    "tertiary": "#720400",
+                    "on-error": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#400100",
+                    "on-primary-fixed-variant": "#1200ed",
+                    "primary-container": "#1400ff",
+                    "primary-fixed-dim": "#bfc1ff",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#1a1b26",
+                    "text-primary": "#161318",
+                    "surface-container-lowest": "#ffffff",
+                    "dark-card": "#1f1f35",
+                    "dark-panel": "#18182c",
+                    "soft-blue": "#776cf5",
+                    "surface-container-highest": "#e3e1f1",
+                    "surface": "#fffaf4",
+                    "surface-bright": "#fbf8ff",
+                    "secondary": "#8200c9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "padding-compact": "8px",
+                    "gap-column": "16px",
+                    "padding-standard": "16px",
+                    "gap-card": "12px"
+            },
+            "fontFamily": {
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "display": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f7f4ef;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+        .neomorphic-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 12px 12px 24px rgba(0, 0, 0, 0.04), -8px -8px 16px rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .neomorphic-inset {
+            background: #f1ece7;
+            box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.05), inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+            border: 1px solid #e7ded8;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e3e1f1;
+            border-radius: 10px;
+        }
+        .funnel-step {
+            clip-path: polygon(0% 0%, 100% 0%, 90% 100%, 10% 100%);
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col p-padding-standard border-r border-border bg-panel z-50">
+<div class="flex items-center gap-padding-compact mb-8 px-4">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-primary">SuperCampus</h2>
+<p class="text-label-sm font-label-sm text-text-muted">Staff Portal</p>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-padding-compact text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">view_kanban</span>
+<span class="font-label-lg text-label-lg">Pipeline</span>
+</a>
+<a class="flex items-center gap-padding-compact bg-surface-container text-primary rounded-lg px-4 py-3 active:scale-[0.98] transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="font-label-lg text-label-lg">Analytics</span>
+</a>
+<a class="flex items-center gap-padding-compact text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-lg text-label-lg">Students</span>
+</a>
+<a class="flex items-center gap-padding-compact text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-lg text-label-lg">Inventory</span>
+</a>
+<a class="flex items-center gap-padding-compact text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<button class="mt-4 mb-8 bg-primary text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-label-lg text-label-lg hover:shadow-lg transition-all active:scale-95">
+<span class="material-symbols-outlined">add</span>
+            New Entry
+        </button>
+<div class="pt-4 border-t border-border">
+<a class="flex items-center gap-padding-compact text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col min-w-0">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-padding-standard h-16 sticky top-0 z-40 bg-panel shadow-sm">
+<div class="flex items-center gap-padding-standard">
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary">Team Performance Analytics</h1>
+<div class="hidden md:flex neomorphic-inset px-4 py-1.5 rounded-full items-center gap-2 ml-4">
+<span class="material-symbols-outlined text-text-muted text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 placeholder:text-text-muted" placeholder="Search counselors..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-padding-standard">
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-surface-variant rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-variant rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">help</span>
+</button>
+</div>
+<div class="flex items-center gap-3 pl-4 border-l border-border">
+<div class="text-right hidden sm:block">
+<p class="text-label-lg font-label-lg text-text-primary leading-tight">Sarah Mitchell</p>
+<p class="text-label-sm font-label-sm text-text-muted leading-tight">Head of Admissions</p>
+</div>
+<img class="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" data-alt="A professional headshot of a middle-aged woman with a friendly smile, set in a brightly lit modern office environment with soft focus campus architecture in the background. The aesthetic is clean, professional, and warm, matching a premium university staff profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfs02XyEbkdkxgBK3nKd1MqZEc-wwz_9dBrqk9urgIw-EanGjIxlfBhvCGmn-_1YtSWd0txGGG2IqSsarl0He0Pi8xy5npYmCj1QJW7OJjcqz64B1peFVNmLPGgPIve_54hqxJ579KKaKkEGEClVULZK9s3QoX59cx6vSrLcJ10fZC4v1CrTpr4IWdG9pdDOwsIvYZFZmqI09uUBNqaZ2HZI4acL5IO65upos51EyK9_QD1lpib0OCYw"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="p-padding-standard space-y-6 max-w-7xl mx-auto w-full">
+<!-- Key Metric Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-padding-standard">
+<!-- Metric 1: Conversion Rate -->
+<div class="neomorphic-card p-6 border-l-4 border-soft-blue group hover:-translate-y-1">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-surface-container-high rounded-lg text-soft-blue">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<span class="text-label-sm font-label-sm bg-surface-container px-2 py-1 rounded text-primary-fixed-dim bg-opacity-10 text-primary">+4.2% ↑</span>
+</div>
+<h3 class="text-text-muted font-label-lg text-label-lg mb-1">Conversion Rate</h3>
+<div class="flex items-baseline gap-2">
+<span class="text-display font-display text-primary">24.8%</span>
+<span class="text-label-sm font-label-sm text-text-muted">vs 20.6% last month</span>
+</div>
+</div>
+<!-- Metric 2: Lead Response Time -->
+<div class="neomorphic-card p-6 border-l-4 border-pink-violet group hover:-translate-y-1">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-surface-container-high rounded-lg text-pink-violet">
+<span class="material-symbols-outlined">timer</span>
+</div>
+<span class="text-label-sm font-label-sm bg-surface-container px-2 py-1 rounded text-danger-pink">-12m ↓</span>
+</div>
+<h3 class="text-text-muted font-label-lg text-label-lg mb-1">Avg. Response Time</h3>
+<div class="flex items-baseline gap-2">
+<span class="text-display font-display text-primary">42m</span>
+<span class="text-label-sm font-label-sm text-text-muted">Target: 60m</span>
+</div>
+</div>
+<!-- Metric 3: Target vs Actual -->
+<div class="neomorphic-card p-6 border-l-4 border-secondary group hover:-translate-y-1">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-surface-container-high rounded-lg text-secondary">
+<span class="material-symbols-outlined">ads_click</span>
+</div>
+<div class="w-16 h-1.5 bg-surface-container rounded-full mt-3 overflow-hidden">
+<div class="bg-secondary h-full" style="width: 78%;"></div>
+</div>
+</div>
+<h3 class="text-text-muted font-label-lg text-label-lg mb-1">Actual vs. Target</h3>
+<div class="flex items-baseline gap-2">
+<span class="text-display font-display text-primary">782 <span class="text-headline-md">/ 1,000</span></span>
+</div>
+</div>
+</div>
+<!-- Visualizations Row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-padding-standard h-full lg:h-[500px]">
+<!-- Funnel Chart (Main Focus) -->
+<div class="lg:col-span-2 neomorphic-card p-padding-standard flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-headline-md font-headline-md text-text-primary">Admissions Pipeline Funnel</h2>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 neomorphic-inset rounded-lg text-label-sm font-label-sm text-text-muted hover:text-primary transition-colors">Last 30 Days</button>
+<button class="px-3 py-1.5 neomorphic-inset rounded-lg text-label-sm font-label-sm text-text-muted hover:text-primary transition-colors">Download</button>
+</div>
+</div>
+<div class="flex-1 flex flex-col items-center justify-center space-y-2 py-4">
+<!-- Funnel Layers -->
+<div class="w-full flex flex-col items-center gap-1">
+<!-- Stage 1: Lead Generated -->
+<div class="funnel-step w-[95%] h-20 bg-primary-fixed flex flex-col items-center justify-center hover:brightness-95 transition-all cursor-pointer">
+<span class="text-primary font-bold text-lg">12,400</span>
+<span class="text-primary text-xs font-label-lg">Leads Generated</span>
+</div>
+<!-- Stage 2: Contacted -->
+<div class="funnel-step w-[75%] h-20 bg-primary-fixed-dim flex flex-col items-center justify-center hover:brightness-95 transition-all cursor-pointer">
+<span class="text-primary font-bold text-lg">8,210</span>
+<span class="text-primary text-xs font-label-lg">Initial Contact (66%)</span>
+</div>
+<!-- Stage 3: Interviewed -->
+<div class="funnel-step w-[55%] h-20 bg-soft-blue/30 flex flex-col items-center justify-center hover:brightness-95 transition-all cursor-pointer">
+<span class="text-primary font-bold text-lg">3,120</span>
+<span class="text-primary text-xs font-label-lg">Interviews Scheduled (38%)</span>
+</div>
+<!-- Stage 4: Enrolled -->
+<div class="funnel-step w-[35%] h-20 bg-soft-blue flex flex-col items-center justify-center hover:brightness-95 transition-all cursor-pointer">
+<span class="text-white font-bold text-lg">782</span>
+<span class="text-white text-xs font-label-lg">Final Enrolment (25%)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Leaderboard Section -->
+<div class="neomorphic-card flex flex-col h-full">
+<div class="p-padding-standard border-b border-border flex justify-between items-center">
+<h2 class="text-headline-md font-headline-md text-text-primary">Leaderboard</h2>
+<span class="material-symbols-outlined text-text-muted">emoji_events</span>
+</div>
+<div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
+<!-- Leaderboard Item 1 -->
+<div class="flex items-center gap-3 p-3 hover:bg-surface-container rounded-xl transition-all cursor-pointer">
+<div class="relative">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of a young male admissions counselor with a friendly, energetic expression, wearing professional attire. Bright office lighting with clean, minimalist background elements that fit a high-end educational consulting vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDX_4OgAh90z9uKmnw3CF0zgghkjOIv0xEYJQgCKvypDUV8i8W0NnS_Fo7G5vshYDN_6FgIwEsZmWv8mbkFnAsCwU5SV4qeeO4UYFTFh3VxVYmvnMuUe7fwspp2T9q7n9oCzzZXpMq4td1DwjsaJFIs0ehX7NH_YsvnIwbR2T8F3uDKQYCkRnAPqeumGcdvqheO7hlVVrOwwqLJCCvG7q5nKDXTX8B1n0nJHgDFNylQ18Byn_Jtk8QPJQ"/>
+<div class="absolute -bottom-1 -right-1 bg-secondary w-5 h-5 rounded-full flex items-center justify-center border-2 border-white text-[10px] text-white font-bold">1</div>
+</div>
+<div class="flex-1">
+<p class="text-label-lg font-label-lg text-text-primary leading-none">James Wilson</p>
+<p class="text-label-sm font-label-sm text-text-muted">142 Admissions</p>
+</div>
+<div class="text-right">
+<p class="text-label-lg font-label-lg text-soft-blue">32%</p>
+<p class="text-[10px] text-text-muted">Conv.</p>
+</div>
+</div>
+<!-- Leaderboard Item 2 -->
+<div class="flex items-center gap-3 p-3 hover:bg-surface-container rounded-xl transition-all cursor-pointer">
+<div class="relative">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="Close up of a professional female counselor, ethnic diversity, wearing stylish glasses and a white blazer. Her expression is confident and welcoming. Soft, diffused lighting typical of a high-end corporate setting, maintaining a light-mode palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsU_IAMIO4lgwKnPEMDlrBJJtQlPG9nriR2IB1s3N5C6tS7jFfn1-swX-pWY_6MqaS0SJ0nNO_d1sSYn_wbGZhSeQWVSwk2UVi5I2xqIUvmp-EImzUFwH9hZTofHimzazJ_M8BzCIiArYJZzMpvTnah9lJJKJNKBpceg3P5LQKvDOYcmCplDGrFAFlVXpZeRRW5cvkqcpJ4V5nZ0SkLXQ6OsXjL2k4PwkkEv8d3g3CTsixqwcLgQlMug"/>
+<div class="absolute -bottom-1 -right-1 bg-soft-blue w-5 h-5 rounded-full flex items-center justify-center border-2 border-white text-[10px] text-white font-bold">2</div>
+</div>
+<div class="flex-1">
+<p class="text-label-lg font-label-lg text-text-primary leading-none">Aria Patel</p>
+<p class="text-label-sm font-label-sm text-text-muted">128 Admissions</p>
+</div>
+<div class="text-right">
+<p class="text-label-lg font-label-lg text-soft-blue">28%</p>
+<p class="text-[10px] text-text-muted">Conv.</p>
+</div>
+</div>
+<!-- Leaderboard Item 3 -->
+<div class="flex items-center gap-3 p-3 hover:bg-surface-container rounded-xl transition-all cursor-pointer">
+<div class="relative">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="Professional profile of an older male counselor with silver hair, looking knowledgeable and trustworthy. Set in a contemporary university library background with warm ambient light. High quality, crisp imagery reflecting a premium academic brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDrI1965Qt8t6KuG9ZSC4HoO9ntAQ-4B7skno2hHt2s3cIEuqmyKILBgAhdD3oG35UG6s3qeBPTPsWlW7Nf_-azvUhn8da1R7V6GkKnuQCrPfs_0BzoYRPHRTfw2lz9OcTw4e4LGMewilre-h4PBIj9s5zwxHHKbdcIuOHh2DME87i4_60f4Xwd05FoqjSjP7FweFMjOmOvgIYhBrmy6d3Z4Q53Wpdk7CPMfl0Wjq8_o7ZIHJcZWx6pw"/>
+<div class="absolute -bottom-1 -right-1 bg-pink-violet w-5 h-5 rounded-full flex items-center justify-center border-2 border-white text-[10px] text-white font-bold">3</div>
+</div>
+<div class="flex-1">
+<p class="text-label-lg font-label-lg text-text-primary leading-none">Robert Chen</p>
+<p class="text-label-sm font-label-sm text-text-muted">115 Admissions</p>
+</div>
+<div class="text-right">
+<p class="text-label-lg font-label-lg text-soft-blue">25%</p>
+<p class="text-[10px] text-text-muted">Conv.</p>
+</div>
+</div>
+<!-- More Items -->
+<div class="flex items-center gap-3 p-3 hover:bg-surface-container rounded-xl transition-all cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-text-muted">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div class="flex-1">
+<p class="text-label-lg font-label-lg text-text-primary leading-none">Elena Rossi</p>
+<p class="text-label-sm font-label-sm text-text-muted">98 Admissions</p>
+</div>
+<div class="text-right">
+<p class="text-label-lg font-label-lg text-soft-blue">21%</p>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 hover:bg-surface-container rounded-xl transition-all cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-text-muted">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div class="flex-1">
+<p class="text-label-lg font-label-lg text-text-primary leading-none">Marcus Miller</p>
+<p class="text-label-sm font-label-sm text-text-muted">84 Admissions</p>
+</div>
+<div class="text-right">
+<p class="text-label-lg font-label-lg text-soft-blue">19%</p>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-border">
+<button class="w-full text-center text-label-lg font-label-lg text-primary py-2 hover:bg-primary-fixed-dim rounded-lg transition-colors">View All Counselors</button>
+</div>
+</div>
+</div>
+<!-- Bottom Row: Leads Handled Bar Chart -->
+<div class="neomorphic-card p-padding-standard">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h2 class="text-headline-md font-headline-md text-text-primary">Leads Handled Per Counselor</h2>
+<p class="text-label-sm font-label-sm text-text-muted">Workload distribution across the team</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-1.5 mr-4">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="text-label-sm font-label-sm text-text-muted">Handled</span>
+</div>
+<div class="flex items-center gap-1.5 mr-4">
+<span class="w-3 h-3 rounded-full bg-primary-fixed-dim"></span>
+<span class="text-label-sm font-label-sm text-text-muted">Pending</span>
+</div>
+</div>
+</div>
+<div class="h-64 flex items-end gap-padding-standard px-4">
+<!-- Dynamic Bars -->
+<div class="flex-1 flex flex-col items-center group gap-2">
+<div class="w-full max-w-[40px] flex flex-col gap-0.5">
+<div class="w-full bg-primary-fixed-dim rounded-t h-12" title="Pending"></div>
+<div class="w-full bg-primary h-40 rounded-b" title="Handled"></div>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted rotate-45 lg:rotate-0 mt-2">James</span>
+</div>
+<div class="flex-1 flex flex-col items-center group gap-2">
+<div class="w-full max-w-[40px] flex flex-col gap-0.5">
+<div class="w-full bg-primary-fixed-dim rounded-t h-8"></div>
+<div class="w-full bg-primary h-36 rounded-b"></div>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted rotate-45 lg:rotate-0 mt-2">Aria</span>
+</div>
+<div class="flex-1 flex flex-col items-center group gap-2">
+<div class="w-full max-w-[40px] flex flex-col gap-0.5">
+<div class="w-full bg-primary-fixed-dim rounded-t h-16"></div>
+<div class="w-full bg-primary h-32 rounded-b"></div>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted rotate-45 lg:rotate-0 mt-2">Robert</span>
+</div>
+<div class="flex-1 flex flex-col items-center group gap-2">
+<div class="w-full max-w-[40px] flex flex-col gap-0.5">
+<div class="w-full bg-primary-fixed-dim rounded-t h-10"></div>
+<div class="w-full bg-primary h-44 rounded-b"></div>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted rotate-45 lg:rotate-0 mt-2">Elena</span>
+</div>
+<div class="flex-1 flex flex-col items-center group gap-2">
+<div class="w-full max-w-[40px] flex flex-col gap-0.5">
+<div class="w-full bg-primary-fixed-dim rounded-t h-20"></div>
+<div class="w-full bg-primary h-28 rounded-b"></div>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted rotate-45 lg:rotate-0 mt-2">Marcus</span>
+</div>
+<div class="flex-1 flex flex-col items-center group gap-2">
+<div class="w-full max-w-[40px] flex flex-col gap-0.5">
+<div class="w-full bg-primary-fixed-dim rounded-t h-5"></div>
+<div class="w-full bg-primary h-38 rounded-b"></div>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted rotate-45 lg:rotate-0 mt-2">Chloe</span>
+</div>
+<div class="flex-1 flex flex-col items-center group gap-2">
+<div class="w-full max-w-[40px] flex flex-col gap-0.5">
+<div class="w-full bg-primary-fixed-dim rounded-t h-14"></div>
+<div class="w-full bg-primary h-34 rounded-b"></div>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted rotate-45 lg:rotate-0 mt-2">Derek</span>
+</div>
+<div class="flex-1 flex flex-col items-center group gap-2">
+<div class="w-full max-w-[40px] flex flex-col gap-0.5">
+<div class="w-full bg-primary-fixed-dim rounded-t h-10"></div>
+<div class="w-full bg-primary h-30 rounded-b"></div>
+</div>
+<span class="text-label-sm font-label-sm text-text-muted rotate-45 lg:rotate-0 mt-2">Sophia</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer / Feedback -->
+<footer class="p-padding-standard text-center text-text-muted text-label-sm border-t border-border mt-auto">
+            © 2024 SuperCampus Admissions Management. System Status: Operational (Latency 24ms).
+        </footer>
+</main>
+<!-- Floating Action for Quick Report -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-secondary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50">
+<span class="material-symbols-outlined">description</span>
+</button>
+<script>
+        // Simple micro-interactions
+        document.querySelectorAll('.neomorphic-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+                card.style.boxShadow = '16px 16px 32px rgba(0, 0, 0, 0.08), -10px -10px 20px rgba(255, 255, 255, 0.9)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+                card.style.boxShadow = '12px 12px 24px rgba(0, 0, 0, 0.04), -8px -8px 16px rgba(255, 255, 255, 0.8)';
+            });
+        });
+    </script>
+</body></html>

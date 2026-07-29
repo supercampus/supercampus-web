@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SuperCampus CRM | Admission Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Brittany+Signature&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .font-brittany { font-family: 'Brittany Signature', cursive; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1ece7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dcd7d0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #767589;
+        }
+        .neomorphic-card {
+            box-shadow: 18px 18px 36px 0 rgba(0, 0, 0, 0.04), -18px -18px 36px 0 rgba(255, 255, 255, 0.7);
+        }
+        .inner-recess {
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05), inset -2px -2px 5px rgba(255,255,255,0.8);
+        }
+        .kanban-container {
+            height: calc(100vh - 180px);
+        }
+
+        /* Drag and Drop Specific Styles */
+        .draggable-card {
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+            user-select: none;
+            touch-action: none;
+        }
+        .draggable-card:active {
+            cursor: grabbing;
+        }
+        .draggable-card.dragging {
+            opacity: 0.8;
+            transform: scale(1.02) rotate(2deg);
+            box-shadow: 20px 25px 50px -12px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            pointer-events: none;
+        }
+        .drop-zone-active {
+            background-color: rgba(57, 59, 255, 0.05);
+            outline: 2px dashed #393bff;
+            outline-offset: -2px;
+        }
+        .column-scroll-container::-webkit-scrollbar {
+            width: 4px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-fixed-variant": "#1200ed",
+                      "primary-fixed": "#e1e0ff",
+                      "tertiary-fixed": "#ffdad4",
+                      "on-tertiary-fixed-variant": "#920600",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "dark-card": "#1f1f35",
+                      "secondary": "#8200c9",
+                      "panel": "#f1ece7",
+                      "secondary-fixed": "#f3daff",
+                      "on-background": "#1a1b26",
+                      "secondary-fixed-dim": "#e3b5ff",
+                      "pink-violet": "#de6cf5",
+                      "soft-blue": "#776cf5",
+                      "outline-variant": "#c6c4db",
+                      "secondary-container": "#a600ff",
+                      "border": "#e7ded8",
+                      "inverse-on-surface": "#f1efff",
+                      "primary": "#0b00bc",
+                      "surface-dim": "#dad8e8",
+                      "tertiary-fixed-dim": "#ffb4a7",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed": "#03006d",
+                      "surface-container": "#eeecfc",
+                      "dark-surface": "#111122",
+                      "on-surface": "#1a1b26",
+                      "inverse-surface": "#2f2f3b",
+                      "inverse-primary": "#bfc1ff",
+                      "text-primary": "#161318",
+                      "dark-bg": "#090914",
+                      "on-surface-variant": "#454558",
+                      "surface-container-high": "#e9e6f6",
+                      "primary-fixed-dim": "#bfc1ff",
+                      "on-primary": "#ffffff",
+                      "surface-container-low": "#f5f2ff",
+                      "tertiary-container": "#9d0700",
+                      "danger-pink": "#ff005c",
+                      "on-secondary-fixed": "#2f004c",
+                      "on-secondary-container": "#fbebff",
+                      "on-error": "#ffffff",
+                      "surface-variant": "#e3e1f1",
+                      "text-muted": "#6f6875",
+                      "error": "#ba1a1a",
+                      "card": "#ffffff",
+                      "surface-container-highest": "#e3e1f1",
+                      "on-primary-container": "#b5b8ff",
+                      "outline": "#767589",
+                      "error-container": "#ffdad6",
+                      "on-tertiary-fixed": "#400100",
+                      "surface-bright": "#fbf8ff",
+                      "on-error-container": "#93000a",
+                      "surface-tint": "#393bff",
+                      "primary-container": "#1400ff",
+                      "background": "#f7f4ef",
+                      "surface": "#fffaf4",
+                      "on-tertiary-container": "#ffa798",
+                      "dark-panel": "#18182c",
+                      "on-secondary-fixed-variant": "#6e00ab",
+                      "tertiary": "#720400"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gap-column": "16px",
+                      "padding-standard": "16px",
+                      "padding-compact": "8px",
+                      "gap-card": "12px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Plus Jakarta Sans"],
+                      "headline-lg": ["Plus Jakarta Sans"],
+                      "label-sm": ["Plus Jakarta Sans"],
+                      "display": ["Plus Jakarta Sans"],
+                      "label-lg": ["Plus Jakarta Sans"],
+                      "body-lg": ["Plus Jakarta Sans"],
+                      "body-md": ["Plus Jakarta Sans"]
+              },
+              "fontSize": {
+                      "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                      "display": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background font-body-md text-on-surface overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-padding-standard bg-surface shadow-sm h-16">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-1">
+<span class="font-brittany text-headline-lg bg-gradient-to-r from-primary to-pink-violet bg-clip-text text-transparent">SuperCampus</span>
+<span class="text-label-lg font-bold text-outline uppercase tracking-widest ml-2">Admissions</span>
+</div>
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 bg-panel border-none rounded-full text-body-md w-80 inner-recess focus:ring-2 focus:ring-primary/20" placeholder="Search leads, applications..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors relative">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-danger-pink rounded-full border-2 border-surface"></span>
+</button>
+<div class="h-8 w-[1px] bg-border mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-label-lg font-bold text-on-surface">Arjun Mehta</p>
+<p class="text-[10px] text-outline uppercase font-semibold">Senior Counselor</p>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-primary-fixed bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAiYCNSONbAnA4pDA3k57qfso3trx9n5S-NZyFwtO3-h0MRyA_4bisYsl9rUfYVRzFCyrWz4QDtVY5mbCwUAxXtCbszVDp5t8iytmSX8_eGwy4OiFopTOOBLCoKNo2JCzqq5Lsh5CYjeY3kJEZ7-nfNWia7ptIvzTst9idC8HmtZtngJ2LpKfSSwONHrc73Zzq1AXFfDfBfoakYqDurZVB5LrAnFdKs7a0rLkzD7KRdlUzJBx6xIVL4_w')"></div>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-symbols-outlined text-on-surface-variant">dark_mode</span>
+</button>
+</div>
+</header>
+<!-- Side Navigation Shell -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-16 hover:w-64 z-40 flex flex-col py-4 border-r border-border bg-panel transition-all duration-300 group overflow-hidden">
+<nav class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-4 mx-2 my-1 p-3 bg-primary-container text-on-primary-container rounded-lg transition-all transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">view_kanban</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-lg transition-opacity">Pipeline</span>
+</a>
+<a class="flex items-center gap-4 mx-2 my-1 p-3 text-on-surface-variant rounded-lg hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-lg transition-opacity">Teams</span>
+</a>
+<a class="flex items-center gap-4 mx-2 my-1 p-3 text-on-surface-variant rounded-lg hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-lg transition-opacity">Analytics</span>
+</a>
+<a class="flex items-center gap-4 mx-2 my-1 p-3 text-on-surface-variant rounded-lg hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-lg transition-opacity">Archives</span>
+</a>
+</nav>
+<div class="p-2 flex flex-col gap-2">
+<a class="flex items-center gap-4 p-3 text-on-surface-variant rounded-lg hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="opacity-0 group-hover:opacity-100 font-label-lg transition-opacity">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pl-16 pt-16 h-screen flex flex-col overflow-hidden">
+<!-- Secondary Toolbar -->
+<section class="h-20 border-b border-border bg-background px-6 flex items-center justify-between shrink-0">
+<div class="flex items-center gap-4">
+<button class="bg-gradient-to-r from-primary to-secondary text-on-primary px-5 py-2.5 rounded-full font-label-lg flex items-center gap-2 shadow-lg hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                Add New Lead
+            </button>
+<div class="h-6 w-[1px] bg-border mx-2"></div>
+<div class="flex gap-2">
+<div class="px-3 py-1.5 bg-card border border-border rounded-lg flex items-center gap-2 cursor-pointer hover:bg-panel transition-colors">
+<span class="text-label-lg text-outline">Source:</span>
+<span class="text-label-lg font-bold">All</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</div>
+<div class="px-3 py-1.5 bg-card border border-border rounded-lg flex items-center gap-2 cursor-pointer hover:bg-panel transition-colors">
+<span class="text-label-lg text-outline">Course:</span>
+<span class="text-label-lg font-bold">B.Tech</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex p-1 bg-panel rounded-lg inner-recess">
+<button class="px-4 py-1.5 bg-card text-primary rounded-md shadow-sm font-label-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">view_kanban</span> Kanban
+                </button>
+<button class="px-4 py-1.5 text-on-surface-variant font-label-lg flex items-center gap-2 hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">list_alt</span> List
+                </button>
+</div>
+</div>
+</section>
+<!-- Kanban Board Container -->
+<div class="flex-1 overflow-x-auto overflow-y-hidden kanban-container scroll-smooth p-6">
+<div class="inline-flex gap-gap-column h-full">
+<!-- Enquiry Column -->
+<div class="w-[300px] flex flex-col gap-4 kanban-column" data-status="enquiry">
+<header class="flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm z-10 py-1">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-6 bg-soft-blue rounded-full"></div>
+<h3 class="font-headline-md text-on-surface">Enquiry</h3>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-label-lg font-bold">12</span>
+</header>
+<div class="flex-1 flex flex-col gap-gap-card overflow-y-auto pb-4 pr-1 column-scroll-container drop-zone">
+<!-- Rahul Kumar Card -->
+<div class="neomorphic-card bg-card p-4 rounded-xl border-l-4 border-soft-blue draggable-card" draggable="true" onclick="toggleSidebar()">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-danger-pink/10 text-danger-pink rounded-full text-[10px] font-bold tracking-wider">HOT</span>
+<span class="material-symbols-outlined text-outline-variant text-[18px]">more_horiz</span>
+</div>
+<h4 class="font-headline-sm text-on-surface font-bold">Rahul Kumar</h4>
+<p class="text-label-lg text-on-surface-variant mb-3">B.Tech CSE | 2026</p>
+<div class="flex flex-wrap gap-2 mb-4">
+<span class="px-2 py-0.5 bg-panel text-outline text-[10px] font-bold rounded">Facebook</span>
+<span class="px-2 py-0.5 bg-panel text-outline text-[10px] font-bold rounded">Scholarship Opt</span>
+</div>
+<div class="flex justify-between items-center pt-3 border-t border-border">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-card bg-soft-blue flex items-center justify-center text-[10px] font-bold text-white">RK</div>
+</div>
+<span class="text-[10px] font-bold text-outline uppercase">2h ago</span>
+</div>
+</div>
+<!-- Priya Sharma Card -->
+<div class="neomorphic-card bg-card p-4 rounded-xl border-l-4 border-soft-blue draggable-card" draggable="true">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-secondary/10 text-secondary rounded-full text-[10px] font-bold tracking-wider">WARM</span>
+<span class="material-symbols-outlined text-outline-variant text-[18px]">more_horiz</span>
+</div>
+<h4 class="font-headline-sm text-on-surface font-bold">Priya Sharma</h4>
+<p class="text-label-lg text-on-surface-variant mb-3">MBA Marketing | 2024</p>
+<div class="flex flex-wrap gap-2 mb-4">
+<span class="px-2 py-0.5 bg-panel text-outline text-[10px] font-bold rounded">Walk-in</span>
+</div>
+<div class="flex justify-between items-center pt-3 border-t border-border">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-card bg-secondary flex items-center justify-center text-[10px] font-bold text-white">PS</div>
+</div>
+<span class="text-[10px] font-bold text-outline uppercase">5h ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Contact Attempted Column -->
+<div class="w-[300px] flex flex-col gap-4 kanban-column" data-status="attempted">
+<header class="flex items-center justify-between sticky top-0 py-1">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-6 bg-pink-violet rounded-full"></div>
+<h3 class="font-headline-md text-on-surface">Attempted</h3>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-label-lg font-bold">5</span>
+</header>
+<div class="flex-1 flex flex-col gap-gap-card overflow-y-auto pb-4 pr-1 column-scroll-container drop-zone">
+<div class="bg-panel/40 border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center text-center empty-state-placeholder pointer-events-none">
+<span class="material-symbols-outlined text-outline-variant text-[32px] mb-2">call</span>
+<p class="text-label-lg text-outline font-semibold">Drop lead here to log call</p>
+</div>
+</div>
+</div>
+<!-- Contacted Column -->
+<div class="w-[300px] flex flex-col gap-4 kanban-column" data-status="contacted">
+<header class="flex items-center justify-between sticky top-0 py-1">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-6 bg-primary rounded-full"></div>
+<h3 class="font-headline-md text-on-surface">Contacted</h3>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-label-lg font-bold">8</span>
+</header>
+<div class="flex-1 flex flex-col gap-gap-card overflow-y-auto pb-4 pr-1 column-scroll-container drop-zone">
+<div class="neomorphic-card bg-card p-4 rounded-xl border-l-4 border-primary draggable-card" draggable="true">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-outline-variant/20 text-outline rounded-full text-[10px] font-bold tracking-wider uppercase">Cold</span>
+<span class="material-symbols-outlined text-outline-variant text-[18px]">more_horiz</span>
+</div>
+<h4 class="font-headline-sm text-on-surface font-bold">Ankit Verma</h4>
+<p class="text-label-lg text-on-surface-variant mb-3">B.Com Hons | 2025</p>
+<div class="flex flex-wrap gap-2 mb-4">
+<span class="px-2 py-0.5 bg-panel text-outline text-[10px] font-bold rounded">Referral</span>
+</div>
+<div class="flex justify-between items-center pt-3 border-t border-border">
+<div class="w-6 h-6 rounded-full border-2 border-card bg-primary flex items-center justify-center text-[10px] font-bold text-white">AV</div>
+<span class="text-[10px] font-bold text-outline uppercase">Yesterday</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Nurture Column -->
+<div class="w-[300px] flex flex-col gap-4 kanban-column" data-status="nurture">
+<header class="flex items-center justify-between sticky top-0 py-1">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-6 bg-secondary-fixed-dim rounded-full"></div>
+<h3 class="font-headline-md text-on-surface">Nurture</h3>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-label-lg font-bold">21</span>
+</header>
+<div class="flex-1 flex flex-col gap-gap-card overflow-y-auto pb-4 pr-1 column-scroll-container drop-zone"></div>
+</div>
+<!-- Qualified Column -->
+<div class="w-[300px] flex flex-col gap-4 kanban-column" data-status="qualified">
+<header class="flex items-center justify-between sticky top-0 py-1">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-6 bg-on-tertiary-container rounded-full"></div>
+<h3 class="font-headline-md text-on-surface">Qualified</h3>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-label-lg font-bold">4</span>
+</header>
+<div class="flex-1 flex flex-col gap-gap-card overflow-y-auto pb-4 pr-1 column-scroll-container drop-zone"></div>
+</div>
+<!-- Application Column -->
+<div class="w-[300px] flex flex-col gap-4 kanban-column" data-status="application">
+<header class="flex items-center justify-between sticky top-0 py-1">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-6 bg-tertiary rounded-full"></div>
+<h3 class="font-headline-md text-on-surface">Application</h3>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-label-lg font-bold">9</span>
+</header>
+<div class="flex-1 flex flex-col gap-gap-card overflow-y-auto pb-4 pr-1 column-scroll-container drop-zone"></div>
+</div>
+<!-- Admitted Column -->
+<div class="w-[300px] flex flex-col gap-4 kanban-column" data-status="admitted">
+<header class="flex items-center justify-between sticky top-0 py-1">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-6 bg-primary-fixed-dim rounded-full"></div>
+<h3 class="font-headline-md text-on-surface">Admitted</h3>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-label-lg font-bold">0</span>
+</header>
+<div class="flex-1 flex flex-col gap-gap-card items-center justify-center text-center p-8 border-2 border-panel rounded-2xl bg-panel/20 drop-zone relative">
+<div class="w-32 h-32 mb-4 pointer-events-none">
+<div class="w-full h-full opacity-40 bg-cover bg-center rounded-lg grayscale" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAsQt3XUtFToSumwvb3jwulXnCkk--qJri58pcYMFSMVvPSyAiAwWW-rsO7XJrp71bsCeqIR2c484ofcBLmplqLjegO2DrLASmoYPGoHqmjEOtKEkF1KUkbg1T9-Uj_Gf9ZGSV0vJ1NBhV-eH5sIQbCiAyPHRUlD4twgZs6JGohmbEqzTECnGrC1suO8KBluBqEZBPXHc2_6D7-t3Lamq_3-r8njav2oayTIHcaiqM0Z304BDugr6HMqw')"></div>
+</div>
+<p class="text-body-md font-semibold text-outline mb-1 pointer-events-none">No leads here yet.</p>
+<p class="text-[11px] text-outline-variant leading-relaxed pointer-events-none">Admitted students move to ERP automatically for enrollment.</p>
+</div>
+</div>
+<!-- Archived Column -->
+<div class="w-[300px] flex flex-col gap-4 opacity-30 kanban-column" data-status="archived">
+<header class="flex items-center justify-between sticky top-0 py-1">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-6 bg-outline rounded-full"></div>
+<h3 class="font-headline-md text-on-surface">Archived</h3>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-label-lg font-bold">142</span>
+</header>
+<div class="flex-1 flex flex-col gap-gap-card overflow-y-auto pb-4 pr-1 column-scroll-container drop-zone"></div>
+</div>
+</div>
+</div>
+<!-- Bottom Special Buckets Section -->
+<section class="h-24 bg-surface border-t border-border px-6 py-4 flex items-center justify-between shrink-0">
+<div class="flex gap-4 w-full">
+<div class="flex-1 border-2 border-dashed border-border rounded-xl flex items-center justify-center gap-3 hover:bg-panel transition-all cursor-pointer group drop-zone" data-bucket="prospect">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">rocket_launch</span>
+<span class="text-label-lg font-bold text-on-surface-variant group-hover:text-on-surface">Prospect</span>
+</div>
+<div class="flex-1 border-2 border-dashed border-border rounded-xl flex items-center justify-center gap-3 hover:bg-panel transition-all cursor-pointer group drop-zone" data-bucket="deferred">
+<span class="material-symbols-outlined text-outline group-hover:text-secondary transition-colors">history</span>
+<span class="text-label-lg font-bold text-on-surface-variant group-hover:text-on-surface">Deferred</span>
+</div>
+<div class="flex-1 border-2 border-dashed border-border rounded-xl flex items-center justify-center gap-3 hover:bg-panel transition-all cursor-pointer group drop-zone" data-bucket="onhold">
+<span class="material-symbols-outlined text-outline group-hover:text-tertiary-container transition-colors">pause_circle</span>
+<span class="text-label-lg font-bold text-on-surface-variant group-hover:text-on-surface">On Hold</span>
+</div>
+<div class="flex-1 border-2 border-dashed border-border rounded-xl flex items-center justify-center gap-3 hover:bg-panel transition-all cursor-pointer group drop-zone" data-bucket="archive">
+<span class="material-symbols-outlined text-outline group-hover:text-outline-variant transition-colors">archive</span>
+<span class="text-label-lg font-bold text-on-surface-variant group-hover:text-on-surface">Archive</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Lead Detail Sidebar -->
+<aside class="fixed right-0 top-0 h-full w-[400px] bg-card shadow-2xl z-[60] border-l border-border transform translate-x-full transition-transform duration-300 ease-out flex flex-col" id="detailSidebar">
+<header class="p-6 border-b border-border flex justify-between items-center bg-surface">
+<div>
+<h2 class="text-headline-md font-bold text-on-surface">Lead Details</h2>
+<p class="text-[10px] text-outline font-bold uppercase tracking-widest">UID: #SC2024-9182</p>
+</div>
+<button class="p-2 hover:bg-panel rounded-full transition-colors" onclick="toggleSidebar()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</header>
+<div class="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
+<!-- Lead Identity -->
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-soft-blue to-primary flex items-center justify-center text-headline-md text-white font-bold">RK</div>
+<div>
+<h3 class="text-headline-md font-bold text-on-surface">Rahul Kumar</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2 py-0.5 bg-danger-pink/10 text-danger-pink rounded-full text-[10px] font-bold">HOT LEAD</span>
+<span class="text-label-lg text-outline">B.Tech CSE | 2026</span>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="grid grid-cols-2 gap-3">
+<button class="flex items-center justify-center gap-2 py-2.5 bg-primary text-on-primary rounded-lg font-label-lg hover:opacity-90">
+<span class="material-symbols-outlined text-[18px]">call</span> Call Now
+            </button>
+<button class="flex items-center justify-center gap-2 py-2.5 bg-surface-container text-on-surface rounded-lg font-label-lg hover:bg-panel">
+<span class="material-symbols-outlined text-[18px]">mail</span> Email
+            </button>
+</div>
+<!-- Document Checklist -->
+<div>
+<div class="flex items-center justify-between mb-4">
+<h4 class="text-label-lg font-bold text-on-surface uppercase">Documents Checklist</h4>
+<span class="text-label-lg font-bold text-primary">3 of 5 verified</span>
+</div>
+<div class="bg-panel p-4 rounded-xl flex flex-col gap-3 inner-recess">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-body-md text-on-surface font-medium">10th Grade Marksheet</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-body-md text-on-surface font-medium">12th Grade Marksheet</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-body-md text-on-surface font-medium">Identity Proof (Aadhar)</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline-variant text-[20px]">circle</span>
+<span class="text-body-md text-outline font-medium">Migration Certificate</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline-variant text-[20px]">circle</span>
+<span class="text-body-md text-outline font-medium">Character Certificate</span>
+</div>
+</div>
+</div>
+<!-- Activity History -->
+<div>
+<h4 class="text-label-lg font-bold text-on-surface uppercase mb-4">Recent Activity</h4>
+<div class="flex flex-col gap-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-[1px] before:bg-border">
+<div class="flex gap-4 relative">
+<div class="w-6 h-6 rounded-full bg-card border-2 border-soft-blue flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-[14px] text-soft-blue" style="font-variation-settings: 'FILL' 1;">call</span>
+</div>
+<div>
+<p class="text-body-md font-bold">Call Completed</p>
+<p class="text-[11px] text-outline-variant">"Inquired about scholarship eligibility. High interest."</p>
+<p class="text-[10px] text-outline font-bold mt-1 uppercase">Today, 10:45 AM</p>
+</div>
+</div>
+<div class="flex gap-4 relative">
+<div class="w-6 h-6 rounded-full bg-card border-2 border-pink-violet flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-[14px] text-pink-violet" style="font-variation-settings: 'FILL' 1;">mail</span>
+</div>
+<div>
+<p class="text-body-md font-bold">Brochure Sent</p>
+<p class="text-[11px] text-outline-variant">Email delivered: B.Tech 2026 Prospectus</p>
+<p class="text-[10px] text-outline font-bold mt-1 uppercase">Yesterday, 02:20 PM</p>
+</div>
+</div>
+<div class="flex gap-4 relative">
+<div class="w-6 h-6 rounded-full bg-card border-2 border-primary flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-[14px] text-primary" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div>
+<p class="text-body-md font-bold">Lead Created</p>
+<p class="text-[11px] text-outline-variant">Source: Facebook Lead Gen Ads</p>
+<p class="text-[10px] text-outline font-bold mt-1 uppercase">Oct 24, 09:12 AM</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="p-6 bg-surface border-t border-border">
+<button class="w-full py-3 bg-panel border border-border text-on-surface-variant font-bold rounded-lg hover:bg-surface-container transition-colors">
+            Edit Lead Data
+        </button>
+</footer>
+</aside>
+<!-- Overlay Backdrop -->
+<div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[55] opacity-0 pointer-events-none transition-opacity duration-300" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('detailSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (sidebar.classList.contains('translate-x-full')) {
+            sidebar.classList.remove('translate-x-full');
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+        } else {
+            sidebar.classList.add('translate-x-full');
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+        }
+    }
+
+    // Drag and Drop Logic
+    document.addEventListener('DOMContentLoaded', () => {
+        const draggables = document.querySelectorAll('.draggable-card');
+        const dropZones = document.querySelectorAll('.drop-zone');
+
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', (e) => {
+                draggable.classList.add('dragging');
+                // Set data for ghost image or logic if needed
+                e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+            });
+
+            draggable.addEventListener('dragend', () => {
+                draggable.classList.remove('dragging');
+            });
+        });
+
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const dragging = document.querySelector('.dragging');
+                if (!dragging) return;
+                
+                zone.classList.add('drop-zone-active');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drop-zone-active');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drop-zone-active');
+                const dragging = document.querySelector('.dragging');
+                
+                if (dragging) {
+                    // Logic to move card to new zone
+                    // For status columns, we append to the list
+                    // For buckets, we might just hide or log action
+                    if (zone.classList.contains('column-scroll-container') || zone.getAttribute('data-status')) {
+                        zone.appendChild(dragging);
+                    } else if (zone.getAttribute('data-bucket')) {
+                        // "Parking" logic - visually move it or process it
+                        console.log(`Moved to bucket: ${zone.getAttribute('data-bucket')}`);
+                        // In a real app, this might trigger an archival animation
+                        // Here we just let it drop if it's a valid UI location
+                        zone.appendChild(dragging);
+                    }
+                }
+            });
+        });
+    });
+</script>
+</body></html>

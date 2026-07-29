@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SuperCampus CRM | Support &amp; Help Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "pink-violet": "#de6cf5",
+                    "surface-dim": "#dad8e8",
+                    "background": "#f7f4ef",
+                    "primary": "#0b00bc",
+                    "dark-bg": "#090914",
+                    "on-tertiary-container": "#ffa798",
+                    "secondary-container": "#a600ff",
+                    "outline": "#767589",
+                    "panel": "#f1ece7",
+                    "dark-surface": "#111122",
+                    "tertiary-container": "#9d0700",
+                    "primary-fixed": "#e1e0ff",
+                    "on-primary-container": "#b5b8ff",
+                    "on-background": "#1a1b26",
+                    "on-tertiary-fixed-variant": "#920600",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#f3daff",
+                    "on-primary-fixed": "#03006d",
+                    "surface-container": "#eeecfc",
+                    "on-secondary-fixed": "#2f004c",
+                    "border": "#e7ded8",
+                    "surface-tint": "#393bff",
+                    "inverse-on-surface": "#f1efff",
+                    "on-secondary-container": "#fbebff",
+                    "inverse-primary": "#bfc1ff",
+                    "text-muted": "#6f6875",
+                    "on-error-container": "#93000a",
+                    "card": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb4a7",
+                    "inverse-surface": "#2f2f3b",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed": "#ffdad4",
+                    "secondary-fixed-dim": "#e3b5ff",
+                    "outline-variant": "#c6c4db",
+                    "surface-variant": "#e3e1f1",
+                    "surface-container-low": "#f5f2ff",
+                    "on-surface-variant": "#454558",
+                    "on-secondary-fixed-variant": "#6e00ab",
+                    "danger-pink": "#ff005c",
+                    "surface-container-high": "#e9e6f6",
+                    "tertiary": "#720400",
+                    "on-error": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#400100",
+                    "on-primary-fixed-variant": "#1200ed",
+                    "primary-container": "#1400ff",
+                    "primary-fixed-dim": "#bfc1ff",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#1a1b26",
+                    "text-primary": "#161318",
+                    "surface-container-lowest": "#ffffff",
+                    "dark-card": "#1f1f35",
+                    "dark-panel": "#18182c",
+                    "soft-blue": "#776cf5",
+                    "surface-container-highest": "#e3e1f1",
+                    "surface": "#fffaf4",
+                    "surface-bright": "#fbf8ff",
+                    "secondary": "#8200c9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "padding-compact": "8px",
+                    "gap-column": "16px",
+                    "padding-standard": "16px",
+                    "gap-card": "12px"
+            },
+            "fontFamily": {
+                    "label-lg": ["Plus Jakarta Sans", "sans-serif"],
+                    "body-md": ["Plus Jakarta Sans", "sans-serif"],
+                    "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+                    "display": ["Plus Jakarta Sans", "sans-serif"],
+                    "body-lg": ["Plus Jakarta Sans", "sans-serif"],
+                    "label-sm": ["Plus Jakarta Sans", "sans-serif"],
+                    "headline-lg": ["Plus Jakarta Sans", "sans-serif"]
+            },
+            "fontSize": {
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f7f4ef;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #1a1b26;
+        }
+        .neomorphic-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .neomorphic-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px -12px rgba(0, 0, 0, 0.12);
+        }
+        .recessed-input {
+            background: #f1ece7;
+            border: 1px solid #e7ded8;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.03);
+        }
+        .recessed-input:focus {
+            outline: none;
+            border-color: #0b00bc;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.03), 0 0 0 2px rgba(11, 0, 188, 0.1);
+        }
+        .accent-border-blue { border-left: 4px solid #776cf5; }
+        .accent-border-pink { border-left: 4px solid #de6cf5; }
+        .accent-border-primary { border-left: 4px solid #0b00bc; }
+        
+        .chat-widget {
+            bottom: 24px;
+            right: 24px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="flex justify-between items-center w-full px-padding-standard h-16 sticky top-0 z-50 bg-panel dark:bg-dark-panel shadow-sm">
+<div class="flex items-center gap-4">
+<span class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed">SuperCampus</span>
+<div class="hidden md:flex ml-8 space-x-6">
+<a class="text-primary dark:text-primary-fixed font-bold border-b-2 border-primary py-1" href="#">Help Center</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-dark-card transition-colors px-2 py-1 rounded" href="#">My Tickets</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-dark-card transition-colors px-2 py-1 rounded" href="#">Community</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="recessed-input rounded-full pl-10 pr-4 py-2 w-64 text-body-md" placeholder="Search Help Center..." type="text"/>
+</div>
+<span class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform">notifications</span>
+<span class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform">help</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-border">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a campus staff member in a brightly lit, modern educational office setting. The person is smiling warmly, wearing a smart-casual navy blazer. The background is softly blurred, showing hints of architectural detail and soft indoor plants, maintaining the brand's calm and professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPnbNbFbM2-eR5wecXjLxDk3nHGX0nSNjCd7WwwBC74i5xkaStQBmOPmmj7rRFTgW3kkG7voifRKcY98XVj91xFoST2ezZpPA1jHOXJA4mahYLDbyi3_AFC1Wn1vXDPuEzH5fXT5NfHnyOJv7K2oJJSj2GgpmBX13QBNY9_Ds6z-x30K2IfKiBw964PGS6E2-NU7fOavze_s4lRoA7OAIYlGt3g8BiarLOfLFquISrSTt62WsB4CbM6A"/>
+</div>
+</div>
+</nav>
+<div class="flex">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 flex flex-col p-padding-standard bg-panel dark:bg-dark-panel border-r border-border dark:border-outline hidden lg:flex">
+<div class="flex flex-col gap-2 flex-grow">
+<div class="flex items-center gap-padding-compact text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all cursor-pointer">
+<span class="material-symbols-outlined">view_kanban</span>
+<span class="font-label-lg text-label-lg">Pipeline</span>
+</div>
+<div class="flex items-center gap-padding-compact text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all cursor-pointer">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-label-lg text-label-lg">Analytics</span>
+</div>
+<div class="flex items-center gap-padding-compact text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all cursor-pointer">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-lg text-label-lg">Students</span>
+</div>
+<div class="flex items-center gap-padding-compact text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all cursor-pointer">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-lg text-label-lg">Inventory</span>
+</div>
+<div class="flex items-center gap-padding-compact bg-surface-container dark:bg-dark-surface text-primary dark:text-primary-fixed rounded-lg px-4 py-3">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</div>
+</div>
+<div class="mt-auto pt-4 border-t border-border">
+<div class="flex items-center gap-padding-compact text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all cursor-pointer">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 lg:ml-64 p-8 min-h-screen">
+<!-- Hero Section -->
+<section class="mb-12 text-center max-w-4xl mx-auto">
+<h1 class="font-display text-display text-on-background mb-4">How can we help you today?</h1>
+<p class="text-body-lg text-text-muted mb-8">Access SuperCampus guides, troubleshooting, and direct support for campus staff.</p>
+<div class="relative max-w-2xl mx-auto">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary text-2xl">search</span>
+<input class="w-full h-16 recessed-input rounded-2xl pl-14 pr-6 text-body-lg shadow-sm focus:ring-2 focus:ring-primary/20" placeholder="Search for articles, features, or error codes..." type="text"/>
+</div>
+</section>
+<!-- Help Topics Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+<!-- Getting Started -->
+<div class="neomorphic-card p-6 accent-border-blue flex flex-col">
+<div class="w-12 h-12 bg-soft-blue/10 rounded-xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-soft-blue">rocket_launch</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-2">Getting Started</h3>
+<p class="text-body-md text-text-muted mb-4 flex-grow">New to SuperCampus? Learn the basics of the staff portal and dashboard navigation.</p>
+<ul class="space-y-2">
+<li><a class="text-primary hover:underline text-body-md flex items-center gap-2" href="#">Introduction to CRM <span class="material-symbols-outlined text-sm">arrow_forward</span></a></li>
+<li><a class="text-primary hover:underline text-body-md flex items-center gap-2" href="#">Setting up your profile <span class="material-symbols-outlined text-sm">arrow_forward</span></a></li>
+</ul>
+</div>
+<!-- Lead Management -->
+<div class="neomorphic-card p-6 accent-border-pink flex flex-col">
+<div class="w-12 h-12 bg-pink-violet/10 rounded-xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-pink-violet">person_search</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-2">Lead Management</h3>
+<p class="text-body-md text-text-muted mb-4 flex-grow">Master the pipeline, student intake processes, and automated follow-ups.</p>
+<ul class="space-y-2">
+<li><a class="text-primary hover:underline text-body-md flex items-center gap-2" href="#">Kanban Board Tutorial <span class="material-symbols-outlined text-sm">arrow_forward</span></a></li>
+<li><a class="text-primary hover:underline text-body-md flex items-center gap-2" href="#">Scoring &amp; Categorization <span class="material-symbols-outlined text-sm">arrow_forward</span></a></li>
+</ul>
+</div>
+<!-- Troubleshooting -->
+<div class="neomorphic-card p-6 accent-border-primary flex flex-col">
+<div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-primary">build</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-2">Troubleshooting</h3>
+<p class="text-body-md text-text-muted mb-4 flex-grow">Common error codes, synchronization issues, and data integrity fixes.</p>
+<ul class="space-y-2">
+<li><a class="text-primary hover:underline text-body-md flex items-center gap-2" href="#">API Sync Errors <span class="material-symbols-outlined text-sm">arrow_forward</span></a></li>
+<li><a class="text-primary hover:underline text-body-md flex items-center gap-2" href="#">System Status Dashboard <span class="material-symbols-outlined text-sm">arrow_forward</span></a></li>
+</ul>
+</div>
+</section>
+<!-- Main Actions: Ticket Form & Banner -->
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start mb-20">
+<!-- Submit a Ticket Form -->
+<div class="xl:col-span-2 neomorphic-card p-8">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary text-3xl">confirmation_number</span>
+<h2 class="font-headline-lg text-headline-lg">Submit a Support Ticket</h2>
+</div>
+<form class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col gap-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Subject</label>
+<input class="recessed-input rounded-lg px-4 py-3 text-body-md" placeholder="Briefly describe the issue" type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Category</label>
+<select class="recessed-input rounded-lg px-4 py-3 text-body-md">
+<option>Technical Issue</option>
+<option>Billing &amp; Access</option>
+<option>Feature Request</option>
+<option>General Inquiry</option>
+</select>
+</div>
+<div class="flex flex-col gap-2 md:col-span-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Description</label>
+<textarea class="recessed-input rounded-lg px-4 py-3 text-body-md" placeholder="Provide detailed steps to reproduce the issue..." rows="4"></textarea>
+</div>
+<div class="md:col-span-2 flex justify-end gap-4">
+<button class="px-6 py-3 rounded-xl font-label-lg text-label-lg text-primary bg-surface-container-high hover:bg-surface-variant transition-colors" type="button">Discard</button>
+<button class="px-8 py-3 rounded-xl font-label-lg text-label-lg bg-primary text-on-primary hover:shadow-lg transition-all active:scale-95" type="submit">Submit Ticket</button>
+</div>
+</form>
+</div>
+<!-- Info Sidebar -->
+<div class="flex flex-col gap-6">
+<div class="bg-primary p-8 rounded-[24px] text-on-primary shadow-xl relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="font-headline-md text-headline-md mb-2">Need immediate assistance?</h3>
+<p class="text-body-md opacity-90 mb-6">Our average response time for staff tickets is under 2 hours.</p>
+<div class="flex items-center gap-4 mb-2">
+<span class="material-symbols-outlined">schedule</span>
+<span class="text-label-lg">9:00 AM - 6:00 PM EST</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined">call</span>
+<span class="text-label-lg">+1 (800) CAMPUS-HELP</span>
+</div>
+</div>
+<!-- Abstract decorative circle -->
+<div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+</div>
+<div class="neomorphic-card p-6">
+<h4 class="font-label-lg text-label-lg text-text-muted mb-4 uppercase tracking-wider">Helpful Resources</h4>
+<div class="space-y-4">
+<div class="flex items-start gap-4 group cursor-pointer">
+<span class="material-symbols-outlined text-soft-blue bg-soft-blue/10 p-2 rounded-lg">description</span>
+<div>
+<p class="font-label-lg text-label-lg group-hover:text-primary transition-colors">Staff Handbook 2024</p>
+<p class="text-label-sm text-text-muted">PDF • 4.2 MB</p>
+</div>
+</div>
+<div class="flex items-start gap-4 group cursor-pointer">
+<span class="material-symbols-outlined text-pink-violet bg-pink-violet/10 p-2 rounded-lg">video_library</span>
+<div>
+<p class="font-label-lg text-label-lg group-hover:text-primary transition-colors">Onboarding Webinars</p>
+<p class="text-label-sm text-text-muted">12 Video Series</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Live Chat Widget -->
+<div class="fixed chat-widget flex flex-col items-end" id="chat-widget">
+<!-- Chat Bubble Popup (Hidden by default) -->
+<div class="hidden w-80 neomorphic-card overflow-hidden flex flex-col mb-4 scale-95 opacity-0 origin-bottom-right transition-all duration-300" id="chat-popup">
+<div class="bg-primary p-4 text-on-primary flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+<span class="font-label-lg text-label-lg">Support Online</span>
+</div>
+<button class="material-symbols-outlined hover:bg-white/20 rounded-full p-1" onclick="toggleChat()">close</button>
+</div>
+<div class="h-64 p-4 bg-surface-container-low overflow-y-auto space-y-4 flex flex-col">
+<div class="bg-surface-variant p-3 rounded-2xl rounded-tl-none self-start text-body-md max-w-[80%] shadow-sm">
+                    Hi! I'm the SuperCampus Assistant. How can I help you today?
+                </div>
+</div>
+<div class="p-3 border-t border-border flex gap-2">
+<input class="flex-grow recessed-input rounded-full px-4 py-2 text-body-md" placeholder="Type message..." type="text"/>
+<button class="bg-primary text-on-primary w-10 h-10 rounded-full flex items-center justify-center hover:shadow-md active:scale-90 transition-all">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+<!-- FAB -->
+<button class="w-16 h-16 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center group active:scale-90 transition-transform" onclick="toggleChat()">
+<span class="material-symbols-outlined text-3xl group-hover:rotate-12 transition-transform">chat</span>
+</button>
+</div>
+<!-- Background Decoration -->
+<div class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none overflow-hidden">
+<div class="absolute top-[10%] right-[5%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px]"></div>
+<div class="absolute bottom-[5%] left-[5%] w-[300px] h-[300px] bg-soft-blue/5 rounded-full blur-[80px]"></div>
+</div>
+<script>
+        function toggleChat() {
+            const popup = document.getElementById('chat-popup');
+            if (popup.classList.contains('hidden')) {
+                popup.classList.remove('hidden');
+                setTimeout(() => {
+                    popup.classList.remove('scale-95', 'opacity-0');
+                    popup.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                popup.classList.remove('scale-100', 'opacity-100');
+                popup.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    popup.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // Add small micro-interaction to cards
+        document.querySelectorAll('.neomorphic-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                // Potential for JS based shadows if needed, but Tailwind handles hover well
+            });
+        });
+    </script>
+</body></html>

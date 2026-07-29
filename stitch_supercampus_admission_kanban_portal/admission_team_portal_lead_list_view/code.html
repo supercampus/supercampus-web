@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lead List View - SuperCampus CRM</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "on-tertiary-container": "#ffa798",
+                "dark-card": "#1f1f35",
+                "tertiary-fixed-dim": "#ffb4a7",
+                "on-secondary-fixed": "#2f004c",
+                "on-secondary-container": "#fbebff",
+                "surface-bright": "#fbf8ff",
+                "on-error": "#ffffff",
+                "surface-container-low": "#f5f2ff",
+                "tertiary-container": "#9d0700",
+                "on-tertiary": "#ffffff",
+                "primary-fixed": "#e1e0ff",
+                "primary-container": "#1400ff",
+                "surface-tint": "#393bff",
+                "text-primary": "#161318",
+                "dark-panel": "#18182c",
+                "surface-container-lowest": "#ffffff",
+                "tertiary": "#720400",
+                "secondary-fixed": "#f3daff",
+                "secondary-container": "#a600ff",
+                "secondary-fixed-dim": "#e3b5ff",
+                "on-primary-container": "#b5b8ff",
+                "outline": "#767589",
+                "on-primary-fixed": "#03006d",
+                "on-secondary-fixed-variant": "#6e00ab",
+                "inverse-surface": "#2f2f3b",
+                "inverse-on-surface": "#f1efff",
+                "surface-variant": "#e3e1f1",
+                "dark-bg": "#090914",
+                "on-secondary": "#ffffff",
+                "on-surface": "#1a1b26",
+                "primary-fixed-dim": "#bfc1ff",
+                "on-primary-fixed-variant": "#1200ed",
+                "secondary": "#8200c9",
+                "on-primary": "#ffffff",
+                "dark-surface": "#111122",
+                "surface-container": "#eeecfc",
+                "error": "#ba1a1a",
+                "surface-dim": "#dad8e8",
+                "surface-container-highest": "#e3e1f1",
+                "danger-pink": "#ff005c",
+                "on-surface-variant": "#454558",
+                "soft-blue": "#776cf5",
+                "primary": "#0b00bc",
+                "text-muted": "#6f6875",
+                "surface": "#fffaf4",
+                "outline-variant": "#c6c4db",
+                "tertiary-fixed": "#ffdad4",
+                "card": "#ffffff",
+                "on-background": "#1a1b26",
+                "border": "#e7ded8",
+                "error-container": "#ffdad6",
+                "surface-container-high": "#e9e6f6",
+                "background": "#f7f4ef",
+                "panel": "#f1ece7",
+                "on-tertiary-fixed-variant": "#920600",
+                "on-error-container": "#93000a",
+                "on-tertiary-fixed": "#400100",
+                "pink-violet": "#de6cf5",
+                "inverse-primary": "#bfc1ff"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "padding-compact": "8px",
+                "gap-column": "16px",
+                "padding-standard": "16px",
+                "gap-card": "12px"
+            },
+            "fontFamily": {
+                "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+                "body-lg": ["Plus Jakarta Sans", "sans-serif"],
+                "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+                "label-lg": ["Plus Jakarta Sans", "sans-serif"],
+                "body-md": ["Plus Jakarta Sans", "sans-serif"],
+                "label-sm": ["Plus Jakarta Sans", "sans-serif"],
+                "display": ["Plus Jakarta Sans", "sans-serif"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f7f4ef;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .neomorphic-shadow {
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+        }
+        .recessed-input {
+            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e7ded8;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #c6c4db;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-padding-standard bg-surface dark:bg-dark-surface h-16 shadow-sm dark:shadow-none border-b border-border">
+<div class="flex items-center gap-8">
+<span class="text-headline-lg font-headline-lg font-bold text-primary dark:text-primary-fixed">SuperCampus CRM</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container transition-colors duration-200 px-3 py-1 rounded" href="#">Dashboard</a>
+<a class="text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed pb-1 font-label-lg text-label-lg" href="#">Leads</a>
+<a class="text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container transition-colors duration-200 px-3 py-1 rounded" href="#">Admissions</a>
+<a class="text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container transition-colors duration-200 px-3 py-1 rounded" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="bg-panel recessed-input border border-border rounded-full pl-10 pr-4 py-1.5 text-body-md font-body-md w-64 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search leads..." type="text"/>
+</div>
+<button class="bg-primary text-on-primary font-label-lg text-label-lg px-4 py-2 rounded-lg hover:opacity-90 active:scale-95 transition-all">Add Lead</button>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+<img class="w-8 h-8 rounded-full border border-border object-cover ml-2" data-alt="A professional headshot of a friendly admission counselor with a warm smile, wearing modern office attire. The background is a brightly lit, clean university administrative office with soft natural lighting and subtle brand colors in the décor, reflecting a professional and accessible tone." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlLivoKltip_2OtSIwzoMrRWyBZO956aC6mevBOXHPXAgUyilPflRvq7CftEyAvAQc7WXKsDmCN3gRXtm3hr34vYwzP52YGUMu__8d1LUwMnyQn9jASHVyX4o-KhH2GLLtWd518co71GMKokEhkzdnwdjVRlBRmY7glYRWP5RpWVurmtDMkvgYIWQNyq__MD0tAdSuZD1cZTxYWSnacVW6qfCU2qPsVgyBsLeVR-bKEtSxZwjMpDKcSA"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Hidden on small screens) -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 z-40 flex flex-col py-4 border-r border-border bg-panel hidden md:flex">
+<div class="px-6 mb-6">
+<p class="text-headline-md font-headline-md text-primary">Admission Portal</p>
+<p class="text-label-lg font-label-lg text-muted">SuperCampus CRM</p>
+</div>
+<div class="flex-1 flex flex-col gap-1 px-2">
+<button class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors group">
+<span class="material-symbols-outlined">view_kanban</span>
+<span class="text-label-lg font-label-lg">Pipeline</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">group</span>
+<span class="text-label-lg font-label-lg">Teams</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-lg font-label-lg">Analytics</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-label-lg font-label-lg">Archives</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-lg font-label-lg">Settings</span>
+</button>
+</div>
+<div class="px-4 mb-4">
+<button class="w-full flex items-center justify-center gap-2 bg-white border border-border py-2.5 rounded-lg text-primary font-label-lg text-label-lg shadow-sm hover:shadow-md transition-shadow">
+<span class="material-symbols-outlined text-sm">filter_alt</span>
+                Quick Filter
+            </button>
+</div>
+<div class="mt-auto border-t border-border pt-4 px-2">
+<button class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">help</span>
+<span class="text-label-lg font-label-lg">Help</span>
+</button>
+<button class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-error hover:bg-error-container/20 transition-colors">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-label-lg font-label-lg">Logout</span>
+</button>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="md:ml-64 pt-20 p-6 min-h-screen">
+<!-- Dashboard Header & Filters -->
+<div class="flex flex-col gap-6 mb-8">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h1 class="text-headline-lg font-headline-lg text-text-primary">Lead Management</h1>
+<p class="text-body-md font-body-md text-text-muted">Monitor and engage with incoming student applications.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-label-lg font-label-lg text-on-surface-variant hover:bg-panel transition-colors">
+<span class="material-symbols-outlined text-[18px]">ios_share</span>
+                        Export
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-label-lg font-label-lg text-on-surface-variant hover:bg-panel transition-colors">
+<span class="material-symbols-outlined text-[18px]">group_add</span>
+                        Reassign
+                    </button>
+</div>
+</div>
+<!-- Advanced Filters Bar -->
+<div class="bg-white rounded-xl p-4 neomorphic-shadow flex flex-wrap items-center gap-4 border border-border">
+<div class="flex items-center gap-2 bg-panel rounded-lg px-3 py-1.5 border border-border recessed-input">
+<span class="material-symbols-outlined text-outline text-[18px]">filter_list</span>
+<select class="bg-transparent border-none focus:ring-0 text-label-lg font-label-lg text-on-surface-variant cursor-pointer">
+<option>Status: All</option>
+<option>New</option>
+<option>Contacted</option>
+<option>Qualified</option>
+<option>Enrolled</option>
+</select>
+</div>
+<div class="flex items-center gap-2 bg-panel rounded-lg px-3 py-1.5 border border-border recessed-input">
+<span class="material-symbols-outlined text-outline text-[18px]">source</span>
+<select class="bg-transparent border-none focus:ring-0 text-label-lg font-label-lg text-on-surface-variant cursor-pointer">
+<option>Source: All</option>
+<option>Website</option>
+<option>Referral</option>
+<option>Social Media</option>
+<option>Direct Call</option>
+</select>
+</div>
+<div class="flex items-center gap-2 bg-panel rounded-lg px-3 py-1.5 border border-border recessed-input">
+<span class="material-symbols-outlined text-outline text-[18px]">calendar_today</span>
+<span class="text-label-lg font-label-lg text-on-surface-variant">Last 30 Days</span>
+<span class="material-symbols-outlined text-outline text-[18px]">expand_more</span>
+</div>
+<div class="h-8 w-px bg-border mx-2"></div>
+<button class="text-primary font-label-lg text-label-lg px-3 hover:underline">Clear all</button>
+<div class="ml-auto text-label-sm font-label-sm text-text-muted">
+                    Showing 1-12 of 1,248 leads
+                </div>
+</div>
+</div>
+<!-- Lead Table View -->
+<div class="bg-white rounded-xl neomorphic-shadow border border-border overflow-hidden">
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead class="bg-panel border-b border-border sticky top-0">
+<tr>
+<th class="px-6 py-4">
+<input class="rounded border-border text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+</th>
+<th class="px-4 py-4 text-label-lg font-label-lg text-on-surface-variant uppercase tracking-wider">Lead Name</th>
+<th class="px-4 py-4 text-label-lg font-label-lg text-on-surface-variant uppercase tracking-wider">Course</th>
+<th class="px-4 py-4 text-label-lg font-label-lg text-on-surface-variant uppercase tracking-wider">Intake</th>
+<th class="px-4 py-4 text-label-lg font-label-lg text-on-surface-variant uppercase tracking-wider">Source</th>
+<th class="px-4 py-4 text-label-lg font-label-lg text-on-surface-variant uppercase tracking-wider">Assigned To</th>
+<th class="px-4 py-4 text-label-lg font-label-lg text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-4 py-4 text-label-lg font-label-lg text-on-surface-variant uppercase tracking-wider">Last Activity</th>
+<th class="px-4 py-4"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border">
+<!-- Lead Item 1 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-6 py-4">
+<input class="rounded border-border text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-soft-blue/10 flex items-center justify-center text-soft-blue font-bold">JD</div>
+<div>
+<div class="text-body-md font-bold text-text-primary">Jane Doe</div>
+<div class="text-label-sm font-label-sm text-text-muted">jane.doe@email.com</div>
+</div>
+</div>
+</td>
+<td class="px-4 py-4 text-body-md font-body-md">MSc Data Science</td>
+<td class="px-4 py-4 text-body-md font-body-md text-text-muted">Fall 2024</td>
+<td class="px-4 py-4">
+<span class="px-2 py-1 bg-surface-container-high rounded text-label-sm font-label-sm text-on-surface-variant">Website</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="A portrait of a male admissions representative in a professional workspace, with soft background bokeh showing a modern office environment. The image uses soft warm tones and clean lighting, adhering to the brand's calm and operational aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbQZMXBnKPHGS_M3zgZkKE1fFiXDcQSVOMuUePDel1e9-PH9L1pOUFJWQl94Ld99Q2R7abL7kZb5RlfzmA_g_09KG-bm51YhOo3Nmg0v9Alxtvu3sVp3RhBba878GmN__299G5KvEudPk7pvEpCkwdP_Op6VBeq7PjXMBuuttxBs5EBPVUweVbAWXxkEwlxWT9Uj5VlwsxDRt5L6iyhpxdTbzlNdZD1yCLNlqNe53Q5WR1oDPXayk3Gw"/>
+<span class="text-body-md font-body-md">Mark Smith</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="px-3 py-1 rounded-full bg-soft-blue/15 text-soft-blue text-label-sm font-label-sm border border-soft-blue/20">Qualified</span>
+</td>
+<td class="px-4 py-4">
+<div class="text-body-md font-body-md">2 hours ago</div>
+<div class="text-label-sm font-label-sm text-text-muted">Email Opened</div>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-high rounded transition-colors text-outline">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Lead Item 2 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-6 py-4">
+<input class="rounded border-border text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-pink-violet/10 flex items-center justify-center text-pink-violet font-bold">AL</div>
+<div>
+<div class="text-body-md font-bold text-text-primary">Alex Lee</div>
+<div class="text-label-sm font-label-sm text-text-muted">alex.lee@gmail.com</div>
+</div>
+</div>
+</td>
+<td class="px-4 py-4 text-body-md font-body-md">MBA Strategy</td>
+<td class="px-4 py-4 text-body-md font-body-md text-text-muted">Spring 2024</td>
+<td class="px-4 py-4">
+<span class="px-2 py-1 bg-surface-container-high rounded text-label-sm font-label-sm text-on-surface-variant">LinkedIn</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Close up of a professional administrative staff member with a friendly smile, set in a clean minimalist modern office. Soft ambient lighting, white and light grey color palette with subtle warm accents for an operational yet high-end look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfQYrh7tk2wx5vY6YAygune2HRhAGpZgrXBCElKL-pSXTui4rbyltcccRkjlYCud4tXklbfk6sYj7G3yv781nn6vv5LRYFKfS24O-gwGFDDAOuSh7jUcYZP93ifGkiy53BuwsyTwLsiZNInQm7YWiIfDWELQsP0Hcnl989RAK0cXH5vycCqyAaid1oPzfNTRZXHJD1iSJLp3VfXDjREQqqtJ6AZe7nKNxnoF9ndmWVE8FxGg0rQGHyug"/>
+<span class="text-body-md font-body-md">Sarah Chen</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="px-3 py-1 rounded-full bg-secondary/10 text-secondary text-label-sm font-label-sm border border-secondary/20">Contacted</span>
+</td>
+<td class="px-4 py-4">
+<div class="text-body-md font-body-md">Yesterday</div>
+<div class="text-label-sm font-label-sm text-text-muted">Phone Call (5m)</div>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-high rounded transition-colors text-outline">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Lead Item 3 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-6 py-4">
+<input class="rounded border-border text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary font-bold">MR</div>
+<div>
+<div class="text-body-md font-bold text-text-primary">Marcus Rivera</div>
+<div class="text-label-sm font-label-sm text-text-muted">m.rivera@edu.org</div>
+</div>
+</div>
+</td>
+<td class="px-4 py-4 text-body-md font-body-md">BEng Software</td>
+<td class="px-4 py-4 text-body-md font-body-md text-text-muted">Fall 2024</td>
+<td class="px-4 py-4">
+<span class="px-2 py-1 bg-surface-container-high rounded text-label-sm font-label-sm text-on-surface-variant">Referral</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2 text-text-muted italic">
+<span class="material-symbols-outlined text-[18px]">person_off</span>
+<span class="text-body-md font-body-md">Unassigned</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="px-3 py-1 rounded-full bg-tertiary/15 text-tertiary text-label-sm font-label-sm border border-tertiary/20">New</span>
+</td>
+<td class="px-4 py-4">
+<div class="text-body-md font-body-md">3 hours ago</div>
+<div class="text-label-sm font-label-sm text-text-muted">Form Submitted</div>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-high rounded transition-colors text-outline">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Lead Item 4 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-6 py-4">
+<input class="rounded border-border text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">HW</div>
+<div>
+<div class="text-body-md font-bold text-text-primary">Hana Watanabe</div>
+<div class="text-label-sm font-label-sm text-text-muted">hana@watanabe.jp</div>
+</div>
+</div>
+</td>
+<td class="px-4 py-4 text-body-md font-body-md">MFA Design</td>
+<td class="px-4 py-4 text-body-md font-body-md text-text-muted">Fall 2024</td>
+<td class="px-4 py-4">
+<span class="px-2 py-1 bg-surface-container-high rounded text-label-sm font-label-sm text-on-surface-variant">Website</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="A portrait of a cheerful female administrator with glasses in a minimalist professional university building setting. The aesthetic is clean and modern, with soft shadows and high-key lighting to emphasize an efficient and friendly workplace atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEsPbNU2EdG8OvbTSzjrrAGJ1OSOPZgRxmtnH1dd27h64tgl79JL4O6ZphrXw0ZqqP7HgjLgzQmqVEPqIfG7x9x03F-5QnT8fSMzvum7im1rx2HTnOMfhUNlIDNUeFjm2MIvD-KeHqIQzzG8YJdOeD6D2wObpn9wYUjtk2umFGLRH3950fKBTuqB_SuxSXE2qmXiYeIGSfQuy1b7L1tFPQZCChgioko-pHqEcuXc1IbfmzWPnu93UUDw"/>
+<span class="text-body-md font-body-md">Sarah Chen</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="px-3 py-1 rounded-full bg-on-tertiary-container/20 text-tertiary text-label-sm font-label-sm border border-tertiary/20">Enrolled</span>
+</td>
+<td class="px-4 py-4">
+<div class="text-body-md font-body-md">5 mins ago</div>
+<div class="text-label-sm font-label-sm text-text-muted">Deposit Paid</div>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-high rounded transition-colors text-outline">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Repeat for visual density -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-6 py-4">
+<input class="rounded border-border text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-soft-blue/10 flex items-center justify-center text-soft-blue font-bold">TK</div>
+<div>
+<div class="text-body-md font-bold text-text-primary">Thomas K.</div>
+<div class="text-label-sm font-label-sm text-text-muted">tk@domain.com</div>
+</div>
+</div>
+</td>
+<td class="px-4 py-4 text-body-md font-body-md">BSc Economics</td>
+<td class="px-4 py-4 text-body-md font-body-md text-text-muted">Fall 2024</td>
+<td class="px-4 py-4">
+<span class="px-2 py-1 bg-surface-container-high rounded text-label-sm font-label-sm text-on-surface-variant">Social</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="A portrait of a male admissions representative in a professional workspace, with soft background bokeh showing a modern office environment. The image uses soft warm tones and clean lighting, adhering to the brand's calm and operational aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJFSVaVXBStxEEhht9zN4y1s4TaZRRr0GW6DF1GieKGF9vQcvqCBQxK2vXgeiShbLNNS2w4Fk7xw2rPUY_nSViczTEYz9EIlznFErRz3GG8uqW2LO0NaBVYuLB82SxqlMF5p4ORm6R6b2OfCYyJQ_FjVjJ8vDLA4ap_CfheulQHHjYEMTDk3O6F3Ot_2QCEiEipVI7DJdEH701Otu7xrYPbWcgNirEOslmLdya0IS15Tpa_6a1_JCCrw"/>
+<span class="text-body-md font-body-md">Mark Smith</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="px-3 py-1 rounded-full bg-error/10 text-error text-label-sm font-label-sm border border-error/20">Declined</span>
+</td>
+<td class="px-4 py-4">
+<div class="text-body-md font-body-md">1 day ago</div>
+<div class="text-label-sm font-label-sm text-text-muted">Offer Rejected</div>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-high rounded transition-colors text-outline">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="bg-panel px-6 py-4 flex items-center justify-between border-t border-border">
+<div class="text-label-lg font-label-lg text-on-surface-variant">
+                    Showing 1 to 5 of 1,248 leads
+                </div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-white text-outline hover:text-primary transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-primary bg-primary text-on-primary font-label-lg text-label-lg">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-white text-on-surface-variant font-label-lg text-label-lg hover:border-primary/40">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-white text-on-surface-variant font-label-lg text-label-lg hover:border-primary/40">3</button>
+<span class="px-2 text-outline">...</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-white text-on-surface-variant font-label-lg text-label-lg hover:border-primary/40">25</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-white text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button - Only for Desktop Main View -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full flex items-center justify-center neomorphic-shadow hover:scale-105 active:scale-95 transition-all z-50 group">
+<span class="material-symbols-outlined text-[28px] group-hover:rotate-90 transition-transform">add</span>
+</button>
+<!-- Micro-interaction Script -->
+<script>
+        // Simple row selection toggle
+        const masterCheckbox = document.querySelector('thead input[type="checkbox"]');
+        const rowCheckboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+        
+        masterCheckbox?.addEventListener('change', (e) => {
+            rowCheckboxes.forEach(cb => {
+                cb.checked = e.target.checked;
+                cb.closest('tr').classList.toggle('bg-primary-container/10', e.target.checked);
+            });
+        });
+
+        rowCheckboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                cb.closest('tr').classList.toggle('bg-primary-container/10', cb.checked);
+            });
+        });
+
+        // Search highlight micro-interaction
+        const searchInput = document.querySelector('input[placeholder="Search leads..."]');
+        searchInput?.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary/20');
+        });
+        searchInput?.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary/20');
+        });
+    </script>
+</body></html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SuperCampus | Centralized Document Repository</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "pink-violet": "#de6cf5",
+                    "surface-dim": "#dad8e8",
+                    "background": "#f7f4ef",
+                    "primary": "#0b00bc",
+                    "dark-bg": "#090914",
+                    "on-tertiary-container": "#ffa798",
+                    "secondary-container": "#a600ff",
+                    "outline": "#767589",
+                    "panel": "#f1ece7",
+                    "dark-surface": "#111122",
+                    "tertiary-container": "#9d0700",
+                    "primary-fixed": "#e1e0ff",
+                    "on-primary-container": "#b5b8ff",
+                    "on-background": "#1a1b26",
+                    "on-tertiary-fixed-variant": "#920600",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#f3daff",
+                    "on-primary-fixed": "#03006d",
+                    "surface-container": "#eeecfc",
+                    "on-secondary-fixed": "#2f004c",
+                    "border": "#e7ded8",
+                    "surface-tint": "#393bff",
+                    "inverse-on-surface": "#f1efff",
+                    "on-secondary-container": "#fbebff",
+                    "inverse-primary": "#bfc1ff",
+                    "text-muted": "#6f6875",
+                    "on-error-container": "#93000a",
+                    "card": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb4a7",
+                    "inverse-surface": "#2f2f3b",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed": "#ffdad4",
+                    "secondary-fixed-dim": "#e3b5ff",
+                    "outline-variant": "#c6c4db",
+                    "surface-variant": "#e3e1f1",
+                    "surface-container-low": "#f5f2ff",
+                    "on-surface-variant": "#454558",
+                    "on-secondary-fixed-variant": "#6e00ab",
+                    "danger-pink": "#ff005c",
+                    "surface-container-high": "#e9e6f6",
+                    "tertiary": "#720400",
+                    "on-error": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#400100",
+                    "on-primary-fixed-variant": "#1200ed",
+                    "primary-container": "#1400ff",
+                    "primary-fixed-dim": "#bfc1ff",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#1a1b26",
+                    "text-primary": "#161318",
+                    "surface-container-lowest": "#ffffff",
+                    "dark-card": "#1f1f35",
+                    "dark-panel": "#18182c",
+                    "soft-blue": "#776cf5",
+                    "surface-container-highest": "#e3e1f1",
+                    "surface": "#fffaf4",
+                    "surface-bright": "#fbf8ff",
+                    "secondary": "#8200c9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "padding-compact": "8px",
+                    "gap-column": "16px",
+                    "padding-standard": "16px",
+                    "gap-card": "12px"
+            },
+            "fontFamily": {
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "display": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f7f4ef; }
+        .soft-shadow { box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08); }
+        .neomorphic-inset { box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05), inset -2px -2px 5px rgba(255,255,255,0.7); }
+        .kanban-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+        .kanban-scroll::-webkit-scrollbar-track { background: #f1ece7; }
+        .kanban-scroll::-webkit-scrollbar-thumb { background: #dcd7d0; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col p-padding-standard border-r border-border bg-panel z-40">
+<div class="mb-10 px-4">
+<h1 class="font-headline-md text-headline-md text-primary">SuperCampus</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Staff Portal</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-padding-compact text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined">view_kanban</span>
+<span class="font-label-lg text-label-lg">Pipeline</span>
+</a>
+<a class="flex items-center gap-padding-compact text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-label-lg text-label-lg">Analytics</span>
+</a>
+<a class="flex items-center gap-padding-compact text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-lg text-label-lg">Students</span>
+</a>
+<a class="flex items-center gap-padding-compact bg-surface-container text-primary rounded-lg px-4 py-3 transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-lg text-label-lg">Inventory</span>
+</a>
+<a class="flex items-center gap-padding-compact text-on-surface-variant px-4 py-3 hover:bg-surface-variant rounded-lg transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-border pt-4">
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-white py-3 rounded-xl font-label-lg text-label-lg shadow-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">upload_file</span>
+                New Entry
+            </button>
+<a class="flex items-center gap-padding-compact text-on-surface-variant px-4 py-3 mt-4 hover:bg-surface-variant rounded-lg transition-all cursor-pointer" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-10 h-16 sticky top-0 z-30 bg-background/80 backdrop-blur-md">
+<div class="flex items-center flex-1 max-w-xl">
+<div class="relative w-full group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-panel border-none neomorphic-inset rounded-full py-2.5 pl-12 pr-4 font-body-md text-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none" placeholder="Search institutional resources..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6 ml-10">
+<button class="relative text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-danger-pink rounded-full border-2 border-background"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="flex items-center gap-3 pl-6 border-l border-border">
+<div class="text-right">
+<p class="font-label-lg text-label-lg text-on-surface">Alex Rivera</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Administrator</p>
+</div>
+<img class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" data-alt="A professional headshot of a campus staff member, late 30s, friendly expression, wearing a navy blue blazer, blurred modern university office background with soft lighting, matching the SuperCampus light mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBa3QbdTEBeXmgjwPaCvF50Z9t3nn8hNDI9gy15VVeHIzDMkAy2ZoIDJwyfJrRG1emd1YhPj5QHRPXMukFtW2xLZQTo-6-PAoHgM7vK9j2BL1IxR51BdqmQxq2GVxPVclgvrvM13IV0uM7Rv4vbBYw2q-XUEyxj9O_Ckd38P9XYw1aODV6YpqaHJIaZUKmATpgrIGRVjek9SgefIAqom3hK85h0n3we4e-MKJe1zxQ3gMtSbAIL3zneQw"/>
+</div>
+</div>
+</header>
+<!-- Repository Content -->
+<div class="flex-1 p-10 flex gap-8 h-[calc(100vh-64px)] overflow-hidden">
+<!-- Center Canvas: File Explorer -->
+<div class="flex-1 flex flex-col overflow-hidden">
+<div class="flex items-end justify-between mb-8">
+<div>
+<h2 class="font-display text-display text-on-surface tracking-tight">Resource Repository</h2>
+<p class="text-text-muted font-body-md">Manage and access official SuperCampus documents.</p>
+</div>
+<div class="flex gap-2">
+<button class="p-2 bg-card rounded-lg border border-border shadow-sm text-primary transition-all active:scale-95">
+<span class="material-symbols-outlined">grid_view</span>
+</button>
+<button class="p-2 bg-panel rounded-lg border border-border text-on-surface-variant hover:bg-card transition-all active:scale-95">
+<span class="material-symbols-outlined">list</span>
+</button>
+</div>
+</div>
+<!-- Folders Quick Access -->
+<div class="grid grid-cols-3 gap-gap-column mb-10">
+<div class="bg-card p-6 rounded-[24px] border border-border soft-shadow hover:-translate-y-1 transition-all cursor-pointer group">
+<div class="w-12 h-12 rounded-xl bg-soft-blue/10 flex items-center justify-center text-soft-blue mb-4 group-hover:bg-soft-blue group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">campaign</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-1">Marketing Assets</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">142 files • 1.2GB</p>
+</div>
+<div class="bg-card p-6 rounded-[24px] border border-border soft-shadow hover:-translate-y-1 transition-all cursor-pointer group">
+<div class="w-12 h-12 rounded-xl bg-pink-violet/10 flex items-center justify-center text-pink-violet mb-4 group-hover:bg-pink-violet group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">description</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-1">Admission Templates</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">58 files • 420MB</p>
+</div>
+<div class="bg-card p-6 rounded-[24px] border border-border soft-shadow hover:-translate-y-1 transition-all cursor-pointer group">
+<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">gavel</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-1">Policy Documents</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">24 files • 85MB</p>
+</div>
+</div>
+<!-- File Grid -->
+<div class="flex-1 overflow-y-auto kanban-scroll pr-4">
+<div class="flex items-center justify-between mb-4 px-2">
+<h4 class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-widest">Recent Files</h4>
+<span class="text-primary font-label-lg text-label-lg cursor-pointer">View all</span>
+</div>
+<div class="grid grid-cols-4 gap-gap-card">
+<!-- File Card 1 -->
+<div class="bg-card rounded-xl border border-border p-4 soft-shadow group hover:border-primary transition-colors cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-soft-blue"></div>
+<div class="aspect-video rounded-lg bg-panel mb-4 overflow-hidden flex items-center justify-center group-hover:opacity-90 transition-opacity">
+<img class="w-full h-full object-cover" data-alt="A clean, minimalist graphic design for a university brochure cover. Soft pastel colors, professional typography, featuring high-quality photography of a diverse student body on a sunlit campus. High-end marketing asset aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAK9CcT95Leox4_mHAuL2LORPBABas_AAL2W45OeyNEVm2KlQuqycDW9P6UFdg3iDEB3lHBjcdB4tOVJ976NBJLre9Veb50geZm98NcFi6ZXwRPIyPh968fxvRA95NafGy62oItIB_mS3narrHgNoOTd21d-KXLbe7wHx5952DK-jlniwCs-N6GE52sio5UEZuClcQEsKypTWVAE0t0okCHHj1Wb6UTQEOxKcxb8HT2fukTu32YIcLf9Q"/>
+</div>
+<p class="font-label-lg text-label-lg truncate mb-1">Q3_Brochure_v2.pdf</p>
+<p class="font-label-sm text-label-sm text-text-muted">Modified 2h ago</p>
+</div>
+<!-- File Card 2 -->
+<div class="bg-card rounded-xl border border-border p-4 soft-shadow group hover:border-primary transition-colors cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-pink-violet"></div>
+<div class="aspect-video rounded-lg bg-panel mb-4 overflow-hidden flex items-center justify-center group-hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant/30">description</span>
+</div>
+<p class="font-label-lg text-label-lg truncate mb-1">Offer_Letter_Standard.docx</p>
+<p class="font-label-sm text-label-sm text-text-muted">Modified 1d ago</p>
+</div>
+<!-- File Card 3 -->
+<div class="bg-card rounded-xl border border-border p-4 soft-shadow group hover:border-primary transition-colors cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="aspect-video rounded-lg bg-panel mb-4 overflow-hidden flex items-center justify-center group-hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant/30">picture_as_pdf</span>
+</div>
+<p class="font-label-lg text-label-lg truncate mb-1">Student_Code_Conduct.pdf</p>
+<p class="font-label-sm text-label-sm text-text-muted">Modified 3d ago</p>
+</div>
+<!-- File Card 4 -->
+<div class="bg-card rounded-xl border border-border p-4 soft-shadow group hover:border-primary transition-colors cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-soft-blue"></div>
+<div class="aspect-video rounded-lg bg-panel mb-4 overflow-hidden flex items-center justify-center group-hover:opacity-90 transition-opacity">
+<img class="w-full h-full object-cover" data-alt="Vector collection of minimalist school brand logos. Clean lines, primary blue and gold accents, professional academic branding elements presented on a clean white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvExYT-IRDHW3M7Hx0TPla8e42PCz-LDt1ylD8BY26Fp7-NFH6lo27oKCT3yp5yBMse5cyO0RNK20mnRxq_80z0FW8TLXZDwJGlLpJLEmEJdskc0r_ldODH8LlLfPS8xktnFzTmqQwE0CbIE-zeJByJ3E8Iy6OQ2Xe61AZk3b3RcERYOVMcqJaO6VUX4-6lDRwgIIGRcr9-HL-lMH3-tZqqOQwvhnTzQfNTeZR2WvsbwQ_FmFKUJVKwg"/>
+</div>
+<p class="font-label-lg text-label-lg truncate mb-1">Branding_Assets_Kit.zip</p>
+<p class="font-label-sm text-label-sm text-text-muted">Modified 5d ago</p>
+</div>
+<!-- File Card 5 -->
+<div class="bg-card rounded-xl border border-border p-4 soft-shadow group hover:border-primary transition-colors cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-pink-violet"></div>
+<div class="aspect-video rounded-lg bg-panel mb-4 overflow-hidden flex items-center justify-center group-hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant/30">terminal</span>
+</div>
+<p class="font-label-lg text-label-lg truncate mb-1">Admission_Script_EN.txt</p>
+<p class="font-label-sm text-label-sm text-text-muted">Modified 1w ago</p>
+</div>
+<!-- File Card 6 -->
+<div class="bg-card rounded-xl border border-border p-4 soft-shadow group hover:border-primary transition-colors cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="aspect-video rounded-lg bg-panel mb-4 overflow-hidden flex items-center justify-center group-hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant/30">security</span>
+</div>
+<p class="font-label-lg text-label-lg truncate mb-1">Data_Privacy_Policy_2024.pdf</p>
+<p class="font-label-sm text-label-sm text-text-muted">Modified 2w ago</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Preview Panel -->
+<aside class="w-80 bg-card rounded-[32px] border border-border soft-shadow p-6 flex flex-col">
+<div class="flex justify-between items-start mb-6">
+<h3 class="font-headline-md text-headline-md">Preview</h3>
+<button class="p-2 hover:bg-panel rounded-full transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex-1">
+<!-- File Thumb Large -->
+<div class="aspect-square rounded-2xl bg-panel mb-6 overflow-hidden flex items-center justify-center neomorphic-inset">
+<img class="w-full h-full object-cover" data-alt="Detailed close-up view of a university brochure cover for SuperCampus. Professional high-key photography of students studying in a modern, light-filled library. Superimposed logo and bold primary blue titles. Soft lighting, high-end paper texture feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3nLMdoO00B45G_t4-h8Q9N5xCTr-3VwfAGhTvriQc-B-LXZ43m2R3T1oQ2Bm9qqhHB6NSi13If8ytrzFFC7wWAFMMtdZipCuGb6F8ii_ELnU6eoNozl3ErEqlJokG3PWN916AylJk6m1sCynHrT2cIoSOZc80AR_OzH5WjWy3iH5Sd8dutqZJ6gH6f87UWRR5j_mbp3xsHCE037CYiOXynO0EBUI7qO5D6eaV7w3HRwI7V4jm_0w6FA"/>
+</div>
+<div class="mb-8">
+<h4 class="font-headline-md text-headline-md mb-2">Q3_Brochure_v2.pdf</h4>
+<span class="px-3 py-1 bg-soft-blue/10 text-soft-blue rounded-full font-label-sm text-label-sm border border-soft-blue/20 inline-block mb-4">Marketing Asset</span>
+<div class="space-y-4">
+<div class="flex justify-between">
+<span class="text-text-muted font-label-lg text-label-lg">Type</span>
+<span class="font-label-lg text-label-lg">PDF Document</span>
+</div>
+<div class="flex justify-between">
+<span class="text-text-muted font-label-lg text-label-lg">Size</span>
+<span class="font-label-lg text-label-lg">4.2 MB</span>
+</div>
+<div class="flex justify-between">
+<span class="text-text-muted font-label-lg text-label-lg">Owner</span>
+<span class="font-label-lg text-label-lg">Sarah Jenkins</span>
+</div>
+<div class="flex justify-between">
+<span class="text-text-muted font-label-lg text-label-lg">Modified</span>
+<span class="font-label-lg text-label-lg">Oct 12, 2023</span>
+</div>
+</div>
+</div>
+<div class="space-y-2">
+<button class="w-full bg-primary text-white py-3 rounded-xl font-label-lg text-label-lg shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                            Download File
+                        </button>
+<button class="w-full bg-panel text-on-surface py-3 rounded-xl font-label-lg text-label-lg hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">share</span>
+                            Share Link
+                        </button>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-border">
+<p class="font-label-sm text-label-sm text-text-muted mb-3 uppercase tracking-wider">Access History</p>
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<img class="w-6 h-6 rounded-full" data-alt="Avatar icon of a female faculty member, diverse ethnicity, professional attire, soft focused office background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqKqOz4WVU_qaEat1pdNXQrnPtBzgqn02AxBbPk7kKr3kY-osGPhNXXhw3hYY_24R9Bd0_WDc0lUER8Bx7BfthxuPqV-8a93A8IGeJWhymU6869AuRNknuB2_QgVA1NFWX7Yxm3CRWmtVg9SuK9bCTjsaza1Gu-hB0Z3r7losS9BaB7lrB-Zv8BwJrSWeEuX518Donq1Po044R9cSi7yeQMCzglueZ2lB3QSBjQW4K5n_MU6q3vMHNqw"/>
+<p class="font-label-sm text-label-sm"><span class="font-bold">M. Chen</span> downloaded 20m ago</p>
+</div>
+<div class="flex items-center gap-3">
+<img class="w-6 h-6 rounded-full" data-alt="Avatar icon of a male faculty member, glasses, friendly smile, academic setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDob5NDfOn-6zi7O3h98q5IkbB79Z65GAMA8GL9dqJfkF2rOkktr0poCapD2w9CiSwV0xIVLIfF0f0DoA5D-i9NqBVzxq0_dLxDIN1-H_4kr96eRUUQ0lA1nYR0BRuLGzX4ptqG_rMGeSIHV2xsgHHfTevZGv8cXLoW06K-oHFVZ80_PjWTD1PHDkWN9lyL3yZ3aRncbaseVbTVLUUG_C7WE4QGyAG6_E4LSlCln8RiGeECWn46jfUMqQ"/>
+<p class="font-label-sm text-label-sm"><span class="font-bold">D. Smith</span> viewed 1h ago</p>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<script>
+        // Micro-interaction for hover effects on neomorphic cards
+        document.querySelectorAll('.soft-shadow').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+                card.style.boxShadow = '0 20px 40px -15px rgba(0, 0, 0, 0.12)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+                card.style.boxShadow = '0 10px 30px -10px rgba(0, 0, 0, 0.08)';
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lead Profile - SuperCampus Admissions</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "tertiary": "#720400",
+                    "on-secondary-container": "#fbebff",
+                    "on-tertiary-container": "#ffa798",
+                    "on-tertiary-fixed-variant": "#920600",
+                    "on-surface": "#1a1b26",
+                    "surface-container": "#eeecfc",
+                    "secondary-container": "#a600ff",
+                    "inverse-on-surface": "#f1efff",
+                    "secondary-fixed": "#f3daff",
+                    "border": "#e7ded8",
+                    "surface-container-low": "#f5f2ff",
+                    "pink-violet": "#de6cf5",
+                    "text-muted": "#6f6875",
+                    "surface-bright": "#fbf8ff",
+                    "tertiary-fixed-dim": "#ffb4a7",
+                    "outline": "#767589",
+                    "dark-panel": "#18182c",
+                    "surface-dim": "#dad8e8",
+                    "danger-pink": "#ff005c",
+                    "on-primary-container": "#b5b8ff",
+                    "outline-variant": "#c6c4db",
+                    "on-secondary-fixed": "#2f004c",
+                    "on-background": "#1a1b26",
+                    "surface-variant": "#e3e1f1",
+                    "background": "#f7f4ef",
+                    "on-surface-variant": "#454558",
+                    "primary-container": "#1400ff",
+                    "on-primary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed-variant": "#6e00ab",
+                    "primary-fixed-dim": "#bfc1ff",
+                    "on-error-container": "#93000a",
+                    "primary": "#0b00bc",
+                    "dark-surface": "#111122",
+                    "surface-tint": "#393bff",
+                    "error": "#ba1a1a",
+                    "surface-content": "#fffaf4",
+                    "panel": "#f1ece7",
+                    "surface": "#fffaf4",
+                    "text-primary": "#161318",
+                    "secondary-fixed-dim": "#e3b5ff",
+                    "inverse-surface": "#2f2f3b",
+                    "dark-bg": "#090914",
+                    "tertiary-fixed": "#ffdad4",
+                    "on-primary-fixed-variant": "#1200ed",
+                    "soft-blue": "#776cf5",
+                    "card": "#ffffff",
+                    "on-error": "#ffffff",
+                    "dark-card": "#1f1f35",
+                    "tertiary-container": "#9d0700",
+                    "on-primary-fixed": "#03006d",
+                    "primary-fixed": "#e1e0ff",
+                    "surface-container-high": "#e9e6f6",
+                    "secondary": "#8200c9",
+                    "on-tertiary-fixed": "#400100",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "padding-compact": "8px",
+                    "gap-card": "12px",
+                    "gap-column": "16px",
+                    "padding-standard": "16px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "display": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f7f4ef;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #1a1b26;
+        }
+        .neomorphic-shadow {
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.03), -10px -10px 20px rgba(255,255,255,0.8);
+        }
+        .neomorphic-inset {
+            box-shadow: inset 4px 4px 8px rgba(0,0,0,0.05), inset -4px -4px 8px rgba(255,255,255,0.9);
+        }
+        .soft-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 18px 40px -12px rgba(0,0,0,0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .soft-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 24px 48px -12px rgba(0,0,0,0.08);
+        }
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            left: 23px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e7ded8;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .active-nav-border {
+            border-left: 4px solid #0b00bc;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1ece7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c6c4db;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen bg-background">
+<!-- Sidebar Navigation (SideNavBar) -->
+<aside class="hidden md:flex flex-col w-64 h-screen flex-shrink-0 bg-panel border-r border-border sticky top-0 py-padding-standard px-4 gap-y-2">
+<div class="flex items-center gap-3 mb-8 px-2">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg">
+<span class="material-symbols-outlined">school</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Main Campus</h1>
+<p class="font-label-lg text-label-lg text-on-surface-variant">Admin Portal</p>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 p-3 bg-white text-primary rounded-lg shadow-sm font-bold active-nav-border" href="#">
+<span class="material-symbols-outlined">how_to_reg</span>
+<span class="font-label-lg text-label-lg">Admissions</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-lg text-label-lg">Academics</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-lg text-label-lg">Finance</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">folder_shared</span>
+<span class="font-label-lg text-label-lg">Records</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="font-label-lg text-label-lg">Marketing</span>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-1 pt-4 border-t border-border">
+<button class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all">
+<span class="material-symbols-outlined">dark_mode</span>
+<span class="font-label-lg text-label-lg">Dark Mode</span>
+</button>
+<button class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0">
+<!-- Top Navigation (TopNavBar) -->
+<header class="sticky top-0 z-50 flex items-center justify-between px-padding-standard w-full h-16 bg-surface shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)]">
+<div class="flex items-center gap-4 flex-1">
+<div class="flex items-center bg-panel px-3 py-2 rounded-full w-full max-w-md border border-border neomorphic-inset">
+<span class="material-symbols-outlined text-outline">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md font-body-md w-full px-2 outline-none" placeholder="Search leads, applications, or documents..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden border-2 border-primary-fixed">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a friendly female admissions counselor in her early 30s, wearing business casual attire. She is smiling confidently against a soft-focus office background with warm wooden accents and natural sunlight. The image has a clean, high-end photography style with a soft bokeh effect and professional studio lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0GDP0n_aj6JeMUsp-ThJQzwpAnQ8qKUtX_o9kRspeHzrGjWBL3zDNmBEJtg32pOHEyZpTi1EV0S8jiRfG9-srayFWPJqU6Z9X4dlL9f1-k1Pdg1g9eTQIEMe-bnMJLwZGjXp1msqYIhTYLPIDaaM4RxC3aWHUJFkkvUnqIPmli-6FBUhqOabp6FP3C7nOgSRimjq_UbIFuK6auY0tBF1CWUsvY-Z_LcVnK78vagECQbEgYHmCnl0kUw"/>
+</div>
+</div>
+</header>
+<!-- Profile Workspace -->
+<div class="p-padding-standard lg:p-8 flex flex-col gap-gap-column overflow-y-auto">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-2 text-label-sm font-label-sm text-text-muted">
+<span>Admissions</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>Active Leads</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-bold">Julianne Vance</span>
+</nav>
+<!-- Header Section -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-2xl neomorphic-shadow border-l-4 border-soft-blue">
+<div class="flex items-center gap-6">
+<div class="relative">
+<div class="w-24 h-24 rounded-2xl bg-surface-container overflow-hidden border-4 border-white shadow-md">
+<img class="w-full h-full object-cover" data-alt="Close up portrait of a young college applicant, a teenage girl with a thoughtful and optimistic expression. She has curly brown hair and is wearing a simple denim jacket. The lighting is bright and natural, suggesting an outdoor setting with greenery in the distance. High resolution, professional cinematic portrait style with soft colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAPmpAuTh4U5Iak1Vv979tCRrPw0FC7A2enpFASvO1KgvF9CMJPhcstqy-zRCzMgMLIHU5bZSL8kwadEgmOH_jTJldw1hUdvO1VkBOevQaQzYZQIIbGRjDbYEjhEsDUKaMIDhfvJyxMbgF1t-kPOAnZ24XnzmyfltP76-NJRraO0OJilTBDKRJSfHQMEDDDwCDqKQTyJanAAY-1vuFjCAJzK3ki6M2Qzvs6AUE5zHm1j4AemVZGRpFVQ"/>
+</div>
+<div class="absolute -bottom-2 -right-2 bg-green-500 w-6 h-6 rounded-full border-4 border-white" title="Online now"></div>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h2 class="font-display text-display text-text-primary">Julianne Vance</h2>
+<span class="px-3 py-1 bg-soft-blue/10 text-soft-blue text-label-sm font-label-sm rounded-full border border-soft-blue/20">High Priority</span>
+</div>
+<p class="font-body-md text-body-md text-text-muted flex items-center gap-4">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">mail</span> julianne.v@example.com</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">call</span> +1 (555) 012-3456</span>
+</p>
+<div class="flex gap-2 mt-3">
+<span class="bg-panel px-3 py-1 rounded-md text-label-sm font-label-sm text-on-surface-variant">Class of 2028</span>
+<span class="bg-panel px-3 py-1 rounded-md text-label-sm font-label-sm text-on-surface-variant">B.S. Computer Science</span>
+<span class="bg-panel px-3 py-1 rounded-md text-label-sm font-label-sm text-on-surface-variant">International</span>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap gap-3">
+<button class="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-label-lg text-label-lg shadow-lg hover:scale-[1.02] active:scale-95 transition-all">
+<span class="material-symbols-outlined">call</span>
+                        Call Now
+                    </button>
+<button class="flex items-center gap-2 bg-white text-primary border border-primary px-6 py-3 rounded-xl font-label-lg text-label-lg hover:bg-primary/5 transition-all">
+<span class="material-symbols-outlined">send</span>
+                        Send Email
+                    </button>
+<button class="w-12 h-12 flex items-center justify-center bg-panel text-on-surface-variant rounded-xl border border-border hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gap-column">
+<!-- Central Timeline (Activity) -->
+<div class="lg:col-span-8 flex flex-col gap-gap-column">
+<div class="bg-white p-6 rounded-2xl neomorphic-shadow min-h-[600px]">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-headline-md text-headline-md text-text-primary">Activity Timeline</h3>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 bg-panel text-label-sm font-label-sm rounded-lg text-primary border border-primary/20">All Activity</button>
+<button class="px-3 py-1.5 text-label-sm font-label-sm rounded-lg text-text-muted hover:bg-panel">Communications</button>
+<button class="px-3 py-1.5 text-label-sm font-label-sm rounded-lg text-text-muted hover:bg-panel">Tasks</button>
+</div>
+</div>
+<div class="relative timeline-line pl-12 space-y-10">
+<!-- Timeline Item: Call -->
+<div class="relative">
+<div class="absolute -left-[45px] top-0 w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+<span class="material-symbols-outlined text-[20px]">call</span>
+</div>
+<div class="soft-card p-4 border border-border/50">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-label-lg text-label-lg text-text-primary">Initial Consultation Call</h4>
+<span class="text-label-sm font-label-sm text-text-muted">Today, 10:45 AM</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">Discussed curriculum options and housing availability. Julianne is very interested in the Global Scholar program.</p>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold uppercase tracking-wider">Completed</span>
+<span class="text-label-sm text-text-muted italic">Duration: 14m 22s</span>
+</div>
+</div>
+</div>
+<!-- Timeline Item: Email -->
+<div class="relative">
+<div class="absolute -left-[45px] top-0 w-10 h-10 bg-pink-violet/10 text-pink-violet rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+<span class="material-symbols-outlined text-[20px]">mail</span>
+</div>
+<div class="soft-card p-4 border border-border/50">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-label-lg text-label-lg text-text-primary">Brochure Sent: Computer Science 2024</h4>
+<span class="text-label-sm font-label-sm text-text-muted">Yesterday, 4:20 PM</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-panel rounded-lg border border-border">
+<span class="material-symbols-outlined text-error">picture_as_pdf</span>
+<div class="flex-1">
+<p class="font-label-sm text-label-sm text-text-primary">CS_Global_Scholar_Prospectus.pdf</p>
+<p class="text-[10px] text-text-muted">2.4 MB • Sent via automated workflow</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">open_in_new</span>
+</div>
+</div>
+</div>
+<!-- Timeline Item: System Note -->
+<div class="relative">
+<div class="absolute -left-[45px] top-0 w-10 h-10 bg-tertiary/10 text-tertiary rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+<span class="material-symbols-outlined text-[20px]">assignment</span>
+</div>
+<div class="soft-card p-4 border border-border/50">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-label-lg text-label-lg text-text-primary">Lead Stage Changed</h4>
+<span class="text-label-sm font-label-sm text-text-muted">Oct 12, 2:15 PM</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Automated system moved lead from <span class="font-bold text-text-primary">Inquiry</span> to <span class="font-bold text-text-primary">Nurturing</span> based on document engagement.</p>
+</div>
+</div>
+<!-- Add New Entry Placeholder -->
+<div class="relative">
+<div class="absolute -left-[45px] top-0 w-10 h-10 bg-panel text-outline rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</div>
+<div class="p-4 border-2 border-dashed border-border rounded-2xl text-center hover:bg-panel/50 cursor-pointer transition-all">
+<p class="font-label-lg text-label-lg text-text-muted">Add note, task or log a call...</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar (Status & Checklist) -->
+<div class="lg:col-span-4 flex flex-col gap-gap-column">
+<!-- Lead Status Card -->
+<div class="bg-white p-6 rounded-2xl neomorphic-shadow">
+<h3 class="font-label-lg text-label-lg text-text-muted uppercase tracking-widest mb-6">Pipeline Progress</h3>
+<div class="space-y-6">
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center mb-1">
+<span class="font-label-lg text-label-lg text-text-primary">Lead Score</span>
+<span class="font-bold text-primary">85/100</span>
+</div>
+<div class="w-full h-3 bg-panel rounded-full overflow-hidden neomorphic-inset">
+<div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: 85%"></div>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<p class="font-label-lg text-label-lg text-text-muted">Current Stage</p>
+<select class="w-full bg-panel border-border rounded-xl px-4 py-3 font-body-md text-body-md focus:ring-primary focus:border-primary">
+<option>New Inquiry</option>
+<option selected="">Nurturing</option>
+<option>Application Started</option>
+<option>Under Review</option>
+<option>Decision Sent</option>
+</select>
+</div>
+<button class="w-full py-3 bg-surface-container-high border border-primary-fixed text-primary font-label-lg text-label-lg rounded-xl hover:bg-primary-fixed transition-all">
+                                Update Status
+                            </button>
+</div>
+</div>
+<!-- Document Checklist -->
+<div class="bg-white p-6 rounded-2xl neomorphic-shadow flex-1">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-label-lg text-label-lg text-text-muted uppercase tracking-widest">Document Checklist</h3>
+<span class="text-label-sm font-label-sm bg-panel px-2 py-1 rounded">2 / 5</span>
+</div>
+<div class="space-y-4">
+<label class="flex items-start gap-3 p-3 bg-panel rounded-xl cursor-pointer border border-transparent hover:border-primary-fixed transition-all">
+<div class="mt-1 flex items-center justify-center">
+<input checked="" class="w-5 h-5 text-primary bg-white border-border rounded focus:ring-primary" type="checkbox"/>
+</div>
+<div class="flex-1">
+<p class="font-label-lg text-label-lg text-text-primary">High School Transcript</p>
+<p class="text-[11px] text-text-muted">Uploaded Oct 10</p>
+</div>
+<span class="material-symbols-outlined text-green-500">check_circle</span>
+</label>
+<label class="flex items-start gap-3 p-3 bg-panel rounded-xl cursor-pointer border border-transparent hover:border-primary-fixed transition-all">
+<div class="mt-1 flex items-center justify-center">
+<input checked="" class="w-5 h-5 text-primary bg-white border-border rounded focus:ring-primary" type="checkbox"/>
+</div>
+<div class="flex-1">
+<p class="font-label-lg text-label-lg text-text-primary">Passport Copy</p>
+<p class="text-[11px] text-text-muted">Uploaded Oct 11</p>
+</div>
+<span class="material-symbols-outlined text-green-500">check_circle</span>
+</label>
+<label class="flex items-start gap-3 p-3 bg-white border border-border rounded-xl cursor-pointer hover:bg-panel transition-all">
+<div class="mt-1 flex items-center justify-center">
+<input class="w-5 h-5 text-primary bg-white border-border rounded focus:ring-primary" type="checkbox"/>
+</div>
+<div class="flex-1">
+<p class="font-label-lg text-label-lg text-text-primary">Personal Statement</p>
+<p class="text-[11px] text-text-muted">Required for Review</p>
+</div>
+<span class="material-symbols-outlined text-outline">pending</span>
+</label>
+<label class="flex items-start gap-3 p-3 bg-white border border-border rounded-xl cursor-pointer hover:bg-panel transition-all">
+<div class="mt-1 flex items-center justify-center">
+<input class="w-5 h-5 text-primary bg-white border-border rounded focus:ring-primary" type="checkbox"/>
+</div>
+<div class="flex-1">
+<p class="font-label-lg text-label-lg text-text-primary">English Proficiency (IELTS/TOEFL)</p>
+<p class="text-[11px] text-text-muted">Pending receipt</p>
+</div>
+<span class="material-symbols-outlined text-outline">schedule</span>
+</label>
+<label class="flex items-start gap-3 p-3 bg-white border border-border rounded-xl cursor-pointer hover:bg-panel transition-all">
+<div class="mt-1 flex items-center justify-center">
+<input class="w-5 h-5 text-primary bg-white border-border rounded focus:ring-primary" type="checkbox"/>
+</div>
+<div class="flex-1">
+<p class="font-label-lg text-label-lg text-text-primary">Letters of Recommendation</p>
+<p class="text-[11px] text-text-muted">0/2 Received</p>
+</div>
+<span class="material-symbols-outlined text-outline">warning</span>
+</label>
+</div>
+<button class="mt-6 w-full py-3 border-2 border-dashed border-border rounded-xl text-text-muted font-label-lg text-label-lg hover:border-primary-fixed hover:text-primary transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">upload</span>
+                            Upload New Doc
+                        </button>
+</div>
+<!-- Quick Notes -->
+<div class="bg-white p-6 rounded-2xl neomorphic-shadow">
+<h3 class="font-label-lg text-label-lg text-text-muted uppercase tracking-widest mb-4">Internal Notes</h3>
+<textarea class="w-full h-32 bg-panel border-none rounded-xl p-4 font-body-md text-body-md focus:ring-2 focus:ring-primary/20 placeholder:text-text-muted mb-4 resize-none neomorphic-inset" placeholder="Add a private note about this student..."></textarea>
+<div class="flex justify-end">
+<button class="bg-primary/10 text-primary px-4 py-2 rounded-lg font-label-lg text-label-lg hover:bg-primary/20 transition-all">Save Note</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB for Global Quick Actions (Contextual) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-[60]">
+<span class="material-symbols-outlined">add_comment</span>
+</button>
+<script>
+        // Micro-interactions and effects
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hover effect for checklist items
+            const checklists = document.querySelectorAll('label');
+            checklists.forEach(label => {
+                label.addEventListener('click', (e) => {
+                    const checkbox = label.querySelector('input');
+                    if (checkbox.checked) {
+                        label.classList.add('bg-panel');
+                        label.classList.remove('bg-white');
+                    } else {
+                        label.classList.remove('bg-panel');
+                        label.classList.add('bg-white');
+                    }
+                });
+            });
+
+            // Timeline scroll entry animation
+            const timelineItems = document.querySelectorAll('.timeline-line > div');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('opacity-100', 'translate-x-0');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            timelineItems.forEach(item => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(-20px)';
+                item.style.transition = 'all 0.5s ease-out';
+                observer.observe(item);
+            });
+        });
+    </script>
+</body></html>

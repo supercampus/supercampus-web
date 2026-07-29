@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Marketing Analytics Dashboard | SuperCampus</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e3e1f1",
+                        "inverse-on-surface": "#f1efff",
+                        "on-surface": "#1a1b26",
+                        "on-error-container": "#93000a",
+                        "dark-card": "#1f1f35",
+                        "primary-container": "#1400ff",
+                        "dark-panel": "#18182c",
+                        "secondary-fixed": "#f3daff",
+                        "secondary-container": "#a600ff",
+                        "tertiary": "#720400",
+                        "card": "#ffffff",
+                        "surface-dim": "#dad8e8",
+                        "on-background": "#1a1b26",
+                        "on-primary-fixed-variant": "#1200ed",
+                        "primary-fixed-dim": "#bfc1ff",
+                        "on-tertiary-fixed": "#400100",
+                        "on-tertiary-container": "#ffa798",
+                        "danger-pink": "#ff005c",
+                        "outline-variant": "#c6c4db",
+                        "on-error": "#ffffff",
+                        "panel": "#f1ece7",
+                        "tertiary-fixed": "#ffdad4",
+                        "on-primary-fixed": "#03006d",
+                        "surface-container-low": "#f5f2ff",
+                        "on-secondary-fixed-variant": "#6e00ab",
+                        "error-container": "#ffdad6",
+                        "surface": "#fffaf4",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ffb4a7",
+                        "primary": "#0b00bc",
+                        "surface-bright": "#fbf8ff",
+                        "pink-violet": "#de6cf5",
+                        "inverse-primary": "#bfc1ff",
+                        "soft-blue": "#776cf5",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#e3b5ff",
+                        "surface-container-high": "#e9e6f6",
+                        "on-primary-container": "#b5b8ff",
+                        "on-tertiary": "#ffffff",
+                        "dark-bg": "#090914",
+                        "on-surface-variant": "#454558",
+                        "dark-surface": "#111122",
+                        "outline": "#767589",
+                        "border": "#e7ded8",
+                        "secondary": "#8200c9",
+                        "surface-tint": "#393bff",
+                        "text-muted": "#6f6875",
+                        "background": "#f7f4ef",
+                        "inverse-surface": "#2f2f3b",
+                        "on-tertiary-fixed-variant": "#920600",
+                        "text-primary": "#161318",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#9d0700",
+                        "primary-fixed": "#e1e0ff",
+                        "on-secondary-container": "#fbebff",
+                        "surface-container": "#eeecfc",
+                        "on-secondary-fixed": "#2f004c",
+                        "surface-variant": "#e3e1f1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "12px",
+                        "2xl": "24px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "padding-compact": "8px",
+                        "padding-standard": "16px",
+                        "gap-card": "12px",
+                        "gap-column": "16px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #f7f4ef;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #1a1b26;
+        }
+        .neomorph-card {
+            background: #ffffff;
+            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .neomorph-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0px 12px 32px rgba(0, 0, 0, 0.08);
+        }
+        .chart-container {
+            position: relative;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #0b00bc;
+            display: inline-block;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body class="bg-background">
+<!-- SideNavBar (Authority: JSON) -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col py-padding-standard border-r border-border bg-panel z-40">
+<div class="px-6 mb-8">
+<h1 class="font-headline-md text-headline-md text-on-surface">SuperCampus</h1>
+<p class="text-label-lg text-on-surface-variant opacity-70">Staff Portal</p>
+</div>
+<nav class="flex-1 space-y-1 px-3">
+<!-- Analytics is Active based on context -->
+<a class="flex items-center px-4 py-3 text-on-surface-variant font-label-lg text-label-lg hover:text-primary hover:bg-surface-container-lowest/50 transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3 group-hover:scale-110 transition-transform">view_kanban</span>
+                Pipeline
+            </a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant font-label-lg text-label-lg hover:text-primary hover:bg-surface-container-lowest/50 transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3 group-hover:scale-110 transition-transform">groups</span>
+                Teams
+            </a>
+<a class="flex items-center px-4 py-3 text-primary font-bold border-r-4 border-primary bg-surface-container-low font-label-lg text-label-lg transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3" style="font-variation-settings: 'FILL' 1;">monitoring</span>
+                Analytics
+            </a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant font-label-lg text-label-lg hover:text-primary hover:bg-surface-container-lowest/50 transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3 group-hover:scale-110 transition-transform">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="mt-auto px-3 space-y-1 border-t border-border pt-4">
+<button class="w-full bg-primary text-white py-3 rounded-xl font-bold text-label-lg mb-4 active:scale-95 transition-transform flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Lead
+            </button>
+<a class="flex items-center px-4 py-3 text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-lowest/50 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">contact_support</span>
+                Support
+            </a>
+<a class="flex items-center px-4 py-3 text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-lowest/50 transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen">
+<!-- TopNavBar (Authority: JSON) -->
+<header class="flex justify-between items-center px-padding-standard w-full sticky top-0 z-30 shadow-[0px_2px_4px_rgba(0,0,0,0.05)] bg-surface h-16">
+<div class="flex items-center gap-4">
+<span class="font-display text-display text-primary">Marketing Analytics Dashboard</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-body-md">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-lowest border border-border rounded-full text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 w-64 transition-all" placeholder="Search data..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer active:scale-95 duration-150">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer active:scale-95 duration-150">help</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-border">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female marketing manager with a warm smile, wearing a modern charcoal blazer, set against a blurred office background with soft bokeh lighting and warm tones to match the SuperCampus brand aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAISclPBpQyhmQ4gE5Y3ct1rqvgi_qoEYTMmu1vxTrp6CQ_NRzozGMX_kXwTXCwZAbOkA_6NrwjcIzRhMlJhmKXkNVwE4cY21Tj-XFkGXziumkDxRXc_6PNi7Sxj6xZRHtx3DfmH4wgULaamA2NPZwf9iw12_U90k_Czc_8lp4kovJylLFrXmLpmgVgZiz47WIjq9G2t06cV82JBwZzxU4E4QqUzIugZNiyvJuHfqFtsji2ZjCoCWKxoA"/>
+</div>
+</div>
+</div>
+</header>
+<div class="p-8">
+<!-- Summary Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div class="neomorph-card p-6 border-l-4 border-soft-blue">
+<div class="flex justify-between items-start mb-4">
+<span class="text-label-lg text-outline uppercase tracking-wider">Total Leads</span>
+<span class="material-symbols-outlined text-soft-blue bg-soft-blue/10 p-2 rounded-lg">person_add</span>
+</div>
+<h3 class="font-display text-display text-on-surface mb-1">2,842</h3>
+<p class="text-label-sm text-green-600 flex items-center">
+<span class="material-symbols-outlined text-sm mr-1">trending_up</span>
+                        +12.4% vs last month
+                    </p>
+</div>
+<div class="neomorph-card p-6 border-l-4 border-pink-violet">
+<div class="flex justify-between items-start mb-4">
+<span class="text-label-lg text-outline uppercase tracking-wider">Conversion Rate</span>
+<span class="material-symbols-outlined text-pink-violet bg-pink-violet/10 p-2 rounded-lg">ads_click</span>
+</div>
+<h3 class="font-display text-display text-on-surface mb-1">18.2%</h3>
+<p class="text-label-sm text-green-600 flex items-center">
+<span class="material-symbols-outlined text-sm mr-1">trending_up</span>
+                        +2.1% vs last month
+                    </p>
+</div>
+<div class="neomorph-card p-6 border-l-4 border-primary">
+<div class="flex justify-between items-start mb-4">
+<span class="text-label-lg text-outline uppercase tracking-wider">Top Source</span>
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">share</span>
+</div>
+<h3 class="font-display text-display text-on-surface mb-1">Google Ads</h3>
+<p class="text-label-sm text-outline">42% of total volume</p>
+</div>
+<div class="neomorph-card p-6 border-l-4 border-secondary">
+<div class="flex justify-between items-start mb-4">
+<span class="text-label-lg text-outline uppercase tracking-wider">Active Campaigns</span>
+<span class="material-symbols-outlined text-secondary bg-secondary/10 p-2 rounded-lg">rocket_launch</span>
+</div>
+<h3 class="font-display text-display text-on-surface mb-1">14</h3>
+<p class="text-label-sm text-outline">3 launching next week</p>
+</div>
+</div>
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+<!-- Bar Chart: Weekly Lead Volume -->
+<div class="lg:col-span-2 chart-container neomorph-card">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-md text-headline-md">Weekly Lead Volume</h2>
+<div class="flex gap-2">
+<button class="px-3 py-1 text-label-sm bg-surface-container-low text-primary rounded-full">Last 7 Days</button>
+<button class="px-3 py-1 text-label-sm text-outline hover:bg-surface-container-low rounded-full transition-colors">Last 30 Days</button>
+</div>
+</div>
+<div class="h-64 flex items-end justify-between gap-4 px-2">
+<!-- Bar chart visualization -->
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-surface-container-high rounded-t-lg transition-all duration-500 group-hover:bg-primary-container" style="height: 60%;"></div>
+<span class="text-label-sm text-outline">Mon</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-surface-container-high rounded-t-lg transition-all duration-500 group-hover:bg-primary-container" style="height: 85%;"></div>
+<span class="text-label-sm text-outline">Tue</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-primary rounded-t-lg transition-all duration-500" style="height: 100%;"></div>
+<span class="text-label-sm text-outline">Wed</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-surface-container-high rounded-t-lg transition-all duration-500 group-hover:bg-primary-container" style="height: 75%;"></div>
+<span class="text-label-sm text-outline">Thu</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-surface-container-high rounded-t-lg transition-all duration-500 group-hover:bg-primary-container" style="height: 90%;"></div>
+<span class="text-label-sm text-outline">Fri</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-surface-container-high rounded-t-lg transition-all duration-500 group-hover:bg-primary-container" style="height: 40%;"></div>
+<span class="text-label-sm text-outline">Sat</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-surface-container-high rounded-t-lg transition-all duration-500 group-hover:bg-primary-container" style="height: 35%;"></div>
+<span class="text-label-sm text-outline">Sun</span>
+</div>
+</div>
+</div>
+<!-- Pie Chart: Leads by Source -->
+<div class="chart-container neomorph-card flex flex-col">
+<h2 class="font-headline-md text-headline-md mb-6">Leads by Source</h2>
+<div class="flex-1 flex flex-col justify-center items-center relative">
+<!-- Simple visual representation of a pie chart using CSS gradients -->
+<div class="w-40 h-40 rounded-full mb-8 relative" style="background: conic-gradient(#0b00bc 0% 42%, #776cf5 42% 65%, #de6cf5 65% 85%, #e3e1f1 85% 100%);">
+<div class="absolute inset-4 bg-white rounded-full flex items-center justify-center">
+<span class="font-headline-md text-on-surface">Source</span>
+</div>
+</div>
+<div class="w-full grid grid-cols-2 gap-y-3">
+<div class="flex items-center text-label-sm">
+<span class="w-3 h-3 rounded-full bg-primary mr-2"></span>
+<span class="text-on-surface-variant">Google Ads</span>
+</div>
+<div class="flex items-center text-label-sm">
+<span class="w-3 h-3 rounded-full bg-soft-blue mr-2"></span>
+<span class="text-on-surface-variant">Facebook</span>
+</div>
+<div class="flex items-center text-label-sm">
+<span class="w-3 h-3 rounded-full bg-pink-violet mr-2"></span>
+<span class="text-on-surface-variant">Referral</span>
+</div>
+<div class="flex items-center text-label-sm">
+<span class="w-3 h-3 rounded-full bg-surface-container-highest mr-2"></span>
+<span class="text-on-surface-variant">Walk-in</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Campaigns Table -->
+<div class="neomorph-card overflow-hidden">
+<div class="px-6 py-4 flex justify-between items-center border-b border-border">
+<h2 class="font-headline-md text-headline-md">Recent Marketing Campaigns</h2>
+<button class="text-primary font-bold text-label-lg hover:underline transition-all">View All Report</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-panel/50 text-outline font-label-lg text-label-lg">
+<th class="px-6 py-4">Campaign Name</th>
+<th class="px-6 py-4">Status</th>
+<th class="px-6 py-4">Spend</th>
+<th class="px-6 py-4">Clicks</th>
+<th class="px-6 py-4">Leads</th>
+<th class="px-6 py-4">CPL</th>
+<th class="px-6 py-4">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border/50">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-soft-blue/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-soft-blue">campaign</span>
+</div>
+<div>
+<p class="font-bold text-on-surface text-body-md">Winter Intake 2024</p>
+<p class="text-label-sm text-outline">Search &amp; Display</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-label-sm font-bold flex items-center w-fit">
+<span class="active-dot !bg-green-600"></span> Active
+                                    </span>
+</td>
+<td class="px-6 py-4 text-body-md font-medium">$4,250</td>
+<td class="px-6 py-4 text-body-md">12,402</td>
+<td class="px-6 py-4 text-body-md font-bold">482</td>
+<td class="px-6 py-4 text-body-md">$8.81</td>
+<td class="px-6 py-4">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-pink-violet/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-pink-violet">social_leaderboard</span>
+</div>
+<div>
+<p class="font-bold text-on-surface text-body-md">Alumni Stories - Meta</p>
+<p class="text-label-sm text-outline">Video Ads</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-label-sm font-bold flex items-center w-fit">
+<span class="active-dot !bg-green-600"></span> Active
+                                    </span>
+</td>
+<td class="px-6 py-4 text-body-md font-medium">$1,800</td>
+<td class="px-6 py-4 text-body-md">45,190</td>
+<td class="px-6 py-4 text-body-md font-bold">312</td>
+<td class="px-6 py-4 text-body-md">$5.76</td>
+<td class="px-6 py-4">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">mail</span>
+</div>
+<div>
+<p class="font-bold text-on-surface text-body-md">Re-engagement Email #3</p>
+<p class="text-label-sm text-outline">Drip Campaign</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-surface-container-highest text-outline text-label-sm font-bold flex items-center w-fit">
+<span class="active-dot !bg-outline"></span> Paused
+                                    </span>
+</td>
+<td class="px-6 py-4 text-body-md font-medium">$250</td>
+<td class="px-6 py-4 text-body-md">3,200</td>
+<td class="px-6 py-4 text-body-md font-bold">85</td>
+<td class="px-6 py-4 text-body-md">$2.94</td>
+<td class="px-6 py-4">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">explore</span>
+</div>
+<div>
+<p class="font-bold text-on-surface text-body-md">Open Day Referral</p>
+<p class="text-label-sm text-outline">Organic/Referral</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-label-sm font-bold flex items-center w-fit">
+<span class="active-dot !bg-green-600"></span> Active
+                                    </span>
+</td>
+<td class="px-6 py-4 text-body-md font-medium">$0</td>
+<td class="px-6 py-4 text-body-md">540</td>
+<td class="px-6 py-4 text-body-md font-bold">128</td>
+<td class="px-6 py-4 text-body-md">$0.00</td>
+<td class="px-6 py-4">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_vert</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+<!-- Success Feedback Notification (Micro-interaction) -->
+<div class="fixed bottom-8 right-8 bg-on-surface text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 translate-y-24 opacity-0 transition-all duration-300 z-50" id="toast">
+<span class="material-symbols-outlined text-green-400">check_circle</span>
+<span class="text-label-lg">New Campaign Lead generated!</span>
+</div>
+<script>
+        // Simple Micro-interaction: Periodic toast notification simulation
+        setTimeout(() => {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 5000);
+        }, 3000);
+
+        // Active State Logic (Mandate: Identify active tab)
+        // Dashboard is the current screen, Analytics is the mapping
+        console.log("Analytics Dashboard Active State Applied to SideNav");
+    </script>
+</body></html>

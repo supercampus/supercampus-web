@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @layer base {
-  :root {
+:root {
     --bg-app: #f6f7fb;
     --card-bg: #ffffff;
     --card-border: #ececf2;
@@ -14,6 +14,52 @@
     --warning: #d97706;
     --danger: #ef4444;
     --info: #3b82f6;
+
+    /* CRM Design Tokens */
+    --crm-bg: #f7f4ef;
+    --crm-surface: #fffaf4;
+    --crm-panel: #f1ece7;
+    --crm-card: #ffffff;
+    --crm-text: #161318;
+    --crm-muted: #6f6875;
+    --crm-border: #e7ded8;
+    --crm-brand-blue: #1400ff;
+    --crm-brand-violet: #a600ff;
+    --crm-soft-blue: #776cf5;
+    --crm-pink-violet: #de6cf5;
+    --crm-danger: #ff005c;
+    --crm-outline: #767589;
+    --crm-outline-variant: #c6c4db;
+    --crm-surface-container: #eeecfc;
+    --crm-surface-container-high: #e9e6f6;
+    --crm-surface-container-highest: #e3e1f1;
+    --crm-on-surface: #1a1b26;
+    --crm-on-surface-variant: #454558;
+    --crm-primary-container: #1400ff;
+    --crm-on-primary-container: #b5b8ff;
+  }
+
+  [data-theme="dark"] {
+    --crm-bg: #090914;
+    --crm-surface: #111122;
+    --crm-panel: #18182c;
+    --crm-card: #1f1f35;
+    --crm-text: #f7f3ff;
+    --crm-muted: #b9b2ce;
+    --crm-border: rgba(255,255,255,0.1);
+    --crm-on-surface: #f1efff;
+    --crm-on-surface-variant: #c6c4db;
+    --crm-surface-container: #1f1f35;
+    --crm-surface-container-high: #262640;
+    --crm-surface-container-highest: #2f2f3b;
+    --crm-outline: #767589;
+    --crm-outline-variant: #454558;
+    --bg-app: #090914;
+    --card-bg: #1f1f35;
+    --card-border: rgba(255,255,255,0.1);
+    --text-main: #f7f3ff;
+    --text-muted: #b9b2ce;
+    --text-sub: #767589;
   }
 
   body {
@@ -657,7 +703,7 @@
 
 .sc-stat-card:hover { transform: translateY(-2px); }
 
-.sc-stat-card__top { display: flex; alignItems: center; gap: 8px; margin-bottom: 10px; }
+.sc-stat-card__top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .sc-stat-card__icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
 .sc-stat-card__label { font-size: 12.5px; font-weight: 600; color: #141527; flex: 1; }
 .sc-stat-card__value { font-weight: 800; font-size: 24px; font-family: 'JetBrains Mono', monospace; }

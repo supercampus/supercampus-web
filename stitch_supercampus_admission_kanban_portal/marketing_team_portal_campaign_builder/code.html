@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Campaign Builder | SuperCampus CRM</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-container": "#ffa798",
+                    "dark-card": "#1f1f35",
+                    "tertiary-fixed-dim": "#ffb4a7",
+                    "on-secondary-fixed": "#2f004c",
+                    "on-secondary-container": "#fbebff",
+                    "surface-bright": "#fbf8ff",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#f5f2ff",
+                    "tertiary-container": "#9d0700",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#e1e0ff",
+                    "primary-container": "#1400ff",
+                    "surface-tint": "#393bff",
+                    "text-primary": "#161318",
+                    "dark-panel": "#18182c",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#720400",
+                    "secondary-fixed": "#f3daff",
+                    "secondary-container": "#a600ff",
+                    "secondary-fixed-dim": "#e3b5ff",
+                    "on-primary-container": "#b5b8ff",
+                    "outline": "#767589",
+                    "on-primary-fixed": "#03006d",
+                    "on-secondary-fixed-variant": "#6e00ab",
+                    "inverse-surface": "#2f2f3b",
+                    "inverse-on-surface": "#f1efff",
+                    "surface-variant": "#e3e1f1",
+                    "dark-bg": "#090914",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#1a1b26",
+                    "primary-fixed-dim": "#bfc1ff",
+                    "on-primary-fixed-variant": "#1200ed",
+                    "secondary": "#8200c9",
+                    "on-primary": "#ffffff",
+                    "dark-surface": "#111122",
+                    "surface-container": "#eeecfc",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#dad8e8",
+                    "surface-container-highest": "#e3e1f1",
+                    "danger-pink": "#ff005c",
+                    "on-surface-variant": "#454558",
+                    "soft-blue": "#776cf5",
+                    "primary": "#0b00bc",
+                    "text-muted": "#6f6875",
+                    "surface": "#fffaf4",
+                    "outline-variant": "#c6c4db",
+                    "tertiary-fixed": "#ffdad4",
+                    "card": "#ffffff",
+                    "on-background": "#1a1b26",
+                    "border": "#e7ded8",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e9e6f6",
+                    "background": "#f7f4ef",
+                    "panel": "#f1ece7",
+                    "on-tertiary-fixed-variant": "#920600",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed": "#400100",
+                    "pink-violet": "#de6cf5",
+                    "inverse-primary": "#bfc1ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "padding-compact": "8px",
+                    "gap-column": "16px",
+                    "padding-standard": "16px",
+                    "gap-card": "12px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "display": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "display": ["32px", {"lineHeight": "40px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .neomorphic-shadow {
+            box-shadow: 18px 18px 30px rgba(0, 0, 0, 0.05), -18px -18px 30px rgba(255, 255, 255, 0.8);
+        }
+        .recessed-input {
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05), inset -2px -2px 5px rgba(255,255,255,0.7);
+        }
+        .step-active { color: #0b00bc; }
+        .step-complete { color: #8200c9; }
+        .step-line { transition: width 0.4s ease-in-out; }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+<!-- TopNavBar Cluster -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-padding-standard bg-surface shadow-sm h-16">
+<div class="flex items-center gap-8">
+<span class="text-headline-lg font-headline-lg font-bold text-primary">SuperCampus CRM</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-label-lg font-label-lg text-primary border-b-2 border-primary pb-1" href="#">Dashboard</a>
+<a class="text-label-lg font-label-lg text-on-surface-variant hover:bg-surface-container transition-colors duration-200 px-2 py-1 rounded" href="#">Leads</a>
+<a class="text-label-lg font-label-lg text-on-surface-variant hover:bg-surface-container transition-colors duration-200 px-2 py-1 rounded" href="#">Admissions</a>
+<a class="text-label-lg font-label-lg text-on-surface-variant hover:bg-surface-container transition-colors duration-200 px-2 py-1 rounded" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary text-label-lg font-label-lg px-4 py-2 rounded-lg hover:opacity-80 active:scale-95 transition-all">Add Lead</button>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-surface-container rounded-full">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-surface-container rounded-full">settings</span>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="Professional headshot of a friendly admissions counselor with a warm smile, wearing business casual attire, soft studio lighting with a neutral background, high-end corporate photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwzLrLpMWIsTdW1k_bj5XiaxC0d22zXjLTiewEPW1wPwuVCgdb_vq4tZpQT0YODy86edDb6EtCdZUu3ajrQ1HJNWoq7JF0P3oP4RtytKAusymu8CJwd65Kyzu5B6jHAOWEmS_KmO3UhBxd42mk4HUSB2JRHY5mJdWpz1Tp1hunk7-fY9nYnOBaUKM45zxVZt-RbmGADE-G_MMc76V8_SgvYP8WrQJ_tGZng6C65dM1Scgu4CVpmZOL7g"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar Anchor -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 z-40 flex flex-col py-4 border-r border-border bg-panel">
+<div class="px-6 mb-8">
+<h2 class="text-headline-md font-headline-md text-primary">Admission Portal</h2>
+<p class="text-label-sm font-label-sm text-text-muted">SuperCampus CRM</p>
+</div>
+<div class="flex-1 flex flex-col gap-1">
+<a class="mx-2 my-1 flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">view_kanban</span>
+<span class="text-label-lg font-label-lg">Pipeline</span>
+</a>
+<a class="mx-2 my-1 flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-label-lg font-label-lg">Teams</span>
+</a>
+<a class="mx-2 my-1 flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-lg font-label-lg">Analytics</span>
+</a>
+<a class="mx-2 my-1 flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-label-lg font-label-lg">Archives</span>
+</a>
+<a class="mx-2 my-1 flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-lg font-label-lg">Settings</span>
+</a>
+</div>
+<div class="mt-auto px-4">
+<button class="w-full py-3 mb-4 rounded-xl border-2 border-dashed border-outline text-label-lg font-label-lg text-on-surface-variant hover:bg-white transition-all">
+                Quick Filter
+            </button>
+<div class="flex flex-col gap-1 border-t border-border pt-4">
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-label-lg font-label-lg">Help</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-label-lg font-label-lg">Logout</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-64 mt-16 p-8 min-h-[calc(100vh-64px)]">
+<div class="max-w-4xl mx-auto">
+<!-- Header Section -->
+<div class="mb-10">
+<h1 class="text-display font-display text-primary mb-2">Campaign Builder</h1>
+<p class="text-body-lg font-body-lg text-on-surface-variant">Design and launch high-impact marketing campaigns for prospective students.</p>
+</div>
+<!-- Stepper Navigation -->
+<div class="relative flex justify-between items-center mb-12 px-2">
+<div class="absolute top-1/2 left-0 w-full h-1 bg-surface-container-high -translate-y-1/2 z-0 rounded-full">
+<div class="h-full bg-primary step-line rounded-full" id="progress-bar" style="width: 0%;"></div>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-2 group cursor-pointer" onclick="goToStep(1)">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold transition-all shadow-md" id="step-1-dot">1</div>
+<span class="text-label-lg font-label-lg text-primary">Basic Info</span>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-2 group cursor-pointer" onclick="goToStep(2)">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold transition-all" id="step-2-dot">2</div>
+<span class="text-label-lg font-label-lg text-on-surface-variant">Channels</span>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-2 group cursor-pointer" onclick="goToStep(3)">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold transition-all" id="step-3-dot">3</div>
+<span class="text-label-lg font-label-lg text-on-surface-variant">Schedule</span>
+</div>
+<div class="relative z-10 flex flex-col items-center gap-2 group cursor-pointer" onclick="goToStep(4)">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold transition-all" id="step-4-dot">4</div>
+<span class="text-label-lg font-label-lg text-on-surface-variant">Preview</span>
+</div>
+</div>
+<!-- Form Content Recessed Panel -->
+<div class="bg-card neomorphic-shadow rounded-[24px] p-8 min-h-[400px] transition-all duration-500">
+<!-- Step 1: Basic Info -->
+<div class="step-pane" id="step-1-content">
+<h3 class="text-headline-md font-headline-md text-on-surface mb-6">Fundamental Campaign Details</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-4">
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-2">Campaign Name</label>
+<input class="w-full bg-panel border-border recessed-input rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-body-md font-body-md" placeholder="e.g. Autumn Semester Awareness" type="text"/>
+</div>
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-2">Campaign Goal</label>
+<select class="w-full bg-panel border-border recessed-input rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-body-md font-body-md appearance-none">
+<option>Lead Generation</option>
+<option>Enrollment Conversion</option>
+<option>Brand Awareness</option>
+<option>Event Attendance</option>
+</select>
+</div>
+</div>
+<div class="space-y-4">
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-2">Campaign Description</label>
+<textarea class="w-full bg-panel border-border recessed-input rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-body-md font-body-md" placeholder="Briefly describe the target audience and value proposition..." rows="4"></textarea>
+</div>
+</div>
+</div>
+<!-- Step 2: Channels -->
+<div class="step-pane hidden" id="step-2-content">
+<h3 class="text-headline-md font-headline-md text-on-surface mb-6">Select Distribution Channels</h3>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+<!-- Email Card -->
+<div class="border-2 border-primary bg-primary-container/10 rounded-2xl p-6 flex flex-col items-center gap-4 cursor-pointer hover:shadow-lg transition-all border-l-[4px] border-l-soft-blue">
+<div class="w-16 h-16 rounded-full bg-soft-blue/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-soft-blue text-4xl">mail</span>
+</div>
+<div class="text-center">
+<h4 class="font-headline-md text-headline-md text-on-surface">Email</h4>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Personalized sequences</p>
+</div>
+<input checked="" class="w-6 h-6 rounded-md text-primary border-outline" type="checkbox"/>
+</div>
+<!-- SMS Card -->
+<div class="border border-border bg-white rounded-2xl p-6 flex flex-col items-center gap-4 cursor-pointer hover:border-primary transition-all border-l-[4px] border-l-pink-violet">
+<div class="w-16 h-16 rounded-full bg-pink-violet/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-pink-violet text-4xl">sms</span>
+</div>
+<div class="text-center">
+<h4 class="font-headline-md text-headline-md text-on-surface">SMS</h4>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Urgent notifications</p>
+</div>
+<input class="w-6 h-6 rounded-md text-primary border-outline" type="checkbox"/>
+</div>
+<!-- Social Card -->
+<div class="border border-border bg-white rounded-2xl p-6 flex flex-col items-center gap-4 cursor-pointer hover:border-primary transition-all border-l-[4px] border-l-secondary">
+<div class="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-4xl">share</span>
+</div>
+<div class="text-center">
+<h4 class="font-headline-md text-headline-md text-on-surface">Social</h4>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Platform outreach</p>
+</div>
+<input class="w-6 h-6 rounded-md text-primary border-outline" type="checkbox"/>
+</div>
+</div>
+</div>
+<!-- Step 3: Budget & Schedule -->
+<div class="step-pane hidden" id="step-3-content">
+<h3 class="text-headline-md font-headline-md text-on-surface mb-6">Budget &amp; Timing</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+<div class="space-y-6">
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-3">Total Budget Allocation</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+<input class="w-full bg-panel border-border recessed-input rounded-xl pl-8 pr-4 py-3 focus:ring-2 focus:ring-primary outline-none text-body-md font-body-md" placeholder="5,000" type="number"/>
+</div>
+</div>
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-3">Daily Limit</label>
+<input class="w-full h-2 bg-outline-variant rounded-lg appearance-none cursor-pointer accent-primary" type="range"/>
+<div class="flex justify-between mt-2 text-label-sm font-label-sm text-on-surface-variant">
+<span>$50</span>
+<span>$500</span>
+</div>
+</div>
+</div>
+<div class="space-y-6">
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-3">Launch Date</label>
+<input class="w-full bg-panel border-border recessed-input rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none text-body-md font-body-md" type="date"/>
+</div>
+<div>
+<label class="block text-label-lg font-label-lg text-on-surface-variant mb-3">End Date</label>
+<input class="w-full bg-panel border-border recessed-input rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none text-body-md font-body-md" type="date"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Step 4: Creative Preview -->
+<div class="step-pane hidden" id="step-4-content">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-headline-md font-headline-md text-on-surface">Creative Assets Preview</h3>
+<div class="flex gap-2">
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-label-sm font-label-sm">Desktop</span>
+<span class="bg-surface-container-highest text-on-surface-variant px-3 py-1 rounded-full text-label-sm font-label-sm">Mobile</span>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+<div class="lg:col-span-3 space-y-4">
+<div class="bg-panel rounded-2xl p-6 border border-border">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs">SC</div>
+<div>
+<p class="text-label-lg font-label-lg text-on-surface">SuperCampus Admissions</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">To: Prospective Students</p>
+</div>
+</div>
+<h4 class="text-headline-md font-headline-md mb-4">Your Future Awaits at SuperCampus</h4>
+<p class="text-body-md font-body-md text-on-surface-variant mb-6 leading-relaxed">
+                                    Hello {{first_name}},<br/><br/>
+                                    We noticed your interest in our upcoming autumn intake. Our campus is vibrant, our faculty is world-class, and our graduates are leading the industry. Join our next open day to experience it for yourself.
+                                </p>
+<img class="w-full h-48 object-cover rounded-xl mb-6" data-alt="A modern, architectural campus aerial shot during the golden hour, featuring sleek glass buildings and lush green landscapes. The image is captured with professional wide-angle photography, emphasizing clean lines and an aspirational educational atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNls5Qtj0Il9wlwVQ9QxXJ7x-Uwxp3nETtGeGoXJOchX99uecfJe3wbcFIH02tvtjbCp0Q3Bu1mxczwLP94OiAldBmRp5Sg4_LD2B5Iq6xnyLUs59yl5Drc6DXy6tEIp30BWtGkbesM1-6O66CEI40M-lj18UTOOKGMDKV7waWlkFCPqrx1FQfgOzGgVOu02ne5Jg3MzgWJyb0opiE7x7WDqAddfv4Idj5O3o0IUoHz2AGpTHAQ8Kbpw"/>
+<button class="w-full py-3 bg-primary text-on-primary rounded-xl font-bold">Secure Your Spot</button>
+</div>
+</div>
+<div class="lg:col-span-2 flex flex-col gap-4">
+<div class="bg-white border border-border p-4 rounded-xl shadow-sm">
+<h5 class="text-label-lg font-label-lg text-primary mb-2">Campaign Summary</h5>
+<ul class="space-y-3">
+<li class="flex justify-between border-b border-border/50 pb-2">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Goal</span>
+<span class="text-label-sm font-label-sm font-bold">Enrollment</span>
+</li>
+<li class="flex justify-between border-b border-border/50 pb-2">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Channels</span>
+<span class="text-label-sm font-label-sm font-bold">Email, Social</span>
+</li>
+<li class="flex justify-between border-b border-border/50 pb-2">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Budget</span>
+<span class="text-label-sm font-label-sm font-bold">$12,500</span>
+</li>
+</ul>
+</div>
+<div class="flex-1 rounded-xl overflow-hidden border border-border bg-panel flex items-center justify-center p-4">
+<div class="text-center">
+<span class="material-symbols-outlined text-4xl text-outline-variant mb-2">add_photo_alternate</span>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Upload Social Assets</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="mt-12 flex justify-between items-center border-t border-border pt-8">
+<button class="flex items-center gap-2 px-6 py-3 rounded-xl border border-outline text-label-lg font-label-lg text-on-surface-variant hover:bg-panel transition-all invisible" id="prev-btn" onclick="prevStep()">
+<span class="material-symbols-outlined">arrow_back</span>
+                        Back
+                    </button>
+<div class="flex gap-4">
+<button class="px-6 py-3 text-label-lg font-label-lg text-on-surface-variant hover:bg-panel rounded-xl transition-all">Save as Draft</button>
+<button class="flex items-center gap-2 px-8 py-3 bg-primary text-on-primary rounded-xl text-label-lg font-label-lg hover:shadow-lg active:scale-95 transition-all" id="next-btn" onclick="nextStep()">
+                            Next Step
+                            <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        let currentStep = 1;
+        const totalSteps = 4;
+
+        function updateUI() {
+            // Update step content visibility
+            for (let i = 1; i <= totalSteps; i++) {
+                const content = document.getElementById(`step-${i}-content`);
+                if (i === currentStep) {
+                    content.classList.remove('hidden');
+                    content.classList.add('animate-in', 'fade-in', 'duration-500');
+                } else {
+                    content.classList.add('hidden');
+                }
+            }
+
+            // Update stepper dots and lines
+            for (let i = 1; i <= totalSteps; i++) {
+                const dot = document.getElementById(`step-${i}-dot`);
+                const label = dot.nextElementSibling;
+                
+                if (i < currentStep) {
+                    dot.innerHTML = '<span class="material-symbols-outlined">check</span>';
+                    dot.className = "w-10 h-10 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-bold transition-all shadow-md";
+                    label.className = "text-label-lg font-label-lg text-secondary";
+                } else if (i === currentStep) {
+                    dot.innerHTML = i;
+                    dot.className = "w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold transition-all shadow-lg scale-110";
+                    label.className = "text-label-lg font-label-lg text-primary font-bold";
+                } else {
+                    dot.innerHTML = i;
+                    dot.className = "w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold transition-all";
+                    label.className = "text-label-lg font-label-lg text-on-surface-variant";
+                }
+            }
+
+            // Update progress bar
+            const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            // Footer button states
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+
+            if (currentStep === 1) {
+                prevBtn.classList.add('invisible');
+            } else {
+                prevBtn.classList.remove('invisible');
+            }
+
+            if (currentStep === totalSteps) {
+                nextBtn.innerHTML = 'Launch Campaign <span class="material-symbols-outlined">rocket_launch</span>';
+                nextBtn.classList.remove('bg-primary');
+                nextBtn.classList.add('bg-secondary');
+            } else {
+                nextBtn.innerHTML = 'Next Step <span class="material-symbols-outlined">arrow_forward</span>';
+                nextBtn.classList.add('bg-primary');
+                nextBtn.classList.remove('bg-secondary');
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateUI();
+            } else {
+                alert("Campaign Launch Sequence Initiated!");
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateUI();
+            }
+        }
+
+        function goToStep(step) {
+            currentStep = step;
+            updateUI();
+        }
+
+        // Initialize UI
+        updateUI();
+    </script>
+</body></html>
