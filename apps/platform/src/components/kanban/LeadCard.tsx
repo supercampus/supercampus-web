@@ -4,7 +4,7 @@ import React from 'react';
 import { defaultAnimateLayoutChanges, useSortable, type AnimateLayoutChanges } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Lead } from '@/lib/kanban/kanban-data';
-import { Clock, MessageSquare, Paperclip } from 'lucide-react';
+import { Phone, Mail, MapPin, Paperclip, MessageSquare, Clock } from 'lucide-react';
 
 interface LeadCardProps {
   lead: Lead;
@@ -14,28 +14,11 @@ interface LeadCardProps {
 }
 
 function LeadCardContent({ lead, columnAccent, onClick, isOverdue, className = '', style }: LeadCardProps & { className?: string; style?: React.CSSProperties }) {
-  const sourceLower = lead.source.toLowerCase();
-  const sourceDot = sourceLower.includes('google') || sourceLower.includes('search')
-    ? '#3b82f6'
-    : sourceLower.includes('facebook') || sourceLower.includes('instagram') || sourceLower.includes('social')
-      ? '#ec4899'
-      : sourceLower.includes('college') || sourceLower.includes('education')
-        ? '#8b5cf6'
-        : sourceLower.includes('referral')
-          ? '#22c55e'
-          : sourceLower.includes('walk') || sourceLower.includes('fair') || sourceLower.includes('event') || sourceLower.includes('school')
-            ? '#f97316'
-            : sourceLower.includes('call') || sourceLower.includes('whatsapp') || sourceLower.includes('sms')
-              ? '#14b8a6'
-              : '#94a3b8';
-  const maskedPhone = lead.phone.replace(/(\+91-?\s?)?(\d{2})\d{3}\s?(\d{2})\d{3}/, '+91 $2XXX $3XXX');
-  const followUpLabel = lead.nextFollowUp ? 'Today' : 'Not set';
-
   return (
     <div
       style={style}
       onClick={() => onClick(lead)}
-      className={`crm-lead-card rounded-xl border border-white/10 bg-[#161d29] p-3 shadow-sm cursor-grab active:cursor-grabbing group hover:shadow-lg ${className}`}
+      className={`crm-lead-card bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-3 shadow-sm cursor-grab active:cursor-grabbing group ${className}`}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = columnAccent;
       }}
@@ -43,43 +26,42 @@ function LeadCardContent({ lead, columnAccent, onClick, isOverdue, className = '
         (e.currentTarget as HTMLElement).style.borderColor = 'var(--crm-border)';
       }}
     >
-      <h4 className="text-sm text-white leading-tight mb-1 pr-2">
+      <h4 className="font-semibold text-sm text-[var(--crm-text)] leading-tight mb-1 pr-2">
         {lead.name}
       </h4>
 
-      <p className="text-xs text-white/45 mb-3">
-        {maskedPhone}
+      <p className="text-xs text-[var(--crm-on-surface-variant)] mb-2.5">
+        {lead.course} | {lead.intake}
       </p>
 
-      <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-white/70">
-        <span className="h-2 w-2 rounded-full" style={{ background: sourceDot }} />
-        <span className="truncate">{lead.source}</span>
+      <div className="flex flex-col gap-1 mb-2.5">
+        <div className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">
+          <Phone size={11} />
+          <span>{lead.phone}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">
+          <Mail size={11} />
+          <span className="truncate">{lead.email}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">
+          <MapPin size={11} />
+          <span>{lead.city}</span>
+        </div>
       </div>
 
-      <div className="mb-3 grid gap-1.5 text-[11px] text-white/55">
-        <div className="flex justify-between gap-2">
-          <span>Assigned</span>
-          <span className="truncate text-white/75">{lead.assignedTo.name}</span>
-        </div>
-        <div className="flex justify-between gap-2">
-          <span>Follow-up</span>
-          <span className={isOverdue ? 'text-red-300' : 'text-white/75'}>{followUpLabel}</span>
-        </div>
-      </div>
-
-      <div className="border-t border-white/10 pt-2.5 mt-1" />
+      <div className="border-t border-[var(--crm-border)] pt-2.5 mt-1" />
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div
-            className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] text-white"
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
             style={{
               background: 'var(--primary-grad)',
             }}
           >
             {lead.assignedTo.name.slice(0, 2).toUpperCase()}
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-white/50">
+          <div className="flex items-center gap-2 text-[10px] text-[var(--crm-muted)] font-medium">
             <span className="flex items-center gap-0.5">
               <Paperclip size={10} />
               {lead.documents.uploaded}/{lead.documents.required}
@@ -91,10 +73,10 @@ function LeadCardContent({ lead, columnAccent, onClick, isOverdue, className = '
           </div>
         </div>
 
-        <div className="flex items-center gap-1 text-[10px]">
-          {isOverdue && <Clock size={10} className="text-red-400" />}
+        <div className="flex items-center gap-1 text-[10px] font-medium">
+          {isOverdue && <Clock size={10} className="text-[var(--crm-danger)]" />}
           <span
-            className={isOverdue ? 'text-red-400' : 'text-white/45'}
+            className={isOverdue ? 'text-[var(--crm-danger)]' : 'text-[var(--crm-muted)]'}
             style={{ color: isOverdue ? '#ff005c' : undefined }}
           >
             {lead.lastContact}

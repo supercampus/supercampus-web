@@ -79,15 +79,15 @@ export interface UserRole {
 }
 
 export const COLUMNS: Column[] = [
-  { id: 'enquiry', title: 'Enquiry', accent: '#94a3b8' },
-  { id: 'contact-attempted', title: 'Contact Attempted', accent: '#7dd3fc' },
-  { id: 'contacted', title: 'Contacted', accent: '#3b82f6' },
-  { id: 'nurture', title: 'Nurture', accent: '#6366f1' },
-  { id: 'qualified', title: 'Qualified', accent: '#a855f7' },
-  { id: 'application', title: 'Application', accent: '#f97316' },
-  { id: 'application-status', title: 'Application Status', accent: '#f59e0b' },
-  { id: 'offer-status', title: 'Offer Status', accent: '#22c55e' },
-  { id: 'archived', title: 'Archived', accent: '#ef4444' },
+  { id: 'enquiry', title: 'Enquiry', accent: '#6d5dfc' },
+  { id: 'contact-attempted', title: 'Contact Attempted', accent: '#d946ef' },
+  { id: 'contacted', title: 'Contacted', accent: '#f59e0b' },
+  { id: 'nurture', title: 'Nurture', accent: '#10b981' },
+  { id: 'qualified', title: 'Qualified', accent: '#06b6d4' },
+  { id: 'application', title: 'Application', accent: '#3b82f6' },
+  { id: 'application-status', title: 'Application Status', accent: '#8b5cf6' },
+  { id: 'offer-status', title: 'Offer / Status', accent: '#ec4899' },
+  { id: 'archived', title: 'Archived', accent: '#64748b' },
 ];
 
 export const COLUMN_IDS = COLUMNS.map((c) => c.id);

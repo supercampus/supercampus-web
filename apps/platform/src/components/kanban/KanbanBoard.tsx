@@ -22,6 +22,7 @@ import KanbanColumn from './KanbanColumn';
 import LeadCard from './LeadCard';
 import LeadDetailSidebar from './LeadDetailSidebar';
 import MoveLogModal from './MoveLogModal';
+import { X, Filter, Search } from 'lucide-react';
 
 interface KanbanBoardProps {
   leads: Lead[];
@@ -35,6 +36,9 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moveLogModal, setMoveLogModal] = useState<{ lead: Lead; from: string; to: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterSource, setFilterSource] = useState<string | null>(null);
+  const [filterCourse, setFilterCourse] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor)
@@ -57,13 +61,39 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
     const grouped: Record<string, Lead[]> = {};
     COLUMN_IDS.forEach((id) => { grouped[id] = []; });
 
+    const query = searchQuery.toLowerCase();
     leads.forEach((lead) => {
+      if (searchQuery) {
+        const matches =
+          lead.name.toLowerCase().includes(query) ||
+          lead.email.toLowerCase().includes(query) ||
+          lead.phone.includes(query) ||
+          lead.course.toLowerCase().includes(query) ||
+          lead.city.toLowerCase().includes(query);
+        if (!matches) return;
+      }
+      if (filterSource && lead.source !== filterSource) return;
+      if (filterCourse && lead.course !== filterCourse) return;
+
       if (grouped[lead.status]) {
         grouped[lead.status].push(lead);
       }
     });
 
     return grouped;
+  }, [leads, searchQuery, filterSource, filterCourse]);
+
+  const filterOptions = useMemo(() => {
+    const sources = new Set<string>();
+    const courses = new Set<string>();
+    leads.forEach((l) => {
+      sources.add(l.source);
+      courses.add(l.course);
+    });
+    return {
+      sources: Array.from(sources).sort(),
+      courses: Array.from(courses).sort(),
+    };
   }, [leads]);
 
   const moveLead = useCallback((lead: Lead, toColumn: string) => {
@@ -168,6 +198,51 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <div className="relative flex-1 max-w-xs">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--crm-muted)]" />
+          <input
+            type="text"
+            placeholder="Search leads..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] text-sm text-[var(--crm-text)] placeholder:text-[var(--crm-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--crm-soft-blue)]/30"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Filter size={14} className="text-[var(--crm-muted)]" />
+          <select
+            value={filterSource ?? ''}
+            onChange={(e) => setFilterSource(e.target.value || null)}
+            className="px-2.5 py-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] text-xs text-[var(--crm-text)] focus:outline-none"
+          >
+            <option value="">Source: All</option>
+            {filterOptions.sources.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <select
+            value={filterCourse ?? ''}
+            onChange={(e) => setFilterCourse(e.target.value || null)}
+            className="px-2.5 py-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] text-xs text-[var(--crm-text)] focus:outline-none"
+          >
+            <option value="">Course: All</option>
+            {filterOptions.courses.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          {(searchQuery || filterSource || filterCourse) && (
+            <button
+              onClick={() => { setSearchQuery(''); setFilterSource(null); setFilterCourse(null); }}
+              className="p-2 rounded-lg hover:bg-[var(--crm-panel)] text-[var(--crm-muted)] transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Kanban Board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4 kanban-scroll-hidden">
         <div className="inline-flex gap-4 h-full pb-2">

@@ -2,10 +2,11 @@
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Lead } from '@/lib/kanban/kanban-data';
-import { LEADS, ROLES } from '@/lib/kanban/kanban-data';
+import { COLUMNS, LEADS } from '@/lib/kanban/kanban-data';
 import KanbanBoard from '@/components/kanban/KanbanBoard';
+import ActivityFeed from '@/components/kanban/ActivityFeed';
 import type { LucideIcon } from 'lucide-react';
-import { ArrowUpRight, BarChart3, CalendarDays, CheckCircle2, ClipboardList, Clock, Database, FileText, Grip, Info, Kanban, LayoutDashboard, Layers, ListChecks, LogOut, Mail, Monitor, Moon, PanelLeftClose, PanelLeftOpen, Pencil, PlusCircle, Save, Search, Settings, ShieldCheck, SlidersHorizontal, Smartphone, Sun, Target, Trash2, UserCog, Users, X } from 'lucide-react';
+import { ArrowUpRight, BarChart3, CalendarDays, CheckCircle2, ClipboardList, Clock, Database, FileText, Grip, Info, Kanban, LayoutDashboard, Layers, ListChecks, LogOut, Mail, Monitor, Moon, PanelLeftClose, PanelLeftOpen, Pencil, PhoneCall, PlusCircle, Save, Search, Settings, ShieldCheck, SlidersHorizontal, Smartphone, Sun, Target, TrendingUp, Trash2, UserCog, Users, X } from 'lucide-react';
 
 type NavSection = 'dashboard' | 'crm' | 'pipeline' | 'admissions' | 'students' | 'academics' | 'fees' | 'erp' | 'reports' | 'users' | 'settings';
 type ThemeId = 'classic' | 'ocean' | 'emerald' | 'midnight';
@@ -1114,7 +1115,7 @@ export default function AdmissionsPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [tenantBrand, setTenantBrand] = useState<TenantBrand>(DEFAULT_TENANT_BRAND);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [accessModal, setAccessModal] = useState<AccessModal>(null);
   const [activeScreenByNav, setActiveScreenByNav] = useState<Record<string, string>>({});
   const [selectedRecordByScreen, setSelectedRecordByScreen] = useState<Record<string, number>>({});
@@ -1531,12 +1532,60 @@ export default function AdmissionsPage() {
     showToast(`Feature added: ${feature}`);
   };
 
+  const totalOfferAccepted = leads.filter((lead) => lead.offerDecision === 'accepted').length;
+  const activeApplications = leads.filter((lead) => lead.status === 'application' || lead.status === 'application-status').length;
+  const dashboardStats: { label: string; value: number; icon: LucideIcon }[] = [
+    { label: 'Total Leads', value: leads.length, icon: BarChart3 },
+    { label: 'Applications', value: activeApplications, icon: FileText },
+    { label: 'Offer Accepted', value: totalOfferAccepted, icon: ShieldCheck },
+    { label: 'Team Users', value: staffUsers.length, icon: UserCog },
+  ];
+  const pipelineSummary = COLUMNS.filter((column) => column.id !== 'archived').map((column) => {
+    const count = leads.filter((lead) => lead.status === column.id).length;
+    const percent = leads.length ? Math.round((count / leads.length) * 100) : 0;
+    return { ...column, count, percent };
+  });
+  const maxStageCount = Math.max(...pipelineSummary.map((stage) => stage.count), 1);
+  const sourceSummary = Object.entries(
+    leads.reduce<Record<string, number>>((summary, lead) => {
+      summary[lead.source] = (summary[lead.source] ?? 0) + 1;
+      return summary;
+    }, {})
+  )
+    .map(([source, count]) => ({ source, count, percent: leads.length ? Math.round((count / leads.length) * 100) : 0 }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  const counselorSummary = Object.entries(
+    leads.reduce<Record<string, { total: number; hot: number; documents: number }>>((summary, lead) => {
+      const owner = lead.assignedTo.name;
+      const current = summary[owner] ?? { total: 0, hot: 0, documents: 0 };
+      current.total += 1;
+      if (lead.status === 'qualified' || lead.status === 'application' || lead.status === 'offer-status') current.hot += 1;
+      current.documents += lead.documents.uploaded;
+      summary[owner] = current;
+      return summary;
+    }, {})
+  )
+    .map(([name, stats]) => ({ name, ...stats }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 4);
+  const upcomingFollowUps = leads
+    .filter((lead) => lead.nextFollowUp)
+    .sort((a, b) => new Date(a.nextFollowUp ?? '').getTime() - new Date(b.nextFollowUp ?? '').getTime())
+    .slice(0, 4);
+
   const navItems = [
     { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'crm' as const, label: 'CRM', icon: Target },
     { id: 'pipeline' as const, label: 'Pipeline', icon: Kanban },
     { id: 'admissions' as const, label: 'Admissions', icon: ClipboardList },
     { id: 'students' as const, label: 'Students', icon: Users },
+    { id: 'academics' as const, label: 'Academics', icon: ListChecks },
+    { id: 'fees' as const, label: 'Fees & Finance', icon: Database },
+    { id: 'erp' as const, label: 'ERP Services', icon: Layers },
+    { id: 'reports' as const, label: 'Reports & BI', icon: BarChart3 },
+    { id: 'users' as const, label: 'Users & Roles', icon: UserCog },
+    { id: 'settings' as const, label: 'Settings', icon: Settings },
   ];
   const settingsTabs = [
     { id: 'access' as const, label: 'Access Control', icon: ShieldCheck },
@@ -1591,7 +1640,7 @@ export default function AdmissionsPage() {
   const selectedRecordIndex = selectedRecordByScreen[activeScreenKey] ?? 0;
   const selectedAdminRecord = activeAdminRecords[selectedRecordIndex] ?? activeAdminRecords[0];
   const activeCompletedActions = completedActions[activeScreenKey] ?? [];
-  const customRequirementLayout = ['admissions', 'academics', 'fees', 'erp', 'reports'].includes(activeNav);
+  const customRequirementLayout = ['crm', 'admissions', 'academics', 'fees', 'erp', 'reports'].includes(activeNav);
   const operationContext = operationModal?.context ?? '';
   const operationTitle = operationModal?.title ?? '';
   const operationContextLower = operationContext.toLowerCase();
@@ -1714,63 +1763,248 @@ export default function AdmissionsPage() {
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        <header className="h-16 shrink-0 flex items-center justify-between px-5 bg-[#0d1117] border-b border-white/10 text-white">
-          {activeNav === 'dashboard' || activeNav === 'pipeline' ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setActiveNav('dashboard')}
-                className="flex items-center gap-3 text-left"
-                aria-label="Return to default board view"
-              >
-                <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-xl bg-white text-xs text-[#0d1117]">
-                  {tenantBrand.logoDataUrl ? <img src={tenantBrand.logoDataUrl} alt="Tenant logo" className="h-full w-full object-contain p-1" /> : 'SC'}
-                </span>
-                <span>
-                  <span className="block text-base">Pre-Admission Pipeline</span>
-                  <span className="block text-[11px] text-white/50">SuperCampus / CRM / Pre-Admission</span>
-                </span>
-              </button>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => openOperation('Board visibility', 'CRM Board Settings', ['Visibility mode', 'Allowed users', 'Share note'], 'Apply')} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/70 hover:bg-white/10">Team</button>
-                <button type="button" onClick={() => openOperation('Filter Board', 'Leads', ['Source', 'Assignee', 'Date range', 'Priority'], 'Apply filter')} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/70 hover:bg-white/10">
-                  <SlidersHorizontal size={14} />
-                  Filter
-                </button>
-                <button type="button" onClick={() => openOperation('New List', 'CRM Board Settings', ['Stage name', 'Position', 'Color', 'Allowed roles'], 'Create list')} className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-white" style={{ background: brandGradient }}>
-                  <PlusCircle size={14} />
-                  New List
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <h1 className="text-lg">{NAV_TITLES[activeNav]}</h1>
-                <p className="text-[11px] text-white/50">CRM module control for admission operations.</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="hidden sm:flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs">
-                  <ShieldCheck size={14} className="text-emerald-400" />
-                  {ROLES.find((r) => r.id === roleId)?.label}
-                </div>
-                <button onClick={toggleDarkTheme} className="rounded-xl border border-white/10 bg-white/5 p-2 text-white/70 hover:bg-white/10">
-                  {theme === 'midnight' ? <Sun size={16} /> : <Moon size={16} />}
-                </button>
-              </div>
-            </>
-          )}
+        <header className="h-16 shrink-0 flex items-center justify-between px-6 bg-[var(--crm-surface)] border-b border-[var(--crm-border)]">
+          <div>
+            <h1 className="text-lg font-extrabold">{NAV_TITLES[activeNav]}</h1>
+            <p className="text-[11px] text-[var(--crm-muted)] font-semibold">CRM, Fee Management, ERP, and student app access controlled by admin.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <ActivityFeed leads={leads} />
+            <button onClick={toggleDarkTheme} className="p-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-muted)] hover:bg-[var(--crm-panel)] transition-colors">
+              {theme === 'midnight' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] text-xs font-bold text-[var(--crm-muted)] hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors"
+            >
+              <LogOut size={15} />
+              Sign out
+            </button>
+          </div>
         </header>
 
         {activeNav === 'pipeline' && (
-          <section className="flex-1 overflow-hidden bg-[#0d1117] p-4 flex flex-col">
+          <section className="flex-1 overflow-hidden p-5 flex flex-col">
             <KanbanBoard leads={leads} setLeads={setLeads} roleId={roleId} onShowToast={showToast} />
           </section>
         )}
 
         {activeNav === 'dashboard' && (
-          <section className="flex-1 overflow-hidden bg-[#0d1117] p-4 flex flex-col">
-            <KanbanBoard leads={leads} setLeads={setLeads} roleId={roleId} onShowToast={showToast} />
+          <section className="flex-1 overflow-y-auto kanban-scroll-hidden bg-[var(--crm-panel)] p-6">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-widest text-[var(--crm-muted)]">Portal / Dashboard</p>
+                <h2 className="mt-2 text-3xl tracking-tight">Good morning, Arjun</h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={() => { setActiveNav('settings'); setSettingsSection('widgets'); }} className="inline-flex items-center gap-2 rounded-full border border-[var(--crm-border)] bg-[var(--crm-card)] px-4 py-2 text-xs text-[var(--crm-muted)]">
+                  <PlusCircle size={15} />
+                  Add widget
+                </button>
+                <button type="button" onClick={() => openOperation('Current intake', 'Dashboard', ['Intake', 'Start date', 'End date'], 'Apply')} className="inline-flex items-center gap-2 rounded-full border border-[var(--crm-border)] bg-[var(--crm-card)] px-4 py-2 text-xs text-[var(--crm-muted)]">
+                  <CalendarDays size={15} />
+                  Current intake
+                </button>
+                <button type="button" onClick={() => openOperation('Add lead', 'Dashboard', ['Name', 'Phone', 'Course interest', 'Source', 'Assigned counselor'], 'Add lead')} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs text-white shadow-sm" style={{ background: brandGradient }}>
+                  <PlusCircle size={15} />
+                  Add lead
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[260px_minmax(0,1fr)_300px] gap-4">
+              <div className="space-y-4">
+                <div className="relative min-h-[315px] overflow-hidden rounded-[28px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                  <div className="absolute inset-x-0 bottom-0 h-28" style={{ background: 'linear-gradient(0deg, color-mix(in srgb, var(--tenant-primary) 18%, transparent), transparent)' }} />
+                  <div className="relative mx-auto mt-4 grid h-36 w-36 place-items-center rounded-full" style={{ background: 'linear-gradient(135deg, var(--tenant-surface), var(--crm-card))' }}>
+                    <span className="grid h-28 w-28 place-items-center rounded-full text-4xl text-white" style={{ background: brandGradient }}>AM</span>
+                  </div>
+                  <div className="relative mt-8 rounded-2xl bg-black/75 p-3 text-white">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm">Arjun Mehta</p>
+                        <p className="mt-1 text-[11px] text-white/65">Admin login</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[var(--tenant-primary)]"><PhoneCall size={14} /></span>
+                        <span className="grid h-8 w-8 place-items-center rounded-full bg-white/15"><Mail size={14} /></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-[var(--crm-muted)]">Average response time</p>
+                    <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] text-emerald-700">+0.5%</span>
+                  </div>
+                  <p className="mt-3 text-3xl">46 min</p>
+                  <div className="mt-5 flex h-20 items-end gap-2">
+                    {[24, 38, 42, 58, 36, 45, 54].map((height, index) => (
+                      <span key={index} className="flex-1 rounded-full bg-[var(--tenant-primary)]/20" style={{ height }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4">
+                  <div className="rounded-[28px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-6 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs text-[var(--crm-muted)]">Admission velocity</p>
+                        <div className="mt-3 flex items-end gap-3">
+                          <p className="text-5xl leading-none">{dashboardStats[0]?.value ?? 0}</p>
+                          <span className="mb-2 rounded-full bg-emerald-50 px-2 py-1 text-[10px] text-emerald-700">+12%</span>
+                        </div>
+                        <p className="mt-2 text-xs text-[var(--crm-muted)]">leads in active movement</p>
+                      </div>
+                      <div className="grid h-28 flex-1 grid-cols-12 items-end gap-1">
+                        {[40, 62, 48, 72, 52, 80, 56, 44, 68, 76, 50, 66].map((height, index) => (
+                          <span key={index} className="rounded-full bg-[var(--tenant-primary)]/75" style={{ height: `${height}%` }} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="overflow-hidden rounded-[28px] border border-[var(--crm-border)] bg-[var(--tenant-primary)] p-4 text-white shadow-sm">
+                    <div className="rounded-2xl bg-white/92 p-4 text-[var(--crm-text)]">
+                      <p className="text-3xl">80%</p>
+                      <p className="mt-1 text-[11px] text-[var(--crm-muted)]">Counselor SLA</p>
+                    </div>
+                    <div className="mt-3 rounded-2xl bg-white/14 p-4">
+                      <p className="text-3xl">20%</p>
+                      <p className="mt-1 text-[11px] text-white/70">Needs escalation</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-[28px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-[var(--crm-muted)]">Track your team</p>
+                      <ArrowUpRight size={16} className="text-[var(--crm-muted)]" />
+                    </div>
+                    <div className="mt-5 grid place-items-center">
+                      <div className="relative h-36 w-36 rounded-full" style={{ background: `conic-gradient(var(--tenant-primary) 0 46%, var(--tenant-secondary) 46% 76%, var(--crm-panel) 76% 100%)` }}>
+                        <div className="absolute inset-6 grid place-items-center rounded-full bg-[var(--crm-card)]">
+                          <p className="text-4xl">{staffUsers.length * 24}</p>
+                          <p className="text-[10px] text-[var(--crm-muted)]">team score</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-2 text-xs text-[var(--crm-muted)]">
+                      {counselorSummary.slice(0, 3).map((owner) => (
+                        <div key={owner.name} className="flex items-center justify-between">
+                          <span>{owner.name}</span>
+                          <span>{owner.total} leads</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[28px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-[var(--crm-muted)]">Talent recruitment</p>
+                      <ArrowUpRight size={16} className="text-[var(--crm-muted)]" />
+                    </div>
+                    <p className="mt-4 text-2xl">Admissions funnel</p>
+                    <div className="mt-5 flex items-center gap-2">
+                      {counselorSummary.slice(0, 2).map((owner) => (
+                        <span key={owner.name} className="grid h-12 w-12 place-items-center rounded-2xl text-xs text-white" style={{ background: brandGradient }}>{owner.name.slice(0, 2).toUpperCase()}</span>
+                      ))}
+                      <span className="ml-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--tenant-primary)] text-white"><PhoneCall size={18} /></span>
+                    </div>
+                    <div className="mt-6 grid grid-cols-14 gap-1">
+                      {Array.from({ length: 14 }).map((_, index) => (
+                        <span key={index} className={`h-16 rounded-full ${index < 9 ? 'bg-[var(--tenant-secondary)]' : 'bg-[var(--crm-panel)]'}`} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-[var(--crm-muted)]">Pipeline spread</p>
+                      <h3 className="mt-1 text-xl">Lead movement by stage</h3>
+                    </div>
+                    <TrendingUp size={17} className="text-[var(--tenant-primary)]" />
+                  </div>
+                  <div className="mt-6 flex h-36 items-end gap-3">
+                    {pipelineSummary.map((stage, index) => (
+                      <div key={stage.id} className="flex flex-1 flex-col items-center gap-2">
+                        <span
+                          className={`w-full max-w-10 rounded-full ${index > 3 ? 'bg-[var(--tenant-primary)]' : 'bg-[var(--tenant-primary)]/15'}`}
+                          style={{ height: `${42 + Math.round((stage.count / maxStageCount) * 78)}px` }}
+                        />
+                        <span className="max-w-16 truncate text-[10px] text-[var(--crm-muted)]">{stage.title.split(' ')[0]}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-[28px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                  <div className="mb-5 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-[var(--crm-muted)]">Admissions desk</p>
+                      <h3 className="mt-1 text-xl">Follow-ups</h3>
+                    </div>
+                    <Search size={17} className="text-[var(--crm-muted)]" />
+                  </div>
+                  <div className="space-y-3">
+                    {upcomingFollowUps.slice(0, 5).map((lead) => (
+                      <div key={lead.id} className="grid grid-cols-[38px_1fr_auto] items-center gap-3 rounded-2xl bg-[var(--crm-surface)] p-3">
+                        <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--crm-card)] text-xs">{lead.name.slice(0, 1)}</span>
+                        <div className="min-w-0">
+                          <p className="truncate text-xs">{lead.name}</p>
+                          <p className="truncate text-[10px] text-[var(--crm-muted)]">{lead.course}</p>
+                        </div>
+                        <span className="rounded-full bg-[var(--tenant-surface)] px-2 py-1 text-[10px] text-[var(--tenant-primary)]">
+                          {new Date(lead.nextFollowUp ?? '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] p-5 text-white shadow-sm" style={{ background: 'linear-gradient(145deg, var(--tenant-primary), color-mix(in srgb, var(--tenant-primary) 72%, #000))' }}>
+                  <p className="text-xs text-white/70">Fee readiness</p>
+                  <div className="mt-5 space-y-3">
+                    <div className="rounded-2xl bg-white/20 p-3">
+                      <div className="flex justify-between text-xs"><span>Confirmed applications</span><span>{dashboardStats[1]?.value ?? 0}</span></div>
+                    </div>
+                    <div className="rounded-2xl bg-white p-3 text-[var(--crm-text)]">
+                      <div className="flex justify-between text-xs"><span>Offer accepted</span><span>{dashboardStats[2]?.value ?? 0}</span></div>
+                    </div>
+                    <div className="rounded-2xl bg-white/12 p-3">
+                      <div className="flex justify-between text-xs"><span>Team users</span><span>{dashboardStats[3]?.value ?? 0}</span></div>
+                    </div>
+                  </div>
+                  <p className="mt-6 text-4xl">41%</p>
+                  <p className="mt-1 text-xs text-white/70">conversion target</p>
+                </div>
+
+                <div className="rounded-[28px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                  <p className="text-xs text-[var(--crm-muted)]">Source quality</p>
+                  <div className="mt-4 space-y-3">
+                    {sourceSummary.slice(0, 4).map((source) => (
+                      <div key={source.source}>
+                        <div className="mb-1 flex justify-between text-xs">
+                          <span>{source.source}</span>
+                          <span className="text-[var(--crm-muted)]">{source.percent}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-[var(--crm-panel)]">
+                          <span className="block h-full rounded-full bg-[var(--tenant-primary)]" style={{ width: `${source.percent}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
         )}
 
@@ -1994,6 +2228,188 @@ export default function AdmissionsPage() {
                         <button key={item} type="button" className="flex w-full items-center justify-between rounded-xl bg-[var(--crm-surface)] px-3 py-3 text-left text-xs">
                           <span>{item}</span>
                           <span className="rounded-full bg-[var(--crm-card)] px-2 py-1 text-[10px] text-[var(--tenant-primary)]">{[8, 4, 6, 3][index]}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeNav === 'crm' && (
+              <div className="mt-4 grid grid-cols-[minmax(0,1fr)_340px] gap-4">
+                <div className="space-y-4">
+                  <div className="rounded-[28px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--tenant-primary)]">CRM command center</p>
+                        <h3 className="mt-1 text-2xl">Lead operations board</h3>
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => openOperation('Bulk import CSV/Excel', 'Lead Capture', ['Upload CSV/Excel', 'Column mapping', 'Duplicate handling'], 'Preview import')} className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-xs text-[var(--crm-muted)]">Import</button>
+                        <button type="button" onClick={() => openOperation('Create lead', 'Lead Capture', ['Student name', 'Phone', 'WhatsApp', 'Course', 'Source', 'City'], 'Create lead')} className="rounded-xl px-3 py-2 text-xs text-white" style={{ background: brandGradient }}>Create lead</button>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-5 gap-3">
+                      {[
+                        ['New leads', leads.filter((lead) => lead.status === 'enquiry').length, Target],
+                        ['Contact due', upcomingFollowUps.length, Clock],
+                        ['Qualified', leads.filter((lead) => lead.status === 'qualified').length, CheckCircle2],
+                        ['Applications', activeApplications, FileText],
+                        ['Accepted', totalOfferAccepted, ShieldCheck],
+                      ].map(([label, value, Icon], index) => (
+                        <button key={label as string} type="button" onClick={() => openOperation(label as string, 'CRM Analytics', ['Date range', 'Owner', 'Source'], 'Drill down')} className={`rounded-2xl border p-4 text-left ${index === 0 ? 'border-transparent text-white' : 'border-[var(--crm-border)] bg-[var(--crm-surface)]'}`} style={index === 0 ? { background: brandGradient } : undefined}>
+                          {React.createElement(Icon as LucideIcon, { size: 16 })}
+                          <p className="mt-4 text-3xl">{value as number}</p>
+                          <p className={`mt-1 text-[10px] ${index === 0 ? 'text-white/70' : 'text-[var(--crm-muted)]'}`}>{label as string}</p>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-[1fr_220px] gap-4">
+                      <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
+                        <div className="mb-4 flex items-center justify-between">
+                          <h4 className="text-sm">Priority lead queue</h4>
+                          <button type="button" onClick={() => openOperation('Filter leads', 'Leads', ['Source', 'Stage', 'Assignee', 'Priority'], 'Apply filter')} className="rounded-lg bg-[var(--crm-card)] px-2 py-1 text-[10px] text-[var(--crm-muted)]">Filter</button>
+                        </div>
+                        <div className="space-y-2">
+                          {leads.slice(0, 6).map((lead, index) => (
+                            <button key={lead.id} type="button" onClick={() => openOperation(`Open ${lead.name}`, 'Leads', ['Details', 'Timeline', 'Documents', 'Forms'], 'Update lead')} className="grid w-full grid-cols-[1fr_110px_90px_auto] items-center gap-3 rounded-xl bg-[var(--crm-card)] p-3 text-left text-xs hover:bg-[var(--tenant-surface)]">
+                              <span className="min-w-0">
+                                <span className="block truncate">{lead.name}</span>
+                                <span className="mt-1 block truncate text-[10px] text-[var(--crm-muted)]">{lead.course} / {lead.city}</span>
+                              </span>
+                              <span className="truncate text-[var(--crm-muted)]">{lead.source}</span>
+                              <span className="truncate text-[var(--crm-muted)]">{lead.assignedTo.name}</span>
+                              <span className={`rounded-full px-2 py-1 text-[10px] ${index < 2 ? 'bg-red-50 text-red-600' : index < 4 ? 'bg-amber-50 text-amber-700' : 'bg-sky-50 text-sky-700'}`}>{index < 2 ? 'Hot' : index < 4 ? 'Warm' : 'Cold'}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
+                        <h4 className="text-sm">Stage automation</h4>
+                        <div className="mt-4 space-y-2">
+                          {['Auto assign digital leads', 'Follow-up reminder', 'WhatsApp after Qualified', 'ERP handoff on Accepted'].map((rule, index) => (
+                            <button key={rule} type="button" onClick={() => openOperation(rule, 'CRM Settings', ['Trigger', 'Condition', 'Template', 'Enabled'], 'Save rule')} className="flex w-full items-center justify-between rounded-xl bg-[var(--crm-card)] p-3 text-left text-xs">
+                              <span>{rule}</span>
+                              <span className={`h-5 w-9 rounded-full p-0.5 ${index === 0 || index === 2 ? 'bg-[var(--tenant-primary)]' : 'bg-[var(--crm-panel)]'}`}>
+                                <span className={`block h-4 w-4 rounded-full bg-white ${index === 0 || index === 2 ? 'ml-4' : ''}`} />
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4">
+                    <div className="rounded-[24px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest text-[var(--tenant-primary)]">Campaign ledger</p>
+                          <h3 className="mt-1 text-lg">Source ROI</h3>
+                        </div>
+                        <button type="button" onClick={() => openOperation('Create campaign', 'Campaign Management', ['Campaign name', 'Budget', 'Audience', 'UTM'], 'Create campaign')} className="rounded-xl px-3 py-2 text-xs text-white" style={{ background: brandGradient }}>New campaign</button>
+                      </div>
+                      <div className="mt-5 grid grid-cols-[1.1fr_.7fr_.7fr_.7fr_.8fr] rounded-xl bg-[var(--crm-surface)] px-4 py-3 text-[10px] uppercase tracking-wider text-[var(--crm-muted)]">
+                        <span>Source</span>
+                        <span>Leads</span>
+                        <span>Apps</span>
+                        <span>CPL</span>
+                        <span>ROI</span>
+                      </div>
+                      <div className="overflow-hidden rounded-b-xl border-x border-b border-[var(--crm-border)]">
+                        {sourceSummary.slice(0, 5).map((source, index) => (
+                          <button key={source.source} type="button" onClick={() => openOperation(`${source.source} campaign`, 'Campaign Management', ['Spend', 'Leads', 'Applications', 'ROI'], 'Open campaign')} className="grid w-full grid-cols-[1.1fr_.7fr_.7fr_.7fr_.8fr] items-center border-t border-[var(--crm-border)] px-4 py-3 text-left text-xs first:border-t-0 hover:bg-[var(--crm-surface)]">
+                            <span className="truncate">{source.source}</span>
+                            <span>{source.count}</span>
+                            <span>{Math.max(1, Math.round(source.count * 0.42))}</span>
+                            <span>Rs. {[420, 510, 390, 680, 460][index] ?? 520}</span>
+                            <span>
+                              <span className="inline-flex min-w-14 justify-center rounded-full bg-[var(--tenant-surface)] px-2 py-1 text-[10px] text-[var(--tenant-primary)]">{[3.4, 2.8, 4.1, 1.9, 3.1][index] ?? 2.6}x</span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="mt-4 grid grid-cols-3 gap-3">
+                        {['Budget used', 'Landing pages', 'Active UTM'].map((metric, index) => (
+                          <button key={metric} type="button" onClick={() => openOperation(metric, 'Campaign Management', ['Date range', 'Source', 'Budget'], 'View metric')} className="rounded-xl bg-[var(--crm-surface)] p-3 text-left">
+                            <p className="text-[10px] text-[var(--crm-muted)]">{metric}</p>
+                            <p className="mt-2 text-xl">{['64%', '7', '12'][index]}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="rounded-[24px] p-5 text-white shadow-sm" style={{ background: 'linear-gradient(145deg, var(--tenant-primary), color-mix(in srgb, var(--tenant-primary) 72%, #000))' }}>
+                    <p className="text-xs text-white/70">CRM health</p>
+                    <p className="mt-4 text-5xl">91%</p>
+                    <p className="mt-2 text-xs text-white/70">lead records with owner, follow-up, and source attribution</p>
+                    <div className="mt-6 space-y-3">
+                      {['Duplicate detection', 'Source attribution', 'Post-qualified WhatsApp'].map((item, index) => (
+                        <button key={item} type="button" onClick={() => openOperation(item, 'CRM Settings', ['Rule', 'Owner', 'Status'], 'Configure')} className="w-full rounded-2xl bg-white/12 p-3 text-left text-xs">
+                          <div className="flex justify-between"><span>{item}</span><span>{[98, 87, 100][index]}%</span></div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-[var(--tenant-primary)]">Case control</p>
+                        <h3 className="mt-1 text-lg">Archive and hold</h3>
+                      </div>
+                      <span className="rounded-full bg-red-50 px-3 py-1.5 text-[10px] text-red-600">11 open</span>
+                    </div>
+                    <div className="mt-5 grid grid-cols-4 gap-2">
+                      {[
+                        ['Prospect', 6, 'Future'],
+                        ['Deferred', 3, 'Intake'],
+                        ['On Hold', 8, 'Paused'],
+                        ['Archive', 11, 'Review'],
+                      ].map(([status, count, helper], index) => (
+                        <button
+                          key={status as string}
+                          type="button"
+                          onClick={() => openOperation(status as string, 'Archive & Hold', ['Lead', 'Reason', 'Reminder date', 'Approval'], 'Apply status')}
+                          className={`min-h-[86px] rounded-2xl px-2.5 py-3 text-left transition hover:-translate-y-0.5 ${
+                            index === 3
+                              ? 'bg-red-50 text-red-600'
+                              : 'bg-[var(--crm-surface)] text-[var(--crm-text)] hover:bg-[var(--tenant-surface)]'
+                          }`}
+                        >
+                          <span className="block text-2xl leading-none">{count as number}</span>
+                          <span className={`mt-2 block text-xs leading-tight ${index === 3 ? 'text-red-600' : 'text-[var(--crm-text)]'}`}>{status as string}</span>
+                          <span className={`mt-1 block text-[10px] ${index === 3 ? 'text-red-400' : 'text-[var(--crm-muted)]'}`}>{helper as string}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-5 flex items-center justify-between">
+                      <p className="text-xs text-[var(--crm-muted)]">Active cases</p>
+                      <button type="button" onClick={() => openOperation('Archive review queue', 'Archive & Hold', ['Status', 'Owner', 'Reason'], 'Open queue')} className="text-[10px] text-[var(--tenant-primary)]">View all</button>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {[
+                        ['Rahul Kumar', 'On Hold', 'Health issue', '15 Aug', 'bg-amber-50 text-amber-700'],
+                        ['Sneha Reddy', 'Archive review', 'Not reachable', 'Today', 'bg-red-50 text-red-600'],
+                        ['Varun Chakraborty', 'Deferred', 'Next intake', '01 Sep', 'bg-sky-50 text-sky-700'],
+                      ].map(([name, status, reason, due, tone]) => (
+                        <button key={name} type="button" onClick={() => openOperation(`${status}: ${name}`, 'Archive & Hold', ['Lead', 'Reason', 'Reminder date', 'Approval'], 'Review case')} className="grid w-full grid-cols-[1fr_auto] items-center gap-3 rounded-2xl bg-[var(--crm-surface)] p-3.5 text-left text-xs transition hover:bg-[var(--tenant-surface)]">
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm">{name}</span>
+                            <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-[var(--crm-muted)]">
+                              <span className="truncate">{status}</span>
+                              <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--crm-muted)]/50" />
+                              <span className="truncate">{reason}</span>
+                            </span>
+                          </span>
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] ${tone}`}>{due}</span>
                         </button>
                       ))}
                     </div>
