@@ -1,0 +1,672 @@
+{
+  "moduleKey": "attendance",
+  "source": "docs/workflows/Attendance_Management_Workflow.md",
+  "deliveryTargets": [
+    "flutter-student-app",
+    "flutter-parent-app",
+    "flutter-staff-app",
+    "web-admin",
+    "web-staff"
+  ],
+  "overview": "The Attendance Management module automates attendance tracking across multiple methods (Manual, QR Code, Biometric, Geo-Fencing), validates leaves and on-duty requests, detects shortages, sends alerts, and provides AI-driven attendance insights.",
+  "navigation": [
+    "Student Attendance",
+    "Staff Attendance",
+    "Attendance Entry / Marking",
+    "Leave & On-Duty",
+    "Attendance Corrections",
+    "AI Attendance Insights",
+    "Attendance Shortage Alerts",
+    "Absence Alerts",
+    "Campus Geo Fencing",
+    "Reports"
+  ],
+  "workflows": [
+    {
+      "id": "configure-attendance",
+      "moduleKey": "attendance",
+      "name": "Configure Attendance",
+      "summary": "Choose the active academic year",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Academic Year",
+          "description": "Choose the active academic year",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Semester",
+          "description": "Pick the current semester",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Select Department / Programme",
+          "description": "Specify the academic unit",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Select Batch / Section",
+          "description": "Target the student group",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Configure Attendance Settings",
+          "description": "Working Days, Class Timings, Periods, Breaks, Attendance Type",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Configure Attendance Rules",
+          "description": "Minimum %, Late Entry Rules, Grace Period, Half-Day Rules, Absent Rules, Holiday Calendar",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Configure Leave & On-Duty Rules",
+          "description": "Sick Leave, Medical Leave, On-Duty, Sports, NSS/NCC, Industrial Visit",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Configure Attendance Methods",
+          "description": "Manual, QR Code, RFID, Biometric, Face Recognition, Geo-Fencing",
+          "type": "report",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-9",
+          "order": 9,
+          "title": "Configure Notifications & Alerts",
+          "description": "Daily Absence Alert, Shortage Alert, Parent Notification, Faculty Notification, HOD Escalation",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-10",
+          "order": 10,
+          "title": "Preview Configuration",
+          "description": "Review all settings before activation",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-11",
+          "order": 11,
+          "title": "Save & Activate",
+          "description": "Enable attendance for the academic year",
+          "type": "action",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mark-attendance",
+      "moduleKey": "attendance",
+      "name": "Mark Attendance",
+      "summary": "Select Academic Year",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Academic Year",
+          "description": "Select Academic Year",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Semester",
+          "description": "Select Semester",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Select Department / Batch",
+          "description": "Select Department / Batch",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Select Subject / Period",
+          "description": "Select Subject / Period",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Choose Attendance Method",
+          "description": "Choose Attendance Method",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Manual QR Biometric Geo Fence",
+          "description": "Manual QR Biometric Geo Fence",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Mark Present / Absent",
+          "description": "Mark Present / Absent",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Validate Attendance Data",
+          "description": "Validate Attendance Data",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-9",
+          "order": 9,
+          "title": "Save Attendance",
+          "description": "Save Attendance",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-10",
+          "order": 10,
+          "title": "Attendance Available for Review",
+          "description": "Attendance Available for Review",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "process-exceptions",
+      "moduleKey": "attendance",
+      "name": "Process Exceptions",
+      "summary": "Student or staff submits an exception",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Exception Request Raised",
+          "description": "Student or staff submits an exception",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Exception Type",
+          "description": "Leave / On-Duty / Attendance Correction",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Upload Supporting Document",
+          "description": "Attach proof (medical certificate, approval letter, etc.)",
+          "type": "approval",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Faculty / HOD Approval",
+          "description": "Request routed for approval",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Approved → Update Attendance",
+          "description": "Record adjusted in the system",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Rejected → Notify Student",
+          "description": "Student informed with reason",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Attendance Record Updated",
+          "description": "Final record reflects the exception",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "attendance-processing",
+      "moduleKey": "attendance",
+      "name": "Attendance Processing",
+      "summary": "Collect Daily Attendance Data",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Collect Daily Attendance Data",
+          "description": "Collect Daily Attendance Data",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Apply Leave & On-Duty Rules",
+          "description": "Apply Leave & On-Duty Rules",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Apply Attendance Policies",
+          "description": "Apply Attendance Policies",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Calculate Subject-wise Attendance",
+          "description": "Calculate Subject-wise Attendance",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Calculate Overall Attendance %",
+          "description": "Calculate Overall Attendance %",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Generate Attendance Summary",
+          "description": "Generate Attendance Summary",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Store Attendance Records",
+          "description": "Store Attendance Records",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ai-attendance-insights",
+      "moduleKey": "attendance",
+      "name": "AI Attendance Insights",
+      "summary": "System ingests all attendance data",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Read Attendance Database",
+          "description": "System ingests all attendance data",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Analyze Attendance Patterns",
+          "description": "Detect trends and anomalies",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Frequent Absentees",
+          "description": "Identify students with chronic absence",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Low Attendance Students",
+          "description": "Flag students below threshold",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Attendance Trend Analysis",
+          "description": "Track semester-wise patterns",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Predict Attendance Risk",
+          "description": "Forecast potential dropouts",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Generate AI Recommendations",
+          "description": "Suggest interventions",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Show Dashboard & Action Items",
+          "description": "Present insights to faculty and admin",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alerts",
+      "moduleKey": "attendance",
+      "name": "Alerts",
+      "summary": "Attendance Processing Completed",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Attendance Processing Completed",
+          "description": "Attendance Processing Completed",
+          "type": "action",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Check Attendance Threshold Rules",
+          "description": "Check Attendance Threshold Rules",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Attendance OK Attendance Below Limit",
+          "description": "Attendance OK Attendance Below Limit",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "No Action Generate Alerts",
+          "description": "No Action Generate Alerts",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Student Parent Faculty / Mentor",
+          "description": "Student Parent Faculty / Mentor",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Escalate to HOD",
+          "description": "Escalate to HOD",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Alert History Saved",
+          "description": "Alert History Saved",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reports",
+      "moduleKey": "attendance",
+      "name": "Reports",
+      "summary": "Define report scope",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Report Criteria",
+          "description": "Define report scope",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Academic Year / Semester / Department",
+          "description": "Filter by academic parameters",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Select Student / Faculty / Subject",
+          "description": "Target specific entities",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Generate Attendance Report",
+          "description": "Compile the data",
+          "type": "report",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Choose Report Type",
+          "description": "Daily / Monthly / Semester",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Export PDF / Excel / CSV",
+          "description": "Download in preferred format",
+          "type": "integration",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Share / Print Report",
+          "description": "Distribute as needed",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    }
+  ]
+}

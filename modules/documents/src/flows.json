@@ -1,0 +1,388 @@
+{
+  "moduleKey": "documents",
+  "source": "docs/workflows/Document_Management_Workflow.md",
+  "deliveryTargets": [
+    "flutter-student-app",
+    "flutter-parent-app",
+    "flutter-staff-app",
+    "web-admin",
+    "web-staff"
+  ],
+  "overview": "The Document Management module provides a comprehensive system for organizing, storing, validating, and tracking institutional documents across students, faculty, staff, and the institution itself.",
+  "navigation": [
+    "Document Repository",
+    "Upload Documents",
+    "Document Categories",
+    "Document Verification",
+    "Expiry & Renewal Tracker",
+    "Archive",
+    "Delete Documents",
+    "Notifications",
+    "Reports"
+  ],
+  "workflows": [
+    {
+      "id": "configure-document-categories",
+      "moduleKey": "documents",
+      "name": "Configure Document Categories",
+      "summary": "Define a new document category",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Create Category",
+          "description": "Define a new document category",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Applicable Users",
+          "description": "Choose from: Student / Faculty / Staff / Institution",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Define Mandatory / Optional",
+          "description": "Set whether the document is required or optional",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Set Expiry Required?",
+          "description": "Determine if the document has an expiration date",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Set Renewal Period",
+          "description": "Define how often the document must be renewed",
+          "type": "update",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Save Category",
+          "description": "Store the category configuration",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-repository-upload-and-delete",
+      "moduleKey": "documents",
+      "name": "Document Repository (Upload & Delete)",
+      "summary": "Choose the user (student/faculty/staff)",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select User",
+          "description": "Choose the user (student/faculty/staff)",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Document Category",
+          "description": "Pick the relevant category",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Upload Document",
+          "description": "Supported formats: PDF / Image / DOC",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Enter Metadata",
+          "description": "Name • Number • Issue Date • Expiry Date",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Validate Upload",
+          "description": "System checks for completeness and format",
+          "type": "create",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Store Securely",
+          "description": "Document is saved in the repository",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Manage Document",
+          "description": "View / Download / Replace / Delete",
+          "type": "delete",
+          "crud": [
+            "delete"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-categories-workflow",
+      "moduleKey": "documents",
+      "name": "Document Categories Workflow",
+      "summary": "Create Category",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Create Category",
+          "description": "Create Category",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Assign Department",
+          "description": "Assign Department",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Assign User Type",
+          "description": "Assign User Type",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Mandatory?",
+          "description": "Mandatory?",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Requires Expiry?",
+          "description": "Requires Expiry?",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Save",
+          "description": "Save",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "expiry-and-renewal-tracker",
+      "moduleKey": "documents",
+      "name": "Expiry & Renewal Tracker",
+      "summary": "Total count of all documents in the system",
+      "steps": [
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Total Documents",
+          "description": "Total count of all documents in the system",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Uploaded Today",
+          "description": "Documents uploaded in the current day",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Pending Verification",
+          "description": "Documents awaiting validation",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Expiring Soon",
+          "description": "Documents approaching expiration",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Expired Documents",
+          "description": "Documents that have already expired",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Renewal Requests",
+          "description": "Active renewal requests in progress",
+          "type": "update",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Storage Usage",
+          "description": "Current storage consumption",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-10",
+          "order": 10,
+          "title": "Categorization",
+          "description": "Organize documents by type and user role",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-11",
+          "order": 11,
+          "title": "Secure Storage",
+          "description": "Encrypted repository with access control",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-12",
+          "order": 12,
+          "title": "Expiry Tracking",
+          "description": "Automatic monitoring of document expiration",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-13",
+          "order": 13,
+          "title": "Renewal Alerts",
+          "description": "Proactive notifications before expiry",
+          "type": "notification",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-14",
+          "order": 14,
+          "title": "Version Control",
+          "description": "Archive previous versions upon renewal",
+          "type": "delete",
+          "crud": [
+            "delete"
+          ]
+        },
+        {
+          "id": "step-15",
+          "order": 15,
+          "title": "Analytics",
+          "description": "Reports and insights on document usage",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "repairs-maintenance",
+    "name":  "Repairs \u0026 Maintenance",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "repairs-maintenance.read",
+                        "repairs-maintenance.create",
+                        "repairs-maintenance.update",
+                        "repairs-maintenance.delete",
+                        "repairs-maintenance.configure",
+                        "repairs-maintenance.reports.read"
+                    ],
+    "capabilities":  [
+                         "tickets",
+                         "assets",
+                         "assignments",
+                         "vendors",
+                         "reports"
+                     ]
+}

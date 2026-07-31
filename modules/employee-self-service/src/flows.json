@@ -1,0 +1,1062 @@
+{
+  "moduleKey": "employee-self-service",
+  "source": "docs/workflows/Employee_Self_Service_Workflow.md",
+  "deliveryTargets": [
+    "flutter-staff-app",
+    "web-staff",
+    "web-admin"
+  ],
+  "overview": "The Employee Self Service module empowers faculty and staff to manage their profiles, academic responsibilities, administrative tasks, research activities, and performance metrics through a unified self-service portal.",
+  "navigation": [
+    "Profile",
+    "Workload",
+    "Performance",
+    "Research",
+    "Publications",
+    "Timetable",
+    "Attendance",
+    "Payroll Inputs",
+    "Research Project Tracking",
+    "Publication Records",
+    "Marks",
+    "Leave",
+    "Communication",
+    "Class Notes",
+    "Wall",
+    "AI Insights",
+    "Notifications",
+    "Reports & Analytics"
+  ],
+  "workflows": [
+    {
+      "id": "profile",
+      "moduleKey": "employee-self-service",
+      "name": "Profile",
+      "summary": "Authenticate into portal",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Employee Login",
+          "description": "Authenticate into portal",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "View Employee Profile",
+          "description": "Personal and professional details",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Personal Info • Contact Details • Qualification",
+          "description": "Sections",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Update Editable Details",
+          "description": "Modify allowed fields",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Upload Documents (Optional)",
+          "description": "Attach certificates",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Submit for Verification",
+          "description": "Route for approval",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Approved → Profile Updated",
+          "description": "Changes saved",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Needs Revision → Notify Employee",
+          "description": "Request corrections",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "workload",
+      "moduleKey": "employee-self-service",
+      "name": "Workload",
+      "summary": "Load Faculty Profile",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Load Faculty Profile",
+          "description": "Load Faculty Profile",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Fetch Assigned Subjects",
+          "description": "Fetch Assigned Subjects",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "View Teaching & Non-Teaching Load",
+          "description": "View Teaching & Non-Teaching Load",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Teaching Administrative Research",
+          "description": "Teaching Administrative Research",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "AI Workload Distribution",
+          "description": "AI Workload Distribution",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Workload Summary Displayed",
+          "description": "Workload Summary Displayed",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "performance",
+      "moduleKey": "employee-self-service",
+      "name": "Performance",
+      "summary": "Aggregate metrics",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Collect Performance Data",
+          "description": "Aggregate metrics",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Teaching • Research • Service",
+          "description": "Dimensions",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Student Feedback Integrated",
+          "description": "Survey results",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "KPI & Performance Calculation",
+          "description": "Score computation",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "AI Performance Insights",
+          "description": "Trend analysis",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Performance Dashboard",
+          "description": "Visual summary",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "research",
+      "moduleKey": "employee-self-service",
+      "name": "Research",
+      "summary": "Create Research Activity",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Create Research Activity",
+          "description": "Create Research Activity",
+          "type": "create",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Enter Research Project Details",
+          "description": "Enter Research Project Details",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Upload Proposal / Documents",
+          "description": "Upload Proposal / Documents",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Submit for Approval (If Required)",
+          "description": "Submit for Approval (If Required)",
+          "type": "approval",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Track Research Progress",
+          "description": "Track Research Progress",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Research Status Updated",
+          "description": "Research Status Updated",
+          "type": "update",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "publications",
+      "moduleKey": "employee-self-service",
+      "name": "Publications",
+      "summary": "Log new publication",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Add Publication Record",
+          "description": "Log new publication",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Enter Publication Information",
+          "description": "Title, journal, date",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Upload DOI / Journal Details",
+          "description": "Attach proof",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Verify Publication Details",
+          "description": "Admin check",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Publication Repository Updated",
+          "description": "Record saved",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "timetable",
+      "moduleKey": "employee-self-service",
+      "name": "Timetable",
+      "summary": "Load Faculty Schedule",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Load Faculty Schedule",
+          "description": "Load Faculty Schedule",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "View Weekly Timetable",
+          "description": "View Weekly Timetable",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Lecture Practical Tutorial",
+          "description": "Lecture Practical Tutorial",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Room & Time Information",
+          "description": "Room & Time Information",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Timetable Available",
+          "description": "Timetable Available",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "attendance",
+      "moduleKey": "employee-self-service",
+      "name": "Attendance",
+      "summary": "Target group",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Class / Subject",
+          "description": "Target group",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "View Student Attendance List",
+          "description": "Class roster",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Mark Present / Absent",
+          "description": "Record attendance",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Validate Attendance",
+          "description": "Check for errors",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Save Attendance Record",
+          "description": "Store in system",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Attendance Available for Reports",
+          "description": "Generate reports",
+          "type": "report",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "payroll-inputs",
+      "moduleKey": "employee-self-service",
+      "name": "Payroll Inputs",
+      "summary": "View Payroll Information",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "View Payroll Information",
+          "description": "View Payroll Information",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Submit Payroll Related Inputs",
+          "description": "Submit Payroll Related Inputs",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Extra Hours Allowances Deductions",
+          "description": "Extra Hours Allowances Deductions",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Submit for Approval",
+          "description": "Submit for Approval",
+          "type": "approval",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Approved Rejected",
+          "description": "Approved Rejected",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Payroll Updated Notify Employee",
+          "description": "Payroll Updated Notify Employee",
+          "type": "notification",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "research-project-tracking",
+      "moduleKey": "employee-self-service",
+      "name": "Research Project Tracking",
+      "summary": "Choose active project",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Research Project",
+          "description": "Choose active project",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "View Project Milestones",
+          "description": "Check progress",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Update Progress & Activities",
+          "description": "Log achievements",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Upload Progress Documents",
+          "description": "Attach evidence",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Review Project Status",
+          "description": "Overall health",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Project Progress Dashboard",
+          "description": "Visual tracking",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "publication-records",
+      "moduleKey": "employee-self-service",
+      "name": "Publication Records",
+      "summary": "Retrieve Publication History",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Retrieve Publication History",
+          "description": "Retrieve Publication History",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Filter by Year / Category",
+          "description": "Filter by Year / Category",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "View Publication Details",
+          "description": "View Publication Details",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Export Publication Records",
+          "description": "Export Publication Records",
+          "type": "integration",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leave",
+      "moduleKey": "employee-self-service",
+      "name": "Leave",
+      "summary": "Initiate application",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Apply Leave Request",
+          "description": "Initiate application",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Leave Type & Dates",
+          "description": "Specify details",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Upload Supporting Document",
+          "description": "Attach proof",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Submit for Approval",
+          "description": "Route to approver",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Approved → Leave Balance Updated",
+          "description": "Confirm",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Rejected → Notify Employee",
+          "description": "Communicate reason",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "communication",
+      "moduleKey": "employee-self-service",
+      "name": "Communication",
+      "summary": "Open Communication Hub",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Open Communication Hub",
+          "description": "Open Communication Hub",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Recipient / Group",
+          "description": "Select Recipient / Group",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Compose Message / Announcement",
+          "description": "Compose Message / Announcement",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Attach Files (Optional)",
+          "description": "Attach Files (Optional)",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Send Message",
+          "description": "Send Message",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Delivery & Read Status Updated",
+          "description": "Delivery & Read Status Updated",
+          "type": "update",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "class-notes",
+      "moduleKey": "employee-self-service",
+      "name": "Class Notes",
+      "summary": "Target group",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Subject / Class",
+          "description": "Target group",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Create Lecture Notes",
+          "description": "Draft content",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Upload Files / Resources",
+          "description": "Attach materials",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Publish to Students",
+          "description": "Make available",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Students Access Notes",
+          "description": "Self-service retrieval",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall",
+      "moduleKey": "employee-self-service",
+      "name": "Wall",
+      "summary": "Personal, contact, and qualification management with verification",
+      "steps": [
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Profile",
+          "description": "Personal, contact, and qualification management with verification",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Workload",
+          "description": "Teaching, administrative, and research load with AI distribution",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Performance",
+          "description": "Multi-dimensional KPIs with student feedback integration",
+          "type": "integration",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Research",
+          "description": "Project creation, tracking, and status updates",
+          "type": "update",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Publications",
+          "description": "DOI-linked publication repository with export",
+          "type": "integration",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Timetable",
+          "description": "Weekly schedule with lecture, practical, and tutorial details",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Attendance",
+          "description": "Class-wise student attendance marking and validation",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-9",
+          "order": 9,
+          "title": "Payroll Inputs",
+          "description": "Extra hours, allowances, and deductions with approval",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-10",
+          "order": 10,
+          "title": "Research Tracking",
+          "description": "Milestone-based project progress with document uploads",
+          "type": "create",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-11",
+          "order": 11,
+          "title": "Leave",
+          "description": "Multi-type leave application with balance tracking",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-12",
+          "order": 12,
+          "title": "Communication",
+          "description": "Hub-based messaging with delivery and read receipts",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-13",
+          "order": 13,
+          "title": "Class Notes",
+          "description": "Lecture notes and resource publishing to students",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-14",
+          "order": 14,
+          "title": "Wall",
+          "description": "Faculty social feed for announcements and collaboration",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-15",
+          "order": 15,
+          "title": "AI Insights",
+          "description": "Performance and workload analytics",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+﻿# Alumni Management configuration
+

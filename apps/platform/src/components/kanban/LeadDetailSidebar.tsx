@@ -1,47 +1,117 @@
 'use client';
 
-import React, { useState } from 'react';
-import type { Lead, Communication } from '@/lib/kanban/kanban-data';
+import React, { useMemo, useState } from 'react';
+import type { Lead, OfferDecision, Communication } from '@/lib/kanban/kanban-data';
 import { COLUMNS } from '@/lib/kanban/kanban-data';
-import { X, Phone, Mail, MessageSquare, Calendar, Paperclip, Edit3, Archive, Send, ChevronDown, Clock, User, FileText } from 'lucide-react';
+import { X, Phone, Mail, MessageSquare, Calendar, Send, User, FileText, Save, Pencil, History, Smartphone } from 'lucide-react';
 
 interface LeadDetailSidebarProps {
   lead: Lead;
   onClose: () => void;
-  onArchive: (lead: Lead) => void;
-  onMove: (lead: Lead, to: string) => void;
+  onOfferDecision: (lead: Lead, decision: OfferDecision) => void;
+  onUpdate: (leadId: string, updates: Partial<Lead>) => void;
 }
 
-export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: LeadDetailSidebarProps) {
-  const [activeTab, setActiveTab] = useState<'all' | 'moves' | 'calls' | 'notes' | 'documents'>('all');
-  const [commTab, setCommTab] = useState<'calls' | 'emails' | 'sms' | 'whatsapp' | 'notes'>('calls');
+type EditDraft = Pick<Lead, 'name' | 'phone' | 'email' | 'course' | 'intake' | 'city'> & {
+  assignedToName: string;
+  parentName: string;
+  parentPhone: string;
+  parentRelation: string;
+};
 
-  const priorityLabel = lead.priority.charAt(0).toUpperCase() + lead.priority.slice(1);
-  const priorityColor = lead.priority === 'hot' ? '#ff005c' : lead.priority === 'warm' ? '#de6cf5' : '#776cf5';
+const cleanPhone = (phone: string) => phone.replace(/[^0-9]/g, '');
+
+export default function LeadDetailSidebar({ lead, onClose, onOfferDecision, onUpdate }: LeadDetailSidebarProps) {
+  const [activeTab, setActiveTab] = useState<'all' | 'moves' | 'notes'>('all');
+  const [commTab, setCommTab] = useState<'call' | 'email' | 'sms' | 'whatsapp' | 'note'>('call');
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState<EditDraft>(() => ({
+    name: lead.name,
+    phone: lead.phone,
+    email: lead.email,
+    course: lead.course,
+    intake: lead.intake,
+    city: lead.city,
+    assignedToName: lead.assignedTo.name,
+    parentName: lead.parent.name,
+    parentPhone: lead.parent.phone,
+    parentRelation: lead.parent.relation,
+  }));
 
   const currentColumn = COLUMNS.find((c) => c.id === lead.status);
+  const visibleActivity = useMemo(() => {
+    const entries = [...lead.moveHistory].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    if (activeTab === 'moves') return entries.filter((entry) => entry.from);
+    if (activeTab === 'notes') return entries.filter((entry) => entry.note);
+    return entries;
+  }, [activeTab, lead.moveHistory]);
 
-  const activityFeed = [...lead.moveHistory]
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    .slice(0, 10);
+  const communications = lead.communications ?? [];
+  const visibleCommunications = communications.filter((item) => item.type === commTab).slice(0, 4);
 
-  const priorityClasses = {
-    hot: 'bg-[#ff005c]/10 text-[#ff005c] border-[#ff005c]',
-    warm: 'bg-[#de6cf5]/10 text-[#de6cf5] border-[#de6cf5]',
-    cold: 'bg-[#776cf5]/10 text-[#776cf5] border-[#776cf5]',
-  };
+  const offerOptions: { id: OfferDecision; label: string; className: string }[] = [
+    { id: 'accepted', label: 'Accepted', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    { id: 'rejected', label: 'Rejected', className: 'bg-red-50 text-red-700 border-red-200' },
+    { id: 'on-hold', label: 'On Hold', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+    { id: 'pending', label: 'Pending', className: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  ];
+
+  const formatStage = (stage: string) => COLUMNS.find((c) => c.id === stage)?.title ?? stage;
+
+  function handleDraftChange(field: keyof EditDraft, value: string) {
+    setDraft((current) => ({ ...current, [field]: value }));
+  }
+
+  function handleSaveLead() {
+    const nextName = draft.name.trim() || lead.name;
+    onUpdate(lead.id, {
+      name: nextName,
+      initials: nextName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(),
+      phone: draft.phone.trim(),
+      email: draft.email.trim(),
+      course: draft.course.trim(),
+      intake: draft.intake.trim(),
+      city: draft.city.trim(),
+      assignedTo: { ...lead.assignedTo, name: draft.assignedToName.trim() || lead.assignedTo.name },
+      parent: {
+        name: draft.parentName.trim(),
+        phone: draft.parentPhone.trim(),
+        relation: draft.parentRelation.trim() || 'Parent',
+      },
+      lastContact: 'just now',
+    });
+    setIsEditing(false);
+  }
+
+  function logCommunication(type: Communication['type'], subject: string, summary: string) {
+    const entry: Communication = {
+      id: `c-${Date.now()}`,
+      type,
+      direction: 'outbound',
+      subject,
+      summary,
+      by: 'current-user',
+      byName: 'Admission Team',
+      timestamp: new Date().toISOString(),
+      duration: type === 'call' ? 'Direct call' : undefined,
+    };
+
+    onUpdate(lead.id, {
+      communications: [entry, ...communications],
+      communicationCount: lead.communicationCount + 1,
+      lastContact: 'just now',
+    });
+    setCommTab(type);
+  }
 
   return (
     <>
-      {/* Overlay */}
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100]" onClick={onClose} />
 
-      {/* Sidebar */}
       <aside
-        className="fixed right-0 top-0 h-full w-[420px] bg-[var(--crm-surface)] border-l border-[var(--crm-border)] z-[110] shadow-2xl flex flex-col overflow-hidden animate-slide-in"
+        className="fixed right-0 top-0 h-full w-[440px] bg-[var(--crm-surface)] border-l border-[var(--crm-border)] z-[110] shadow-2xl flex flex-col overflow-hidden animate-slide-in"
         style={{ animation: 'slideIn 0.25s ease-out' }}
       >
-        {/* Header */}
         <div className="px-5 py-4 border-b border-[var(--crm-border)] flex items-center justify-between shrink-0">
           <div>
             <h3 className="font-semibold text-[var(--crm-text)] text-sm">Lead Details</h3>
@@ -52,24 +122,17 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
           </button>
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
-          {/* Profile section */}
-          <div className="flex items-center gap-4">
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5 kanban-scroll-hidden">
+          <div className="flex items-start gap-4">
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shrink-0"
-              style={{ background: 'linear-gradient(135deg, #1400ff, #a600ff)' }}
+              style={{ background: 'var(--primary-grad)' }}
             >
               {lead.initials}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h2 className="text-lg font-bold text-[var(--crm-text)]">{lead.name}</h2>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${priorityClasses[lead.priority]}`}>
-                  {priorityLabel}
-                </span>
-                <span className="text-xs text-[var(--crm-muted)]">{lead.course} | {lead.intake}</span>
-              </div>
+              <p className="text-xs text-[var(--crm-muted)] mt-0.5">{lead.course} | {lead.intake}</p>
               {currentColumn && (
                 <div className="flex items-center gap-1.5 mt-1">
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentColumn.accent }} />
@@ -77,28 +140,93 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
                 </div>
               )}
             </div>
+            <button
+              type="button"
+              onClick={() => setIsEditing((editing) => !editing)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] text-[11px] font-bold text-[var(--crm-muted)] hover:text-[var(--crm-text)]"
+            >
+              <Pencil size={12} />
+              Edit
+            </button>
           </div>
 
-          {/* Action buttons */}
+          {isEditing && (
+            <div className="bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-4">
+              <h4 className="text-xs font-bold text-[var(--crm-muted)] uppercase tracking-wider mb-3">Edit Lead Data</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  ['name', 'Student name'],
+                  ['phone', 'Phone'],
+                  ['email', 'Email'],
+                  ['course', 'Course'],
+                  ['intake', 'Intake'],
+                  ['city', 'City'],
+                  ['assignedToName', 'Assigned to'],
+                  ['parentName', 'Parent name'],
+                  ['parentPhone', 'Parent phone'],
+                  ['parentRelation', 'Relation'],
+                ].map(([field, label]) => (
+                  <label key={field} className="block">
+                    <span className="block text-[10px] font-bold uppercase text-[var(--crm-muted)] mb-1">{label}</span>
+                    <input
+                      value={draft[field as keyof EditDraft]}
+                      onChange={(event) => handleDraftChange(field as keyof EditDraft, event.target.value)}
+                      className="w-full px-2.5 py-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] text-xs text-[var(--crm-text)] outline-none focus:ring-2 focus:ring-[var(--crm-soft-blue)]/25"
+                    />
+                  </label>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveLead}
+                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white"
+                style={{ background: 'var(--primary-grad)' }}
+              >
+                <Save size={14} />
+                Save lead data
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-2">
-            <button className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-white transition-all hover:opacity-90 active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #1400ff, #a600ff)' }}
-              onClick={() => onMove(lead, 'contact-attempted')}
+            <a
+              href={`tel:${lead.phone}`}
+              onClick={() => logCommunication('call', 'Direct call started', `Called ${lead.name} on ${lead.phone}`)}
+              className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-white transition-all hover:opacity-90 active:scale-95"
+              style={{ background: 'var(--primary-grad)' }}
             >
               <Phone size={14} /> Call
-            </button>
-            <button className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-[var(--crm-text)] bg-[var(--crm-surface-container)] hover:bg-[var(--crm-panel)] border border-[var(--crm-border)] transition-colors">
+            </a>
+            <a href={`mailto:${lead.email}`} onClick={() => logCommunication('email', 'Email opened', `Opened email composer for ${lead.email}`)} className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-[var(--crm-text)] bg-[var(--crm-surface-container)] hover:bg-[var(--crm-panel)] border border-[var(--crm-border)] transition-colors">
               <Mail size={14} /> Email
-            </button>
-            <button
-              onClick={() => onArchive(lead)}
-              className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-[var(--crm-muted)] bg-[var(--crm-panel)] hover:bg-red-50 hover:text-[var(--crm-danger)] transition-colors"
-            >
-              <Archive size={14} /> Archive
-            </button>
+            </a>
+            <a href={`https://wa.me/${cleanPhone(lead.phone)}`} target="_blank" rel="noopener noreferrer" onClick={() => logCommunication('whatsapp', 'WhatsApp opened', `Opened WhatsApp chat with ${lead.name}`)} className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-[var(--crm-text)] bg-[var(--crm-surface-container)] hover:bg-[var(--crm-panel)] border border-[var(--crm-border)] transition-colors">
+              <MessageSquare size={14} /> WhatsApp
+            </a>
           </div>
 
-          {/* Contact info */}
+          {lead.status === 'offer-status' && (
+            <div className="bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-4">
+              <h4 className="text-xs font-bold text-[var(--crm-muted)] uppercase tracking-wider mb-3">Offer Status</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {offerOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => onOfferDecision(lead, option.id)}
+                    className={`px-2.5 py-2 rounded-lg border text-[11px] font-bold transition-all ${
+                      (lead.offerDecision ?? 'pending') === option.id
+                        ? option.className
+                        : 'bg-[var(--crm-surface)] text-[var(--crm-muted)] border-[var(--crm-border)] hover:text-[var(--crm-text)]'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-4">
             <h4 className="text-xs font-bold text-[var(--crm-muted)] uppercase tracking-wider mb-3">Contact</h4>
             <div className="flex flex-col gap-2.5">
@@ -111,12 +239,11 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
                 <a href={`mailto:${lead.email}`} className="hover:text-[var(--crm-soft-blue)] truncate transition-colors">{lead.email}</a>
               </div>
               <div className="flex items-center gap-2.5 text-sm text-[var(--crm-text)]">
-                <MessageSquare size={14} className="text-[var(--crm-muted)] shrink-0" />
-                <a href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-green-500 transition-colors">WhatsApp</a>
+                <Smartphone size={14} className="text-[var(--crm-muted)] shrink-0" />
+                <a href={`sms:${lead.phone}`} onClick={() => logCommunication('sms', 'SMS opened', `Opened SMS composer for ${lead.phone}`)} className="hover:text-[var(--crm-soft-blue)] transition-colors">Send SMS</a>
               </div>
             </div>
 
-            {/* Parent info */}
             {lead.parent.name && (
               <div className="mt-4 pt-3 border-t border-[var(--crm-border)]">
                 <div className="flex items-center gap-2 text-xs text-[var(--crm-muted)] mb-1">
@@ -124,12 +251,11 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
                   <span className="font-semibold">{lead.parent.relation}</span>
                 </div>
                 <p className="text-sm font-medium text-[var(--crm-text)]">{lead.parent.name}</p>
-                <p className="text-xs text-[var(--crm-muted)]">{lead.parent.phone}</p>
+                <a href={`tel:${lead.parent.phone}`} className="text-xs text-[var(--crm-muted)] hover:text-[var(--crm-soft-blue)]">{lead.parent.phone}</a>
               </div>
             )}
           </div>
 
-          {/* Documents */}
           <div className="bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-xs font-bold text-[var(--crm-muted)] uppercase tracking-wider">Documents</h4>
@@ -137,13 +263,12 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
                 {lead.documents.uploaded}/{lead.documents.required}
               </span>
             </div>
-            {/* Progress bar */}
             <div className="h-1.5 rounded-full bg-[var(--crm-panel)] mb-3 overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${(lead.documents.uploaded / Math.max(lead.documents.required, 1)) * 100}%`,
-                  background: 'linear-gradient(90deg, #1400ff, #a600ff)',
+                  background: 'linear-gradient(90deg, var(--tenant-primary), var(--tenant-secondary))',
                 }}
               />
             </div>
@@ -166,13 +291,14 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
             </div>
           </div>
 
-          {/* Activity History */}
           <div className="bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-4">
-            <h4 className="text-xs font-bold text-[var(--crm-muted)] uppercase tracking-wider mb-3">Activity History</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-bold text-[var(--crm-muted)] uppercase tracking-wider">Activity History</h4>
+              <History size={14} className="text-[var(--crm-muted)]" />
+            </div>
 
-            {/* Filter tabs */}
-            <div className="flex gap-1 mb-3 overflow-x-auto">
-              {(['all', 'moves', 'calls', 'notes', 'documents'] as const).map((tab) => (
+            <div className="flex gap-1 mb-4 overflow-x-auto kanban-scroll-hidden">
+              {(['all', 'moves', 'notes'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -187,32 +313,32 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
               ))}
             </div>
 
-            {/* Timeline */}
-            <div className="relative pl-5 before:absolute before:left-[7px] before:top-1 before:bottom-1 before:w-[1.5px] before:bg-[var(--crm-border)]">
-              {activityFeed.length === 0 ? (
+            <div className="space-y-3">
+              {visibleActivity.length === 0 ? (
                 <p className="text-xs text-[var(--crm-muted)] py-2">No activity recorded yet.</p>
               ) : (
-                activityFeed.map((entry, i) => {
-                  const dotColor = entry.to === 'archived' ? '#ff005c' : entry.from ? '#776cf5' : '#10b981';
-                  const icon = entry.to === 'archived' ? Archive : entry.from ? ChevronDown : Plus;
-                  const Icon = icon;
+                visibleActivity.map((entry) => {
+                  const isMove = Boolean(entry.from);
                   return (
-                    <div key={entry.id} className="relative pb-4 last:pb-0">
-                      <div
-                        className="absolute left-[-15px] top-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                        style={{ borderColor: dotColor, backgroundColor: 'var(--crm-card)' }}
-                      >
-                        <Icon size={8} style={{ color: dotColor }} />
+                    <div key={entry.id} className="grid grid-cols-[22px_1fr] gap-3">
+                      <div className="relative flex justify-center">
+                        <span className="absolute top-6 bottom-[-12px] w-px bg-[var(--crm-border)] last:hidden" />
+                        <span className="relative z-10 w-5 h-5 rounded-full border-2 bg-[var(--crm-card)] flex items-center justify-center" style={{ borderColor: isMove ? '#776cf5' : '#10b981' }}>
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isMove ? '#776cf5' : '#10b981' }} />
+                        </span>
                       </div>
-                      <p className="text-xs font-semibold text-[var(--crm-text)]">
-                        {entry.from ? `${entry.from.charAt(0).toUpperCase() + entry.from.slice(1)} → ${entry.to.charAt(0).toUpperCase() + entry.to.slice(1)}` : `Added to pipeline`}
-                      </p>
-                      {entry.note && (
-                        <p className="text-[11px] text-[var(--crm-muted)] mt-0.5">{entry.note}</p>
-                      )}
-                      <p className="text-[10px] text-[var(--crm-muted)] mt-0.5 font-medium">
-                        {entry.byName} · {new Date(entry.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                      <div className="min-w-0 pb-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-xs font-bold text-[var(--crm-text)]">
+                            {isMove ? `${formatStage(entry.from)} to ${formatStage(entry.to)}` : 'Added to pipeline'}
+                          </p>
+                          <span className="shrink-0 text-[10px] text-[var(--crm-muted)] font-semibold">
+                            {new Date(entry.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                        {entry.note && <p className="text-[11px] text-[var(--crm-muted)] mt-1 leading-relaxed">{entry.note}</p>}
+                        <p className="text-[10px] text-[var(--crm-muted)] mt-1 font-medium">{entry.byName}</p>
+                      </div>
                     </div>
                   );
                 })
@@ -220,20 +346,24 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
             </div>
           </div>
 
-          {/* Communication */}
           <div className="bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-xs font-bold text-[var(--crm-muted)] uppercase tracking-wider">Communication</h4>
-              <button className="text-xs font-semibold text-[var(--crm-soft-blue)] hover:underline">+ Log Activity</button>
+              <button
+                type="button"
+                onClick={() => logCommunication('note', 'Manual note added', 'Follow-up note added from lead sidebar')}
+                className="text-xs font-semibold text-[var(--crm-soft-blue)] hover:underline"
+              >
+                Log note
+              </button>
             </div>
 
-            {/* Comm tabs */}
-            <div className="flex gap-1 mb-3 overflow-x-auto">
-              {(['calls', 'emails', 'sms', 'whatsapp', 'notes'] as const).map((tab) => (
+            <div className="grid grid-cols-5 gap-1 mb-3">
+              {(['call', 'email', 'sms', 'whatsapp', 'note'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setCommTab(tab)}
-                  className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors whitespace-nowrap ${
+                  className={`px-2 py-1.5 rounded-md text-[10px] font-semibold transition-colors whitespace-nowrap ${
                     commTab === tab
                       ? 'bg-[var(--crm-panel)] text-[var(--crm-text)]'
                       : 'text-[var(--crm-muted)] hover:text-[var(--crm-text)]'
@@ -244,16 +374,28 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
               ))}
             </div>
 
-            {lead.communications && lead.communications.filter((c) => c.type === commTab || commTab === 'calls').length > 0 ? (
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <a href={`tel:${lead.phone}`} onClick={() => logCommunication('call', 'Direct call started', `Called ${lead.name} from CRM`)} className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold text-white" style={{ background: 'var(--primary-grad)' }}>
+                <Phone size={13} /> Call student
+              </a>
+              <a href={`tel:${lead.parent.phone}`} onClick={() => logCommunication('call', 'Parent call started', `Called ${lead.parent.relation}: ${lead.parent.name}`)} className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] text-[11px] font-bold text-[var(--crm-text)]">
+                <Phone size={13} /> Call parent
+              </a>
+              <a href={`https://wa.me/${cleanPhone(lead.phone)}`} target="_blank" rel="noopener noreferrer" onClick={() => logCommunication('whatsapp', 'WhatsApp follow-up', `Opened WhatsApp for ${lead.name}`)} className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] text-[11px] font-bold text-[var(--crm-text)]">
+                <MessageSquare size={13} /> WhatsApp
+              </a>
+            </div>
+
+            {visibleCommunications.length > 0 ? (
               <div className="flex flex-col gap-2">
-                {lead.communications.filter((c) => c.type === commTab || commTab === 'calls').slice(0, 3).map((c) => (
-                  <div key={c.id} className="p-2.5 rounded-lg bg-[var(--crm-panel)]">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xs font-semibold text-[var(--crm-text)]">{c.subject}</span>
-                      {c.duration && <span className="text-[10px] text-[var(--crm-muted)]">· {c.duration}</span>}
+                {visibleCommunications.map((item) => (
+                  <div key={item.id} className="p-2.5 rounded-lg bg-[var(--crm-panel)]">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs font-semibold text-[var(--crm-text)] truncate">{item.subject}</span>
+                      {item.duration && <span className="text-[10px] text-[var(--crm-muted)] shrink-0">{item.duration}</span>}
                     </div>
-                    <p className="text-[11px] text-[var(--crm-muted)]">{c.summary}</p>
-                    <p className="text-[10px] text-[var(--crm-muted)] mt-0.5">{c.byName} · {new Date(c.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
+                    <p className="text-[11px] text-[var(--crm-muted)] leading-relaxed">{item.summary}</p>
+                    <p className="text-[10px] text-[var(--crm-muted)] mt-1">{item.byName} | {new Date(item.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
                   </div>
                 ))}
               </div>
@@ -265,7 +407,6 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
             )}
           </div>
 
-          {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-2">
             <button className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium border border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-text)] hover:bg-[var(--crm-panel)] transition-colors">
               <Calendar size={14} /> Schedule Follow-up
@@ -281,13 +422,6 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
             </button>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="px-5 py-3 border-t border-[var(--crm-border)] bg-[var(--crm-surface)] shrink-0">
-          <button className="w-full py-2.5 rounded-xl border border-[var(--crm-border)] text-xs font-medium text-[var(--crm-text)] hover:bg-[var(--crm-panel)] transition-colors">
-            Edit Lead Data
-          </button>
-        </div>
       </aside>
 
       <style jsx>{`
@@ -297,14 +431,5 @@ export default function LeadDetailSidebar({ lead, onClose, onArchive, onMove }: 
         }
       `}</style>
     </>
-  );
-}
-
-// Icon component for the fabricated Plus used in activity
-function Plus({ size, style }: { size?: number; style?: React.CSSProperties }) {
-  return (
-    <svg width={size ?? 8} height={size ?? 8} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={style}>
-      <path d="M12 5v14M5 12h14" />
-    </svg>
   );
 }

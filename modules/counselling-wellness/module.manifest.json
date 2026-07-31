@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "counselling-wellness",
+    "name":  "Counselling \u0026 Mental Wellness",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "counselling-wellness.read",
+                        "counselling-wellness.create",
+                        "counselling-wellness.update",
+                        "counselling-wellness.delete",
+                        "counselling-wellness.configure",
+                        "counselling-wellness.reports.read"
+                    ],
+    "capabilities":  [
+                         "appointments",
+                         "case-notes",
+                         "wellness-screening",
+                         "referrals",
+                         "confidential-reports"
+                     ]
+}

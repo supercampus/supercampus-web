@@ -1,0 +1,23 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "communications",
+    "name":  "Communication",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "communications.read",
+                        "communications.create",
+                        "communications.update",
+                        "communications.delete",
+                        "communications.configure",
+                        "communications.reports.read"
+                    ],
+    "capabilities":  [
+                         "email",
+                         "sms",
+                         "whatsapp",
+                         "templates",
+                         "logs",
+                         "scheduler"
+                     ]
+}

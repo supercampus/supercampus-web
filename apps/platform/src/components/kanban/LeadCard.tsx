@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
+import { defaultAnimateLayoutChanges, useSortable, type AnimateLayoutChanges } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Lead } from '@/lib/kanban/kanban-data';
-import { Phone, Mail, MapPin, Paperclip, MessageSquare, Clock } from 'lucide-react';
+import { Clock, MessageSquare, Paperclip } from 'lucide-react';
 
 interface LeadCardProps {
   lead: Lead;
@@ -13,40 +13,29 @@ interface LeadCardProps {
   isOverdue?: boolean;
 }
 
-export default function LeadCard({ lead, columnAccent, onClick, isOverdue }: LeadCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: lead.id, data: { lead, columnId: lead.status } });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.7 : 1,
-    rotate: isDragging ? '2deg' : '0deg',
-    zIndex: isDragging ? 50 : 1,
-  };
-
-  const priorityColors: Record<string, { bg: string; text: string; border: string }> = {
-    hot: { bg: 'rgba(255,0,92,0.08)', text: '#ff005c', border: '#ff005c' },
-    warm: { bg: 'rgba(222,108,245,0.08)', text: '#de6cf5', border: '#de6cf5' },
-    cold: { bg: 'rgba(119,108,245,0.08)', text: '#776cf5', border: '#776cf5' },
-  };
-
-  const pc = priorityColors[lead.priority];
+function LeadCardContent({ lead, columnAccent, onClick, isOverdue, className = '', style }: LeadCardProps & { className?: string; style?: React.CSSProperties }) {
+  const sourceLower = lead.source.toLowerCase();
+  const sourceDot = sourceLower.includes('google') || sourceLower.includes('search')
+    ? '#3b82f6'
+    : sourceLower.includes('facebook') || sourceLower.includes('instagram') || sourceLower.includes('social')
+      ? '#ec4899'
+      : sourceLower.includes('college') || sourceLower.includes('education')
+        ? '#8b5cf6'
+        : sourceLower.includes('referral')
+          ? '#22c55e'
+          : sourceLower.includes('walk') || sourceLower.includes('fair') || sourceLower.includes('event') || sourceLower.includes('school')
+            ? '#f97316'
+            : sourceLower.includes('call') || sourceLower.includes('whatsapp') || sourceLower.includes('sms')
+              ? '#14b8a6'
+              : '#94a3b8';
+  const maskedPhone = lead.phone.replace(/(\+91-?\s?)?(\d{2})\d{3}\s?(\d{2})\d{3}/, '+91 $2XXX $3XXX');
+  const followUpLabel = lead.nextFollowUp ? 'Today' : 'Not set';
 
   return (
     <div
-      ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       onClick={() => onClick(lead)}
-      className="bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-3 shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all duration-200 group"
+      className={`crm-lead-card rounded-xl border border-white/10 bg-[#161d29] p-3 shadow-sm cursor-grab active:cursor-grabbing group hover:shadow-lg ${className}`}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = columnAccent;
       }}
@@ -54,72 +43,43 @@ export default function LeadCard({ lead, columnAccent, onClick, isOverdue }: Lea
         (e.currentTarget as HTMLElement).style.borderColor = 'var(--crm-border)';
       }}
     >
-      {/* Top row: priority badge + more */}
-      <div className="flex items-start justify-between mb-1.5">
-        <span
-          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider border"
-          style={{
-            backgroundColor: pc.bg,
-            color: pc.text,
-            borderColor: pc.border,
-          }}
-        >
-          {lead.priority.toUpperCase()}
-        </span>
-        <div className="flex gap-1.5">
-          {lead.tags?.slice(0, 2).map((tag) => (
-            <span
-              key={tag}
-              className="px-1.5 py-0.5 bg-[var(--crm-panel)] text-[var(--crm-muted)] rounded text-[9px] font-semibold leading-none"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Name */}
-      <h4 className="font-semibold text-sm text-[var(--crm-text)] leading-tight mb-1">
+      <h4 className="text-sm text-white leading-tight mb-1 pr-2">
         {lead.name}
       </h4>
 
-      {/* Course & Intake */}
-      <p className="text-xs text-[var(--crm-on-surface-variant)] mb-2.5">
-        {lead.course} | {lead.intake}
+      <p className="text-xs text-white/45 mb-3">
+        {maskedPhone}
       </p>
 
-      {/* Contact info */}
-      <div className="flex flex-col gap-1 mb-2.5">
-        <div className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">
-          <Phone size={11} />
-          <span>{lead.phone}</span>
+      <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-white/70">
+        <span className="h-2 w-2 rounded-full" style={{ background: sourceDot }} />
+        <span className="truncate">{lead.source}</span>
+      </div>
+
+      <div className="mb-3 grid gap-1.5 text-[11px] text-white/55">
+        <div className="flex justify-between gap-2">
+          <span>Assigned</span>
+          <span className="truncate text-white/75">{lead.assignedTo.name}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">
-          <Mail size={11} />
-          <span className="truncate">{lead.email}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">
-          <MapPin size={11} />
-          <span>{lead.city}</span>
+        <div className="flex justify-between gap-2">
+          <span>Follow-up</span>
+          <span className={isOverdue ? 'text-red-300' : 'text-white/75'}>{followUpLabel}</span>
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-[var(--crm-border)] pt-2.5 mt-1" />
+      <div className="border-t border-white/10 pt-2.5 mt-1" />
 
-      {/* Bottom row: indicators */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {/* Assigned counselor avatar */}
           <div
-            className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] text-white"
             style={{
-              background: 'linear-gradient(135deg, #1400ff, #a600ff)',
+              background: 'var(--primary-grad)',
             }}
           >
             {lead.assignedTo.name.slice(0, 2).toUpperCase()}
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-[var(--crm-muted)] font-medium">
+          <div className="flex items-center gap-2 text-[10px] text-white/50">
             <span className="flex items-center gap-0.5">
               <Paperclip size={10} />
               {lead.documents.uploaded}/{lead.documents.required}
@@ -131,10 +91,10 @@ export default function LeadCard({ lead, columnAccent, onClick, isOverdue }: Lea
           </div>
         </div>
 
-        <div className="flex items-center gap-1 text-[10px] font-medium">
-          {isOverdue && <Clock size={10} className="text-[var(--crm-danger)]" />}
+        <div className="flex items-center gap-1 text-[10px]">
+          {isOverdue && <Clock size={10} className="text-red-400" />}
           <span
-            className={isOverdue ? 'text-[var(--crm-danger)]' : 'text-[var(--crm-muted)]'}
+            className={isOverdue ? 'text-red-400' : 'text-white/45'}
             style={{ color: isOverdue ? '#ff005c' : undefined }}
           >
             {lead.lastContact}
@@ -144,3 +104,54 @@ export default function LeadCard({ lead, columnAccent, onClick, isOverdue }: Lea
     </div>
   );
 }
+
+function LeadCard({ lead, columnAccent, onClick, isOverdue }: LeadCardProps) {
+  const animateLayoutChanges: AnimateLayoutChanges = (args) =>
+    defaultAnimateLayoutChanges({ ...args, wasDragging: true });
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: lead.id,
+    data: { lead, columnId: lead.status },
+    animateLayoutChanges,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition ?? 'transform 140ms cubic-bezier(0.2, 0, 0, 1)',
+    opacity: isDragging ? 0.22 : 1,
+    zIndex: isDragging ? 50 : 1,
+    touchAction: 'none',
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+    >
+      <LeadCardContent
+        lead={lead}
+        columnAccent={columnAccent}
+        onClick={onClick}
+        isOverdue={isOverdue}
+        className={isDragging ? 'crm-lead-card--dragging' : ''}
+        style={style}
+      />
+    </div>
+  );
+}
+
+function LeadCardPreview(props: LeadCardProps) {
+  return <LeadCardContent {...props} className="crm-lead-card--preview" />;
+}
+
+LeadCard.Preview = LeadCardPreview;
+
+export default LeadCard;

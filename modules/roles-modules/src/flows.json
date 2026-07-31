@@ -1,0 +1,234 @@
+{
+  "moduleKey": "roles-modules",
+  "source": "docs/workflows/SuperCampus_ERP_Role_Module_Control.md",
+  "deliveryTargets": [
+    "web-admin"
+  ],
+  "overview": "",
+  "navigation": [],
+  "workflows": [
+    {
+      "id": "mcac-crud-policy",
+      "moduleKey": "roles-modules",
+      "name": "MCAC to CRUD Policy",
+      "summary": "Translate View, Operate, Manage, and Admin levels into feature-level CRUD access.",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "View",
+          "description": "Allow read-only access to permitted module features within the user's scope.",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Operate",
+          "description": "Allow day-to-day create, read, and update operations; approval and destructive actions stay blocked.",
+          "type": "update",
+          "crud": [
+            "create",
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Manage",
+          "description": "Allow create, read, update, moderation, approvals, corrections, and operational control without module configuration.",
+          "type": "approval",
+          "crud": [
+            "create",
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Admin",
+          "description": "Allow full feature administration including configuration and delete where audit policy permits it.",
+          "type": "delete",
+          "crud": [
+            "create",
+            "read",
+            "update",
+            "delete"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scope-resolution",
+      "moduleKey": "roles-modules",
+      "name": "Scope Resolution",
+      "summary": "Apply Self, Department, Institution, or Cross-Institution scope after role and CRUD permissions are resolved.",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Self Scope",
+          "description": "Students, parents, and personal staff views can access only their own or linked records.",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Department Scope",
+          "description": "HODs, faculty, exam cell, and department coordinators operate only inside their department.",
+          "type": "action",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Institution Scope",
+          "description": "Principal, registrar, finance, and admin staff operate across one college.",
+          "type": "action",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Cross-Institution Scope",
+          "description": "Management views and controls permitted features across the tenant group.",
+          "type": "action",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sensitive-module-rules",
+      "moduleKey": "roles-modules",
+      "name": "Sensitive Module Rules",
+      "summary": "Apply explicit restrictions for Fees, Examination, Attendance, Gate Pass, and No Due workflows.",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Fees & Finance",
+          "description": "Only Finance and Management receive Admin; students and parents can view own ledger and operate payments.",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Examination",
+          "description": "Exam Controller receives Admin; faculty can enter marks only for assigned subjects; students read published results.",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Attendance",
+          "description": "Faculty mark class attendance, students view their own attendance, and HODs manage corrections and reports.",
+          "type": "update",
+          "crud": [
+            "create",
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Gate Pass",
+          "description": "Students request gate passes, wardens approve, and security verifies at the gate.",
+          "type": "approval",
+          "crud": [
+            "create",
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "No Due",
+          "description": "Finance, Hostel, and Library clearance must be approved before certificate generation.",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cross-module-handoffs",
+      "moduleKey": "roles-modules",
+      "name": "Cross-Module Handoffs",
+      "summary": "Gate critical ERP handoffs through the required module and CRUD permissions.",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Student Onboarding to Academic Management",
+          "description": "Registrar Admin permission activates the student into academic records.",
+          "type": "integration",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "CRM ERP Handoff to Student Onboarding",
+          "description": "Finance confirms payment, then Registrar triggers onboarding.",
+          "type": "integration",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Fees & Finance to No Due",
+          "description": "Finance clearance is required before No Due certificate generation.",
+          "type": "integration",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Examination to Placement",
+          "description": "Exam Controller publishes results and Placement uses CGPA for eligibility.",
+          "type": "integration",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    }
+  ]
+}

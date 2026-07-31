@@ -1,0 +1,464 @@
+import type { ModuleWorkflowCatalog } from "@supercampus/contracts";
+
+export const libraryWorkflowCatalog = {
+  moduleKey: "library",
+  source: "docs/workflows/Library_Management_Workflow.md",
+  deliveryTargets: [
+  "flutter-student-app",
+  "flutter-staff-app",
+  "web-admin",
+  "web-staff"
+],
+  overview: "The Library Management module automates the complete library operations — from catalogue management and OPAC search to book issue/return, overdue tracking, fine management, digital library access, and comprehensive usage analytics.",
+  navigation: [
+  "Library Catalogue",
+  "OPAC (Online Public Access Catalogue)",
+  "Book Issue / Return",
+  "Overdue & Due Date Management",
+  "Fine Management",
+  "Digital Library",
+  "Reports & Analytics"
+],
+  workflows: [
+  {
+    "id": "library-catalogue",
+    "moduleKey": "library",
+    "name": "Library Catalogue",
+    "summary": "Enter or bulk import titles",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Add / Import Books",
+        "description": "Enter or bulk import titles",
+        "type": "integration",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Enter Book Metadata",
+        "description": "ISBN, Author, Publisher, Edition",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Assign Category & Shelf Location",
+        "description": "Organize by subject and position",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Generate Barcode / RFID Tag",
+        "description": "Create machine-readable ID",
+        "type": "create",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Save to Catalogue",
+        "description": "Store in database",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Available for Search & Issue",
+        "description": "Live in OPAC",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "opac-online-public-access-catalogue",
+    "moduleKey": "library",
+    "name": "OPAC (Online Public Access Catalogue)",
+    "summary": "Search Library Resources",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Search Library Resources",
+        "description": "Search Library Resources",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Title Author ISBN",
+        "description": "Title Author ISBN",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Display Search Results",
+        "description": "Display Search Results",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "View Availability & Location",
+        "description": "View Availability & Location",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Available Not Available",
+        "description": "Available Not Available",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Request Issue Reserve Book",
+        "description": "Request Issue Reserve Book",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "book-issue-return",
+    "moduleKey": "library",
+    "name": "Book Issue / Return",
+    "summary": "Verify student/faculty/staff ID",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Identify Member",
+        "description": "Verify student/faculty/staff ID",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Scan Book Barcode",
+        "description": "Read book identifier",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Verify Membership Status",
+        "description": "Check active membership",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Check Book Availability",
+        "description": "Confirm not already issued",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Issue Book → Generate Due Date",
+        "description": "Record loan",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Return Book → Update Book Status",
+        "description": "Mark as available",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Transaction Completed",
+        "description": "Log in system",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "overdue-and-due-date-management",
+    "moduleKey": "library",
+    "name": "Overdue & Due Date Management",
+    "summary": "Monitor Active Borrowings",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Monitor Active Borrowings",
+        "description": "Monitor Active Borrowings",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Check Due Date Status",
+        "description": "Check Due Date Status",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Within Due Date Due Date Exceeded",
+        "description": "Within Due Date Due Date Exceeded",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Send Reminder Mark as Overdue",
+        "description": "Send Reminder Mark as Overdue",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Notify Student / Faculty",
+        "description": "Notify Student / Faculty",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Forward to Fine Management",
+        "description": "Forward to Fine Management",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fine-management",
+    "moduleKey": "library",
+    "name": "Fine Management",
+    "summary": "Flag late returns",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Receive Overdue Record",
+        "description": "Flag late returns",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Calculate Fine Amount",
+        "description": "Apply fine rules",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Notify Member of Fine",
+        "description": "Alert borrower",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Fine Paid → Update Account",
+        "description": "Record payment",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Fine Waived → Approval Process",
+        "description": "Admin approval",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Close Fine Record",
+        "description": "Archive",
+        "type": "delete",
+        "crud": [
+          "delete"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "digital-library",
+    "moduleKey": "library",
+    "name": "Digital Library",
+    "summary": "Book import, metadata entry, categorization, and barcode/RFID tagging",
+    "steps": [
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Library Catalogue",
+        "description": "Book import, metadata entry, categorization, and barcode/RFID tagging",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "OPAC",
+        "description": "Multi-criteria search (title, author, ISBN) with availability and reservation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Book Issue / Return",
+        "description": "Member verification, barcode scanning, and transaction logging",
+        "type": "approval",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Overdue Management",
+        "description": "Due date monitoring, reminders, and overdue flagging",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Fine Management",
+        "description": "Automatic fine calculation, payment, and waiver approval",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Digital Library",
+        "description": "Online access to eBooks, journals, and research papers with usage tracking",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Reports & Analytics",
+        "description": "Issue reports, fine reports, inventory, and usage statistics",
+        "type": "report",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  }
+],
+} as const satisfies ModuleWorkflowCatalog;

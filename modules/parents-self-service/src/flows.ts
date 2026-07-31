@@ -1,0 +1,930 @@
+import type { ModuleWorkflowCatalog } from "@supercampus/contracts";
+
+export const parentsSelfServiceWorkflowCatalog = {
+  moduleKey: "parents-self-service",
+  source: "docs/workflows/Parent_Self_Service_Workflow.md",
+  deliveryTargets: [
+  "flutter-parent-app",
+  "web-admin"
+],
+  overview: "The Parent Self Service module gives parents secure access to their child's academic and administrative information — attendance, marks, fees, homework, timetable, leave requests, and institutional communications — with real-time alerts and a social wall for announcements.",
+  navigation: [
+  "Attendance",
+  "Marks",
+  "Fees",
+  "Homework",
+  "Communication",
+  "Leave Requests",
+  "Timetable",
+  "Parent Profile",
+  "Absence Alerts",
+  "Parent Attendance Notifications",
+  "Parent Wall",
+  "Reports & Activity History"
+],
+  workflows: [
+  {
+    "id": "parent-attendance",
+    "moduleKey": "parents-self-service",
+    "name": "Parent Attendance",
+    "summary": "Authenticate into portal",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Parent Login",
+        "description": "Authenticate into portal",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Student",
+        "description": "Choose child profile",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "View Attendance Summary",
+        "description": "Overall attendance overview",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Apply Filters (Date • Subject)",
+        "description": "Narrow down records",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "View Daily / Monthly Records",
+        "description": "Detailed attendance log",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Attendance Percentage Display",
+        "description": "Visual percentage indicator",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Attendance Shortage (If Any)",
+        "description": "Alert if below threshold",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Download Attendance Report",
+        "description": "Export for records",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent-marks",
+    "moduleKey": "parents-self-service",
+    "name": "Parent Marks",
+    "summary": "Parent Login",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Parent Login",
+        "description": "Parent Login",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Student",
+        "description": "Select Student",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Select Examination",
+        "description": "Select Examination",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "View Subject Marks",
+        "description": "View Subject Marks",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Grade & Rank Calculation",
+        "description": "Grade & Rank Calculation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Performance Comparison Chart",
+        "description": "Performance Comparison Chart",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "AI Performance Insights",
+        "description": "AI Performance Insights",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Download Mark Statement",
+        "description": "Download Mark Statement",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent-fees",
+    "moduleKey": "parents-self-service",
+    "name": "Parent Fees",
+    "summary": "Access portal",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Parent Login",
+        "description": "Access portal",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Student",
+        "description": "Choose child",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "View Fee Summary",
+        "description": "Consolidated fee view",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Paid Fees • Pending Fees • Fine Details",
+        "description": "Breakdown",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Make Online Payment",
+        "description": "Pay outstanding fees",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Payment Confirmation",
+        "description": "Transaction verified",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Receipt & Payment History",
+        "description": "Download receipts",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent-homework",
+    "moduleKey": "parents-self-service",
+    "name": "Parent Homework",
+    "summary": "Parent Login",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Parent Login",
+        "description": "Parent Login",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Student",
+        "description": "Select Student",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "View Homework List",
+        "description": "View Homework List",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Subject-wise Homework Details",
+        "description": "Subject-wise Homework Details",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Due Date & Submission Status",
+        "description": "Due Date & Submission Status",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Teacher Instructions Attached",
+        "description": "Teacher Instructions Attached",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Homework Completion Tracking",
+        "description": "Homework Completion Tracking",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent-communication",
+    "moduleKey": "parents-self-service",
+    "name": "Parent Communication",
+    "summary": "Access portal",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Parent Login",
+        "description": "Access portal",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Open Communication Center",
+        "description": "Messaging hub",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Select Recipient",
+        "description": "Teacher / Class Teacher / Administration",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Read Announcements",
+        "description": "View institutional notices",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Send / Reply Messages",
+        "description": "Two-way communication",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Message Notifications",
+        "description": "Real-time alerts",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Communication History",
+        "description": "Archived conversations",
+        "type": "delete",
+        "crud": [
+          "delete"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent-leave-request",
+    "moduleKey": "parents-self-service",
+    "name": "Parent Leave Request",
+    "summary": "Parent Login",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Parent Login",
+        "description": "Parent Login",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Student",
+        "description": "Select Student",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Create Leave Request",
+        "description": "Create Leave Request",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Select Leave Type & Dates",
+        "description": "Select Leave Type & Dates",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Enter Reason for Leave",
+        "description": "Enter Reason for Leave",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Upload Supporting Documents",
+        "description": "Upload Supporting Documents",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Submit Leave Request",
+        "description": "Submit Leave Request",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Approved Rejected",
+        "description": "Approved Rejected",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Attendance Updated Notify Parent",
+        "description": "Attendance Updated Notify Parent",
+        "type": "notification",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "Leave History Updated",
+        "description": "Leave History Updated",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent-timetable",
+    "moduleKey": "parents-self-service",
+    "name": "Parent Timetable",
+    "summary": "Access portal",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Parent Login",
+        "description": "Access portal",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Student",
+        "description": "Choose child",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "View Class Timetable",
+        "description": "Full schedule",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Daily / Weekly Schedule",
+        "description": "Flexible views",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Faculty & Subject Details",
+        "description": "Instructor info",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Room / Online Meeting Details",
+        "description": "Location info",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Download Timetable",
+        "description": "Export option",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent-profile",
+    "moduleKey": "parents-self-service",
+    "name": "Parent Profile",
+    "summary": "Parent Login",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Parent Login",
+        "description": "Parent Login",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "View Parent Information",
+        "description": "View Parent Information",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Update Contact Information",
+        "description": "Update Contact Information",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Manage Communication Preferences",
+        "description": "Manage Communication Preferences",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Change Password / Security Settings",
+        "description": "Change Password / Security Settings",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Save Profile Changes",
+        "description": "Save Profile Changes",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "absence-alert",
+    "moduleKey": "parents-self-service",
+    "name": "Absence Alert",
+    "summary": "Attendance processed",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Student Marked Absent Today",
+        "description": "Attendance processed",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Attendance Processing Completed",
+        "description": "System check",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Verify Leave Approval",
+        "description": "Check for approved leave",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Leave Approved → No Alert Generated",
+        "description": "Skip notification",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Leave Not Found → Generate Absence Alert",
+        "description": "Create alert",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Notify Parent via App / SMS / Email",
+        "description": "Multi-channel alert",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Alert History Updated",
+        "description": "Log notification",
+        "type": "notification",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent-attendance-notification",
+    "moduleKey": "parents-self-service",
+    "name": "Parent Attendance Notification",
+    "summary": "Attendance Processing Completed",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Attendance Processing Completed",
+        "description": "Attendance Processing Completed",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Check Notification Rules",
+        "description": "Check Notification Rules",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Present Late Entry Attendance Shortage",
+        "description": "Present Late Entry Attendance Shortage",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Generate Parent Notification",
+        "description": "Generate Parent Notification",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Send App / SMS / Email Notification",
+        "description": "Send App / SMS / Email Notification",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Notification Delivery Status",
+        "description": "Notification Delivery Status",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Notification History Saved",
+        "description": "Notification History Saved",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent-wall",
+    "moduleKey": "parents-self-service",
+    "name": "Parent Wall",
+    "summary": "Access portal",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Parent Login",
+        "description": "Access portal",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Open Parent Wall",
+        "description": "Social feed",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "View Content",
+        "description": "Announcements / Events & Circulars / Achievements",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Like / Acknowledge Posts",
+        "description": "Engage with content",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "View Comments & Attachments",
+        "description": "Detailed interaction",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Wall Activity History",
+        "description": "Personal engagement log",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  }
+],
+} as const satisfies ModuleWorkflowCatalog;

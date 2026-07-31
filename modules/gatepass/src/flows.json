@@ -1,0 +1,865 @@
+{
+  "moduleKey": "gatepass",
+  "source": "docs/workflows/Gate_Pass_Management_Workflow.md",
+  "deliveryTargets": [
+    "flutter-student-app",
+    "flutter-parent-app",
+    "flutter-staff-app",
+    "web-admin",
+    "web-staff"
+  ],
+  "overview": "The Gate Pass Management module controls campus exits and entries for students, staff, and assets through configurable rules, multi-level approvals, QR-based verification, geo-fencing, and AI-driven movement insights.",
+  "navigation": [
+    "Configure Gate Pass",
+    "Gate Pass Requests",
+    "Student Gate Pass",
+    "Staff Gate Pass",
+    "Asset Gate Pass",
+    "Approval Workflow",
+    "QR Code Verification",
+    "Entry & Exit Logs",
+    "Campus Geo-Fencing",
+    "Notifications & Alerts",
+    "AI Movement Insights",
+    "Reports & Analytics"
+  ],
+  "workflows": [
+    {
+      "id": "configure-gate-pass",
+      "moduleKey": "gatepass",
+      "name": "Configure Gate Pass",
+      "summary": "Set the active year",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Academic Year",
+          "description": "Set the active year",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Configure Gate Pass Types",
+          "description": "Student / Staff / Asset",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Configure Gate Pass Rules",
+          "description": "Allowed Exit Timings • Validity Period • Parent Approval Rules • Hostel Day Pass Rules • Asset Return Policy • Emergency Exit Rules",
+          "type": "approval",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Configure Approval Workflow",
+          "description": "Define approver hierarchy",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Configure QR & Geo-Fencing Settings",
+          "description": "Enable digital verification",
+          "type": "approval",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Configure Notifications & Alerts",
+          "description": "Alert triggers and recipients",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Save & Activate",
+          "description": "System goes live",
+          "type": "action",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Gate Pass System Ready",
+          "description": "Requests can now be raised",
+          "type": "create",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gate-pass-requests",
+      "moduleKey": "gatepass",
+      "name": "Gate Pass Requests",
+      "summary": "Login to Student/Staff Portal",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Login to Student/Staff Portal",
+          "description": "Login to Student/Staff Portal",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Gate Pass Type",
+          "description": "Select Gate Pass Type",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Student Pass Staff Pass Asset Pass",
+          "description": "Student Pass Staff Pass Asset Pass",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Enter Request Details",
+          "description": "Enter Request Details",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Reason Exit Date/Time Return Time",
+          "description": "Reason Exit Date/Time Return Time",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Upload Supporting Documents",
+          "description": "Upload Supporting Documents",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "(Optional if Required)",
+          "description": "(Optional if Required)",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Submit Request",
+          "description": "Submit Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-9",
+          "order": 9,
+          "title": "Sent for Approval Workflow",
+          "description": "Sent for Approval Workflow",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "student-gate-pass",
+      "moduleKey": "gatepass",
+      "name": "Student Gate Pass",
+      "summary": "Initiate exit pass",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Student Raises Request",
+          "description": "Initiate exit pass",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Pass Category",
+          "description": "Home Visit / Medical Leave / Personal Work",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Enter Exit & Return Time",
+          "description": "Specify departure and expected return",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Parent Consent Required?",
+          "description": "Check if parental approval needed",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Yes → Parent Approval",
+          "description": "Guardian reviews and approves",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "No → Faculty Review",
+          "description": "Direct faculty review",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "HOD/Warden Approval",
+          "description": "Final authority sign-off",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "QR Gate Pass Generated",
+          "description": "Digital pass created",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-9",
+          "order": 9,
+          "title": "Ready for Gate Verification",
+          "description": "Pass active at security gate",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "staff-gate-pass",
+      "moduleKey": "gatepass",
+      "name": "Staff Gate Pass",
+      "summary": "Staff Raises Exit Request",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Staff Raises Exit Request",
+          "description": "Staff Raises Exit Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Official/Personal Exit",
+          "description": "Select Official/Personal Exit",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Enter Purpose & Time Details",
+          "description": "Enter Purpose & Time Details",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Department Head Approval",
+          "description": "Department Head Approval",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Generate Digital QR Pass",
+          "description": "Generate Digital QR Pass",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Security Verification at Gate",
+          "description": "Security Verification at Gate",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Entry & Exit Logged",
+          "description": "Entry & Exit Logged",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "asset-gate-pass",
+      "moduleKey": "gatepass",
+      "name": "Asset Gate Pass",
+      "summary": "Initiate asset exit",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Raise Asset Movement Request",
+          "description": "Initiate asset exit",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Asset Details",
+          "description": "Identify the asset",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Enter Destination & Purpose",
+          "description": "Where and why it's leaving",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Verify Asset Ownership",
+          "description": "Confirm institutional ownership",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Department Approval",
+          "description": "Head signs off",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Store/Inventory Approval",
+          "description": "Inventory team confirms",
+          "type": "approval",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "QR Asset Gate Pass Generated",
+          "description": "Pass linked to asset",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Security Asset Verification",
+          "description": "Guard scans and validates",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-9",
+          "order": 9,
+          "title": "Asset Exit Recorded",
+          "description": "Log departure",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-10",
+          "order": 10,
+          "title": "Asset Return Verification",
+          "description": "Confirm return",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-11",
+          "order": 11,
+          "title": "Asset Status Updated",
+          "description": "Mark as returned",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "approvals",
+      "moduleKey": "gatepass",
+      "name": "Approvals",
+      "summary": "Gate Pass Request Received",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Gate Pass Request Received",
+          "description": "Gate Pass Request Received",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify Request Details",
+          "description": "Verify Request Details",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Check Policy Compliance",
+          "description": "Check Policy Compliance",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Faculty HOD/Warden Parent",
+          "description": "Faculty HOD/Warden Parent",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Final Decision",
+          "description": "Final Decision",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Approved Rejected",
+          "description": "Approved Rejected",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "QR Pass Generated Notify Applicant",
+          "description": "QR Pass Generated Notify Applicant",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Ready for Verification",
+          "description": "Ready for Verification",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qr-code-verification",
+      "moduleKey": "gatepass",
+      "name": "QR Code Verification",
+      "summary": "Present at security checkpoint",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Student/Staff Arrives at Gate",
+          "description": "Present at security checkpoint",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Present Digital QR Gate Pass",
+          "description": "Show pass on mobile",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Security Scans QR Code",
+          "description": "Guard scans with device",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Validate Pass Authenticity",
+          "description": "System verifies",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Valid Pass → Allow Exit/Entry",
+          "description": "Grant access",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Invalid/Expired → Deny Access & Alert",
+          "description": "Block and notify admin",
+          "type": "notification",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Update Entry/Exit Logs",
+          "description": "Record the transaction",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "entry-and-exit-logs",
+      "moduleKey": "gatepass",
+      "name": "Entry & Exit Logs",
+      "summary": "QR Verification Completed",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "QR Verification Completed",
+          "description": "QR Verification Completed",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Record Exit Date & Time",
+          "description": "Record Exit Date & Time",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Record Security Details",
+          "description": "Record Security Details",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Record Return Date & Time",
+          "description": "Record Return Date & Time",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Calculate Duration Outside",
+          "description": "Calculate Duration Outside",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Gate Pass Status",
+          "description": "Update Gate Pass Status",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Archive Movement History",
+          "description": "Archive Movement History",
+          "type": "delete",
+          "crud": [
+            "delete"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "campus-geo-fencing",
+      "moduleKey": "gatepass",
+      "name": "Campus Geo-Fencing",
+      "summary": "GPS tracking active",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Device Location Captured",
+          "description": "GPS tracking active",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Check Campus Boundary Rules",
+          "description": "Compare with geo-fence",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Inside Campus → Normal Status",
+          "description": "No action needed",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Outside Campus → Verify Gate Pass",
+          "description": "Check if exit was authorized",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Unauthorized Exit?",
+          "description": "Evaluate",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Yes → Send Security Alert",
+          "description": "Trigger immediate alert",
+          "type": "notification",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "No → Update Status",
+          "description": "Log authorized exit",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-8",
+          "order": 8,
+          "title": "Incident Logged",
+          "description": "Record all geo-fence events",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    }
+  ]
+}

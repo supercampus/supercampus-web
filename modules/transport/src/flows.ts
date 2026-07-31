@@ -1,0 +1,841 @@
+import type { ModuleWorkflowCatalog } from "@supercampus/contracts";
+
+export const transportWorkflowCatalog = {
+  moduleKey: "transport",
+  source: "docs/workflows/Transport_Management_Workflow.md",
+  deliveryTargets: [
+  "flutter-student-app",
+  "flutter-parent-app",
+  "flutter-staff-app",
+  "web-admin",
+  "web-staff"
+],
+  overview: "The Transport Management module handles the complete fleet and student transport operations — from route creation and vehicle/driver registration to student boarding, live GPS tracking, maintenance scheduling, fee processing, and AI-driven route optimization.",
+  navigation: [
+  "Routes",
+  "Vehicles",
+  "Drivers",
+  "Driver Allocation",
+  "Vehicle Allocation",
+  "Student Transport Registration",
+  "Student Boarding",
+  "GPS Tracking",
+  "Maintenance",
+  "Transport Fee",
+  "AI Fleet Insights",
+  "Notifications & Alerts",
+  "Reports & Analytics"
+],
+  workflows: [
+  {
+    "id": "routes",
+    "moduleKey": "transport",
+    "name": "Routes",
+    "summary": "Set active year",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Academic Year",
+        "description": "Set active year",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Create Transport Route",
+        "description": "Define new route",
+        "type": "create",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Define Route Information",
+        "description": "Route Name • Route Code",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Add Boarding Stops",
+        "description": "List all pickup/drop points",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Set Pickup & Drop Timings",
+        "description": "Schedule for each stop",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Configure Route Distance",
+        "description": "Total and per-segment distance",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Define Transport Zone",
+        "description": "Categorize by area",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Save Route",
+        "description": "Persist configuration",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Route Available for Allocation",
+        "description": "Ready for assignment",
+        "type": "update",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vehicles",
+    "moduleKey": "transport",
+    "name": "Vehicles",
+    "summary": "Register New Vehicle",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Register New Vehicle",
+        "description": "Register New Vehicle",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Enter Vehicle Information",
+        "description": "Enter Vehicle Information",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "(Bus No • Registration • Capacity • Type)",
+        "description": "(Bus No • Registration • Capacity • Type)",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Upload Vehicle Documents",
+        "description": "Upload Vehicle Documents",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Insurance & Permit Verification",
+        "description": "Insurance & Permit Verification",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Fitness Certificate Check",
+        "description": "Fitness Certificate Check",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Vehicle Status Assignment",
+        "description": "Vehicle Status Assignment",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Active Maintenance Inactive",
+        "description": "Active Maintenance Inactive",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Vehicle Ready for Allocation",
+        "description": "Vehicle Ready for Allocation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "drivers",
+    "moduleKey": "transport",
+    "name": "Drivers",
+    "summary": "Personal and contact info",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Register Driver Details",
+        "description": "Personal and contact info",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Upload License & Documents",
+        "description": "Driving license, ID proof",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Background Verification",
+        "description": "Police and reference checks",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Medical Fitness Verification",
+        "description": "Health certificate",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Driver Availability",
+        "description": "Set working schedule",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Save Driver Profile",
+        "description": "Store in system",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Driver Ready for Assignment",
+        "description": "Available for allocation",
+        "type": "update",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "gps-tracking",
+    "moduleKey": "transport",
+    "name": "GPS Tracking",
+    "summary": "Vehicle Starts Trip",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Vehicle Starts Trip",
+        "description": "Vehicle Starts Trip",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "GPS Location Activated",
+        "description": "GPS Location Activated",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Live Vehicle Tracking",
+        "description": "Live Vehicle Tracking",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Current Stop Next Stop ETA Calculation",
+        "description": "Current Stop Next Stop ETA Calculation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Delay & Route Deviation Check",
+        "description": "Delay & Route Deviation Check",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Notify Students & Parents",
+        "description": "Notify Students & Parents",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Trip Completion Recorded",
+        "description": "Trip Completion Recorded",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vehicle-allocation",
+    "moduleKey": "transport",
+    "name": "Vehicle Allocation",
+    "summary": "Choose target route",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Route",
+        "description": "Choose target route",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "View Available Vehicles",
+        "description": "List eligible vehicles",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Check Vehicle Capacity",
+        "description": "Match with student count",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Assign Vehicle to Route",
+        "description": "Link vehicle",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Validate Allocation Conflicts",
+        "description": "Check for double-booking",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Save Vehicle Allocation",
+        "description": "Confirm assignment",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Ready for Daily Operation",
+        "description": "Active for trips",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "student-boarding",
+    "moduleKey": "transport",
+    "name": "Student Boarding",
+    "summary": "Student Transport Registered",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Student Transport Registered",
+        "description": "Student Transport Registered",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Assign Boarding Point",
+        "description": "Assign Boarding Point",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Assign Pickup Schedule",
+        "description": "Assign Pickup Schedule",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Student Boards Vehicle",
+        "description": "Student Boards Vehicle",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Attendance Verified",
+        "description": "Attendance Verified",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "QR Code RFID Mobile App / Manual",
+        "description": "QR Code RFID Mobile App / Manual",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Boarding Confirmation",
+        "description": "Boarding Confirmation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Parent Notification (Optional)",
+        "description": "Parent Notification (Optional)",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Trip Attendance Recorded",
+        "description": "Trip Attendance Recorded",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "maintenance",
+    "moduleKey": "transport",
+    "name": "Maintenance",
+    "summary": "Triggered by calendar or mileage",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Maintenance Schedule Due",
+        "description": "Triggered by calendar or mileage",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Vehicle Inspection",
+        "description": "Pre-service check",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Identify Repair Requirements",
+        "description": "Assess condition",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Minor Service → Complete Service",
+        "description": "Routine maintenance",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Major Repair → Workshop Maintenance",
+        "description": "Extensive repairs",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Quality Inspection",
+        "description": "Post-service verification",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Vehicle Approved",
+        "description": "Cleared for service",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Vehicle Back to Service",
+        "description": "Return to fleet",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "driver-allocation",
+    "moduleKey": "transport",
+    "name": "Driver Allocation",
+    "summary": "Select Vehicle & Route",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Vehicle & Route",
+        "description": "Select Vehicle & Route",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "View Available Drivers",
+        "description": "View Available Drivers",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Validate License & Schedule",
+        "description": "Validate License & Schedule",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Assign Driver",
+        "description": "Assign Driver",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Notify Driver Assignment",
+        "description": "Notify Driver Assignment",
+        "type": "notification",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Ready for Daily Operation",
+        "description": "Ready for Daily Operation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "transport-fee",
+    "moduleKey": "transport",
+    "name": "Transport Fee",
+    "summary": "Define transport fees",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Configure Fee Structure",
+        "description": "Define transport fees",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Assign Fee by Route/Zone",
+        "description": "Zone-based pricing",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Student Transport Enrollment",
+        "description": "Register for transport",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Generate Fee Invoice",
+        "description": "Create bill",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Student Payment",
+        "description": "Process payment",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Paid → Generate Receipt",
+        "description": "Confirm transaction",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Pending → Send Reminder",
+        "description": "Follow up",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Update Fee Status",
+        "description": "Record in ledger",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Reports & Analytics",
+        "description": "Generate insights",
+        "type": "report",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  }
+],
+} as const satisfies ModuleWorkflowCatalog;

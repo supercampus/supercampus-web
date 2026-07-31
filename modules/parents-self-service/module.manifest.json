@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "parents-self-service",
+    "name":  "Parents Self Service",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "parents-self-service.read",
+                        "parents-self-service.create",
+                        "parents-self-service.update",
+                        "parents-self-service.delete",
+                        "parents-self-service.configure",
+                        "parents-self-service.reports.read"
+                    ],
+    "capabilities":  [
+                         "student-profile",
+                         "fees",
+                         "attendance",
+                         "notices",
+                         "communication"
+                     ]
+}

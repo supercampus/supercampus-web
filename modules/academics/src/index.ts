@@ -1,8 +1,10 @@
 import { defineModule } from "@supercampus/module-sdk";
+import { academicsWorkflowCatalog } from "./flows";
 
 export const academicsModule = defineModule({
   key: "academics",
   version: "0.1.0",
+  workflowCatalog: academicsWorkflowCatalog,
   navigation: [{
     id: "academics",
     label: "Academics",

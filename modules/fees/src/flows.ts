@@ -1,0 +1,1018 @@
+import type { ModuleWorkflowCatalog } from "@supercampus/contracts";
+
+export const feesWorkflowCatalog = {
+  moduleKey: "fees",
+  source: "docs/workflows/Fees_Finance_Workflow.md",
+  deliveryTargets: [
+  "flutter-student-app",
+  "flutter-parent-app",
+  "flutter-staff-app",
+  "web-admin",
+  "web-staff"
+],
+  overview: "The Fees & Finance module manages the complete financial lifecycle of students — from fee structure configuration and assignment to payment processing, receipt generation, refund handling, due reminders, and AI-driven financial insights.",
+  navigation: [
+  "Configure Fee Structure",
+  "Fee & Fine Heads",
+  "Student Fee Assignment",
+  "Scholarships & Concessions",
+  "Installment Plans",
+  "Invoice Generation",
+  "Online Payments",
+  "Payment Gateway Integration",
+  "Receipt Generation",
+  "Payment History",
+  "Refund Management",
+  "Due Reminders",
+  "AI Financial Insights",
+  "Reports & Analytics"
+],
+  workflows: [
+  {
+    "id": "configure-fee-structure",
+    "moduleKey": "fees",
+    "name": "Configure Fee Structure",
+    "summary": "Choose the active year",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Academic Year",
+        "description": "Choose the active year",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Semester",
+        "description": "Pick the semester",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Select Programme / Department",
+        "description": "Target academic unit",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Select Batch / Category",
+        "description": "Specify student group",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Configure Fee Components",
+        "description": "Tuition Fee / Hostel Fee / Transport Fee",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Add Other Fee Heads",
+        "description": "Lab • Library • Exam • Miscellaneous",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Configure Payment Schedule",
+        "description": "Set due dates and deadlines",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Preview Fee Structure",
+        "description": "Review before activation",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Save & Activate",
+        "description": "Structure goes live",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "scholarships",
+    "moduleKey": "fees",
+    "name": "Scholarships",
+    "summary": "Scholarship Application",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Scholarship Application",
+        "description": "Scholarship Application",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Upload Required Documents",
+        "description": "Upload Required Documents",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Eligibility Verification",
+        "description": "Eligibility Verification",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Eligible Not Eligible",
+        "description": "Eligible Not Eligible",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Scholarship Approved Notify Student",
+        "description": "Scholarship Approved Notify Student",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Apply Fee Concession",
+        "description": "Apply Fee Concession",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Update Student Fee Ledger",
+        "description": "Update Student Fee Ledger",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "installments",
+    "moduleKey": "fees",
+    "name": "Installments",
+    "summary": "Apply for installment option",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Student Requests Plan",
+        "description": "Apply for installment option",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Finance Office Verification",
+        "description": "Review eligibility",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Approved → Create Installment Schedule",
+        "description": "Define payment timeline",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Rejected → Notify Student",
+        "description": "Reason communicated",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Generate Due Dates",
+        "description": "System creates deadlines",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Update Fee Ledger",
+        "description": "Record installment plan",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "online-payment",
+    "moduleKey": "fees",
+    "name": "Online Payment",
+    "summary": "View Outstanding Fees",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "View Outstanding Fees",
+        "description": "View Outstanding Fees",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Invoice(s)",
+        "description": "Select Invoice(s)",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Choose Payment Method",
+        "description": "Choose Payment Method",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Card UPI Net Banking",
+        "description": "Card UPI Net Banking",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Payment Gateway Processing",
+        "description": "Payment Gateway Processing",
+        "type": "integration",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Success Failed",
+        "description": "Success Failed",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Update Ledger Retry Payment",
+        "description": "Update Ledger Retry Payment",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Generate Receipt",
+        "description": "Generate Receipt",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "receipt-generation",
+    "moduleKey": "fees",
+    "name": "Receipt Generation",
+    "summary": "Gateway confirms",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Payment Successfully Completed",
+        "description": "Gateway confirms",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Generate Receipt Number",
+        "description": "Unique receipt ID",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Create Digital Receipt",
+        "description": "PDF generated",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Email / SMS / Student Portal",
+        "description": "Deliver to student",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Receipt Stored",
+        "description": "Archive for records",
+        "type": "delete",
+        "crud": [
+          "delete"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "refund-workflow",
+    "moduleKey": "fees",
+    "name": "Refund Workflow",
+    "summary": "Refund Request Raised",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Refund Request Raised",
+        "description": "Refund Request Raised",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Upload Supporting Documents",
+        "description": "Upload Supporting Documents",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Finance Verification",
+        "description": "Finance Verification",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Approved Rejected",
+        "description": "Approved Rejected",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Calculate Refund Notify Student",
+        "description": "Calculate Refund Notify Student",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Amount",
+        "description": "Amount",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Process Refund",
+        "description": "Process Refund",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Update Student Ledger",
+        "description": "Update Student Ledger",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Refund Completed",
+        "description": "Refund Completed",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "due-reminders",
+    "moduleKey": "fees",
+    "name": "Due Reminders",
+    "summary": "System scans all dues",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Daily Due Date Check",
+        "description": "System scans all dues",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Compare Due Date",
+        "description": "Evaluate against current date",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "No Due → End Process",
+        "description": "No action needed",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Payment Due → Generate Reminder",
+        "description": "Create alert",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Send to Student • Parent • Email",
+        "description": "Multi-channel notification",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Reminder History",
+        "description": "Log all sent reminders",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fee-and-fine-heads",
+    "moduleKey": "fees",
+    "name": "Fee & Fine Heads",
+    "summary": "Create Fee/Fine Category",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Create Fee/Fine Category",
+        "description": "Create Fee/Fine Category",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Fee Type",
+        "description": "Select Fee Type",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Tuition Library Fine",
+        "description": "Tuition Library Fine",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Assign Amount",
+        "description": "Assign Amount",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Set Applicability Rules",
+        "description": "Set Applicability Rules",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Save Fee Head",
+        "description": "Save Fee Head",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "invoice-generation",
+    "moduleKey": "fees",
+    "name": "Invoice Generation",
+    "summary": "Target for invoicing",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Student / Batch",
+        "description": "Target for invoicing",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Fetch Fee Structure",
+        "description": "Load applicable fees",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Apply Scholarship",
+        "description": "Deduct concessions",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Apply Installments",
+        "description": "Adjust for payment plan",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Generate Invoice",
+        "description": "Create bill document",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Send to Student Portal",
+        "description": "Make available online",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "payment-history",
+    "moduleKey": "fees",
+    "name": "Payment History",
+    "summary": "Select Student",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Student",
+        "description": "Select Student",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Retrieve Transactions",
+        "description": "Retrieve Transactions",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Display",
+        "description": "Display",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Invoices Payments Refunds",
+        "description": "Invoices Payments Refunds",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Export / Print History",
+        "description": "Export / Print History",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "payment-gateway-integration",
+    "moduleKey": "fees",
+    "name": "Payment Gateway Integration",
+    "summary": "Select provider",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Configure Gateway",
+        "description": "Select provider",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "API Credentials",
+        "description": "Enter keys and secrets",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Sandbox Testing",
+        "description": "Test in staging",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Production Activation",
+        "description": "Go live",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Payment Request",
+        "description": "Send to gateway",
+        "type": "integration",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Gateway Response",
+        "description": "Receive status",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Success → Update ERP Ledger",
+        "description": "Record transaction",
+        "type": "integration",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Failure → Retry / Log Error",
+        "description": "Handle exception",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ai-financial-insights",
+    "moduleKey": "fees",
+    "name": "AI Financial Insights",
+    "summary": "Read Fee Transactions",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Read Fee Transactions",
+        "description": "Read Fee Transactions",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Analyze Payment Trends",
+        "description": "Analyze Payment Trends",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Defaulters Revenue Scholarship",
+        "description": "Defaulters Revenue Scholarship",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Prediction Forecast Analysis",
+        "description": "Prediction Forecast Analysis",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Generate Recommendations",
+        "description": "Generate Recommendations",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Finance Dashboard",
+        "description": "Finance Dashboard",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fees-reports",
+    "moduleKey": "fees",
+    "name": "Fees Reports",
+    "summary": "Collection / Outstanding / Scholarships",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Report Type",
+        "description": "Collection / Outstanding / Scholarships",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Apply Filters",
+        "description": "Year • Semester • Department",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Generate Report",
+        "description": "Compile data",
+        "type": "report",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Export PDF / Excel / CSV",
+        "description": "Download in preferred format",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  }
+],
+} as const satisfies ModuleWorkflowCatalog;

@@ -43,7 +43,7 @@ export default function MoveLogModal({ leadName, fromColumn, toColumn, onConfirm
           <span className="px-3 py-1.5 rounded-lg bg-[var(--crm-panel)] text-xs font-medium text-[var(--crm-text)]">{fromColumn}</span>
           <ArrowRight size={18} className="text-[var(--crm-soft-blue)] shrink-0" />
           <span className="px-3 py-1.5 rounded-lg font-medium text-xs text-white"
-            style={{ background: 'linear-gradient(135deg, #1400ff, #a600ff)' }}
+            style={{ background: 'var(--primary-grad)' }}
           >
             {toColumn}
           </span>
@@ -80,7 +80,7 @@ export default function MoveLogModal({ leadName, fromColumn, toColumn, onConfirm
               disabled={!note.trim()}
               className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-40"
               style={{
-                background: !note.trim() ? 'var(--crm-muted)' : 'linear-gradient(135deg, #1400ff, #a600ff)',
+                background: !note.trim() ? 'var(--crm-muted)' : 'var(--primary-grad)',
               }}
             >
               Confirm Move

@@ -1,0 +1,863 @@
+import type { ModuleWorkflowCatalog } from "@supercampus/contracts";
+
+export const visitorManagementWorkflowCatalog = {
+  moduleKey: "visitor-management",
+  source: "docs/workflows/Visitor_Management_Workflow.md",
+  deliveryTargets: [
+  "flutter-staff-app",
+  "public-web",
+  "web-admin",
+  "web-staff"
+],
+  overview: "The Visitor Management module controls campus access through visitor registration, identity verification, host approval, pass generation, check-in/check-out tracking, vehicle entry logging, geo-fencing, and AI-driven visitor insights.",
+  navigation: [
+  "Visitor Registration",
+  "Pre-Approved Visitors",
+  "Visitor Pass",
+  "Check-In / Check-Out",
+  "Host Approval",
+  "Vehicle Entry",
+  "Visitor Logs",
+  "Entry & Exit Logs",
+  "Campus Geo Fencing",
+  "AI Visitor Insights",
+  "Notifications & Alerts",
+  "Reports & Analytics"
+],
+  workflows: [
+  {
+    "id": "visitor-registration",
+    "moduleKey": "visitor-management",
+    "name": "Visitor Registration",
+    "summary": "Walk-in or pre-booked",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Visitor Arrives / Online Request",
+        "description": "Walk-in or pre-booked",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Visitor Type",
+        "description": "Guest / Parent / Vendor",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Enter Visitor Details",
+        "description": "Name • Mobile • Email • Organization • Purpose • Date & Time",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Upload ID Proof",
+        "description": "Government-issued identification",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Capture Visitor Photo",
+        "description": "On-site photograph for pass",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Submit Registration",
+        "description": "Save visitor record",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Registration Successfully Saved",
+        "description": "System confirms entry",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "pre-approved-visitors",
+    "moduleKey": "visitor-management",
+    "name": "Pre-Approved Visitors",
+    "summary": "Staff Creates Visitor Request",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Staff Creates Visitor Request",
+        "description": "Staff Creates Visitor Request",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Enter Visitor Information",
+        "description": "Enter Visitor Information",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Select Visit Date & Time",
+        "description": "Select Visit Date & Time",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Submit for Approval",
+        "description": "Submit for Approval",
+        "type": "approval",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Approval by Authorized Staff",
+        "description": "Approval by Authorized Staff",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Approved Rejected",
+        "description": "Approved Rejected",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Generate Visitor Pass Notify Requester",
+        "description": "Generate Visitor Pass Notify Requester",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Visitor Ready for Check-In",
+        "description": "Visitor Ready for Check-In",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "visitor-pass",
+    "moduleKey": "visitor-management",
+    "name": "Visitor Pass",
+    "summary": "Host or admin approves visit",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Registration Approved",
+        "description": "Host or admin approves visit",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Generate Unique Visitor ID",
+        "description": "System creates visitor reference",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Create QR Code / Barcode",
+        "description": "Machine-readable pass generated",
+        "type": "create",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Print / Email / Mobile Pass",
+        "description": "Deliver pass to visitor",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Pass Validity Activated",
+        "description": "Set time-bound access",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Visitor Ready for Campus Entry",
+        "description": "Pass is active at gate",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "check-in-check-out",
+    "moduleKey": "visitor-management",
+    "name": "Check-In / Check-Out",
+    "summary": "Visitor Arrives at Gate",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Visitor Arrives at Gate",
+        "description": "Visitor Arrives at Gate",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Scan QR / Search Visitor Pass",
+        "description": "Scan QR / Search Visitor Pass",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Verify Identity Document",
+        "description": "Verify Identity Document",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Record Check-In Time",
+        "description": "Record Check-In Time",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Allow Campus Entry",
+        "description": "Allow Campus Entry",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Visitor Meets Host",
+        "description": "Visitor Meets Host",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Visitor Returns to Exit",
+        "description": "Visitor Returns to Exit",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Record Check-Out Time",
+        "description": "Record Check-Out Time",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Visit Duration Calculated",
+        "description": "Visit Duration Calculated",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "Visit Record Closed",
+        "description": "Visit Record Closed",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "host-approval",
+    "moduleKey": "visitor-management",
+    "name": "Host Approval",
+    "summary": "System captures request",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Visitor Registration Received",
+        "description": "System captures request",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Notify Concerned Staff/Faculty",
+        "description": "Alert the host",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Host Reviews Visitor Request",
+        "description": "Approve or reject",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Approve → Generate Visitor Pass",
+        "description": "Pass created and sent",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Reject → Notify Visitor",
+        "description": "Reason communicated",
+        "type": "notification",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Security Receives Approval",
+        "description": "Gate staff informed",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vehicle-entry",
+    "moduleKey": "visitor-management",
+    "name": "Vehicle Entry",
+    "summary": "Visitor Arrives with Vehicle",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Visitor Arrives with Vehicle",
+        "description": "Visitor Arrives with Vehicle",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Record Vehicle Details",
+        "description": "Record Vehicle Details",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Vehicle Number",
+        "description": "Vehicle Number",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Vehicle Type",
+        "description": "Vehicle Type",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Driver Name",
+        "description": "Driver Name",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Parking Zone",
+        "description": "Parking Zone",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Security Verification",
+        "description": "Security Verification",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Link Vehicle to Visitor",
+        "description": "Link Vehicle to Visitor",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Allow Vehicle Entry",
+        "description": "Allow Vehicle Entry",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "Record Vehicle Exit Time",
+        "description": "Record Vehicle Exit Time",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-11",
+        "order": 11,
+        "title": "Vehicle Entry Log Updated",
+        "description": "Vehicle Entry Log Updated",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "visitor-logs",
+    "moduleKey": "visitor-management",
+    "name": "Visitor Logs",
+    "summary": "Aggregate all visitor data",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Collect Visitor Activities",
+        "description": "Aggregate all visitor data",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Registration Information",
+        "description": "Store personal details",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Check-In / Check-Out Details",
+        "description": "Timestamps and duration",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Host Meeting Information",
+        "description": "Who the visitor met",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Vehicle Entry Details",
+        "description": "Linked vehicle records",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Store Visitor History",
+        "description": "Maintain long-term records",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Search / Filter Visitor Logs",
+        "description": "Query by date, name, or type",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "entry-and-exit-logs",
+    "moduleKey": "visitor-management",
+    "name": "Entry & Exit Logs",
+    "summary": "Visitor Entry Recorded",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Visitor Entry Recorded",
+        "description": "Visitor Entry Recorded",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Capture Entry Timestamp",
+        "description": "Capture Entry Timestamp",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Monitor Visitor Presence",
+        "description": "Monitor Visitor Presence",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Visitor Exit Recorded",
+        "description": "Visitor Exit Recorded",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Capture Exit Timestamp",
+        "description": "Capture Exit Timestamp",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Calculate Visit Duration",
+        "description": "Calculate Visit Duration",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Update Entry & Exit History",
+        "description": "Update Entry & Exit History",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "campus-geo-fencing",
+    "moduleKey": "visitor-management",
+    "name": "Campus Geo Fencing",
+    "summary": "Define geo-fenced zones",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Configure Campus Boundaries",
+        "description": "Define geo-fenced zones",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Enable Geo-Fencing for Visitors",
+        "description": "Activate location tracking",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Visitor Check-In Verified",
+        "description": "Confirm entry",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Detect Visitor Location",
+        "description": "Real-time GPS tracking",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Inside Campus → Continue Visit",
+        "description": "Normal status",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Outside Boundary → Generate Security Alert",
+        "description": "Unauthorized exit detected",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Notify Security Personnel",
+        "description": "Alert sent to guards",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Geo-Fencing Activity Logged",
+        "description": "Record all movements",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Select Report Type",
+        "description": "Daily Visits / Visitor History / Vehicle Logs",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "Apply Filters",
+        "description": "Date • Department • Host • Visitor Type",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-11",
+        "order": 11,
+        "title": "Generate Report",
+        "description": "Compile filtered data",
+        "type": "report",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-12",
+        "order": 12,
+        "title": "View / Print / Export",
+        "description": "PDF • Excel • CSV",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  }
+],
+} as const satisfies ModuleWorkflowCatalog;

@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "no-due",
+    "name":  "No Due Management",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "no-due.read",
+                        "no-due.create",
+                        "no-due.update",
+                        "no-due.delete",
+                        "no-due.configure",
+                        "no-due.reports.read"
+                    ],
+    "capabilities":  [
+                         "clearance",
+                         "department-checks",
+                         "approvals",
+                         "certificates",
+                         "reports"
+                     ]
+}

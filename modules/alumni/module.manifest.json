@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "alumni",
+    "name":  "Alumni Management",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "alumni.read",
+                        "alumni.create",
+                        "alumni.update",
+                        "alumni.delete",
+                        "alumni.configure",
+                        "alumni.reports.read"
+                    ],
+    "capabilities":  [
+                         "alumni-profiles",
+                         "chapters",
+                         "events",
+                         "mentorship",
+                         "donations"
+                     ]
+}

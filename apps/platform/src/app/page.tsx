@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AppProvider, useApp } from '@/lib/context';
 import Sidebar from '@/components/layout/Sidebar';
 import TopBar from '@/components/layout/TopBar';
@@ -21,12 +21,22 @@ import QRPage from '@/components/modules/QRPage';
 import LoginPage from '@/components/auth/LoginPage';
 
 function DashboardContent() {
-  const { state, authStatus } = useApp();
+  const { state, authStatus, student } = useApp();
+  const shouldOpenStaffWorkspace = authStatus === 'authenticated' && Boolean(student?.role) && student?.role !== 'Student';
+
+  useEffect(() => {
+    if (shouldOpenStaffWorkspace) {
+      window.location.assign('/dashboard/admissions');
+    }
+  }, [shouldOpenStaffWorkspace]);
 
   if (authStatus === 'checking') {
-    return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">✦</div><span>Securing your workspace…</span></div>;
+    return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">SC</div><span>Securing your workspace...</span></div>;
   }
   if (authStatus === 'unauthenticated') return <LoginPage />;
+  if (shouldOpenStaffWorkspace) {
+    return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">SC</div><span>Opening your staff workspace...</span></div>;
+  }
 
   const renderActiveModule = () => {
     switch (state.active) {

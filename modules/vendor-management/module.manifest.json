@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "vendor-management",
+    "name":  "Vendor Management",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "vendor-management.read",
+                        "vendor-management.create",
+                        "vendor-management.update",
+                        "vendor-management.delete",
+                        "vendor-management.configure",
+                        "vendor-management.reports.read"
+                    ],
+    "capabilities":  [
+                         "vendors",
+                         "contracts",
+                         "purchase-requests",
+                         "compliance",
+                         "payments"
+                     ]
+}

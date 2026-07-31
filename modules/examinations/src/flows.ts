@@ -1,0 +1,1258 @@
+import type { ModuleWorkflowCatalog } from "@supercampus/contracts";
+
+export const examinationsWorkflowCatalog = {
+  moduleKey: "examinations",
+  source: "docs/workflows/Examination_System_Workflow.md",
+  deliveryTargets: [
+  "flutter-student-app",
+  "flutter-parent-app",
+  "flutter-staff-app",
+  "web-admin",
+  "web-staff"
+],
+  overview: "The Examination System module manages the complete examination lifecycle — from configuration and scheduling to hall ticket generation, seating arrangement, question paper management, marks entry, moderation, grade calculation, result publishing, revaluation, and transcript generation.",
+  navigation: [
+  "Configure Examination",
+  "Exam Scheduling",
+  "Hall Tickets",
+  "Seating Arrangement",
+  "Question Paper Management",
+  "Internal Examination",
+  "Marks Entry",
+  "Moderation",
+  "Grade Calculation",
+  "CGPA Calculation",
+  "Degree Audit",
+  "Result Publishing",
+  "Revaluation",
+  "Transcript",
+  "AI Exam Insights",
+  "Notifications & Alerts",
+  "Reports & Analytics"
+],
+  workflows: [
+  {
+    "id": "configure-examination",
+    "moduleKey": "examinations",
+    "name": "Configure Examination",
+    "summary": "Set active year",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Academic Year",
+        "description": "Set active year",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Semester",
+        "description": "Pick term",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Select Programme / Department",
+        "description": "Target group",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Configure Exam Settings",
+        "description": "Exam Type / Passing Rules / Grade Scheme",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Configure Assessment Pattern",
+        "description": "Internal + External Weightage",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Save & Activate Examination",
+        "description": "Go live",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "exam-scheduling",
+    "moduleKey": "examinations",
+    "name": "Exam Scheduling",
+    "summary": "Select Academic Year",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Academic Year",
+        "description": "Select Academic Year",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Semester",
+        "description": "Select Semester",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Select Course / Subject",
+        "description": "Select Course / Subject",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Choose Examination Type",
+        "description": "Choose Examination Type",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Assign Date & Time Slot",
+        "description": "Assign Date & Time Slot",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Allocate Examination Hall",
+        "description": "Allocate Examination Hall",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Assign Invigilators",
+        "description": "Assign Invigilators",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Conflict Validation Engine",
+        "description": "Conflict Validation Engine",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Conflict Found No Conflict",
+        "description": "Conflict Found No Conflict",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "Reschedule Exam Publish Schedule",
+        "description": "Reschedule Exam Publish Schedule",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hall-tickets",
+    "moduleKey": "examinations",
+    "name": "Hall Tickets",
+    "summary": "Check criteria",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Verify Student Eligibility",
+        "description": "Check criteria",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Check Fee Clearance Status",
+        "description": "Confirm payment",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Check Attendance Eligibility",
+        "description": "Verify minimum %",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Verify Exam Registration",
+        "description": "Confirm enrollment",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Eligible → Generate Hall Ticket",
+        "description": "Create pass",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Not Eligible → Notify Student",
+        "description": "Communicate reason",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "QR Code & Digital Signature",
+        "description": "Secure ticket",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Download / Print Hall Ticket",
+        "description": "Export",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "seating-arrangement",
+    "moduleKey": "examinations",
+    "name": "Seating Arrangement",
+    "summary": "Select Examination",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Examination",
+        "description": "Select Examination",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Examination Hall",
+        "description": "Select Examination Hall",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Fetch Registered Students",
+        "description": "Fetch Registered Students",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Apply Seating Rules",
+        "description": "Apply Seating Rules",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Alternate Roll Number Random",
+        "description": "Alternate Roll Number Random",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Seating Order Allocation",
+        "description": "Seating Order Allocation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Generate Seating Plan",
+        "description": "Generate Seating Plan",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Publish Seating Arrangement",
+        "description": "Publish Seating Arrangement",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "question-paper-management",
+    "moduleKey": "examinations",
+    "name": "Question Paper Management",
+    "summary": "Draft content",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Create Question Paper",
+        "description": "Draft content",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Course & Subject",
+        "description": "Target exam",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Choose Question Pattern",
+        "description": "Define format",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Upload / Create Questions",
+        "description": "Build paper",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Faculty Review & Approval",
+        "description": "Quality check",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Approved → Encrypt & Secure Paper",
+        "description": "Protect",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Needs Revision → Edit Paper",
+        "description": "Revise",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Release for Examination",
+        "description": "Distribute",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "marks-entry",
+    "moduleKey": "examinations",
+    "name": "Marks Entry",
+    "summary": "Select Examination",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Examination",
+        "description": "Select Examination",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Course / Subject",
+        "description": "Select Course / Subject",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Fetch Student List",
+        "description": "Fetch Student List",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Enter Internal / External Marks",
+        "description": "Enter Internal / External Marks",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Validate Maximum Marks",
+        "description": "Validate Maximum Marks",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Valid Entry Invalid Entry",
+        "description": "Valid Entry Invalid Entry",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Save Marks Correct Marks",
+        "description": "Save Marks Correct Marks",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Submit for Verification",
+        "description": "Submit for Verification",
+        "type": "approval",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "moderation",
+    "moduleKey": "examinations",
+    "name": "Moderation",
+    "summary": "Faculty submits",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Marks Submitted",
+        "description": "Faculty submits",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Department Verification",
+        "description": "Review accuracy",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Apply Moderation Rules",
+        "description": "Adjust if needed",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Grace Marks • Scaling • Normalization",
+        "description": "Methods",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Verify Final Marks",
+        "description": "Confirm accuracy",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Approve Moderated Marks",
+        "description": "Sign off",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "grade-calculation",
+    "moduleKey": "examinations",
+    "name": "Grade Calculation",
+    "summary": "Fetch Approved Final Marks",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Fetch Approved Final Marks",
+        "description": "Fetch Approved Final Marks",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Apply Grade Regulations",
+        "description": "Apply Grade Regulations",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Calculate Grade Points",
+        "description": "Calculate Grade Points",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Assign Letter Grades",
+        "description": "Assign Letter Grades",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Calculate Subject Result",
+        "description": "Calculate Subject Result",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Store Grade Records",
+        "description": "Store Grade Records",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "transcript",
+    "moduleKey": "examinations",
+    "name": "Transcript",
+    "summary": "Target student",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Student Record",
+        "description": "Target student",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Retrieve All Semesters",
+        "description": "Aggregate data",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Fetch Grades & Credits",
+        "description": "Compile records",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Generate Academic Transcript",
+        "description": "Create document",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Digital Signature & Verification",
+        "description": "Authenticate",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Download / Print Transcript",
+        "description": "Export",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cgpa-calculation",
+    "moduleKey": "examinations",
+    "name": "CGPA Calculation",
+    "summary": "Retrieve Semester Grades",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Retrieve Semester Grades",
+        "description": "Retrieve Semester Grades",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Retrieve Credit Values",
+        "description": "Retrieve Credit Values",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Calculate Grade Points Earned",
+        "description": "Calculate Grade Points Earned",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Calculate Semester GPA",
+        "description": "Calculate Semester GPA",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Calculate Overall CGPA",
+        "description": "Calculate Overall CGPA",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Store CGPA in Student Record",
+        "description": "Store CGPA in Student Record",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "degree-audit",
+    "moduleKey": "examinations",
+    "name": "Degree Audit",
+    "summary": "Target individual",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Student",
+        "description": "Target individual",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Fetch Programme Curriculum",
+        "description": "Load requirements",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Compare Earned Credits",
+        "description": "Check completion",
+        "type": "update",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Requirements Met → Eligible for Degree",
+        "description": "Clear",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Requirements Pending → Show Pending Courses",
+        "description": "Follow up",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Generate Degree Audit Report",
+        "description": "Document status",
+        "type": "report",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "result-publishing",
+    "moduleKey": "examinations",
+    "name": "Result Publishing",
+    "summary": "Final Marks Approved",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Final Marks Approved",
+        "description": "Final Marks Approved",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Generate Student Results",
+        "description": "Generate Student Results",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Verify Result Accuracy",
+        "description": "Verify Result Accuracy",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Publish Results Portal",
+        "description": "Publish Results Portal",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Student Login & View Results",
+        "description": "Student Login & View Results",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "SMS / Email / App Notification",
+        "description": "SMS / Email / App Notification",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "revaluation",
+    "moduleKey": "examinations",
+    "name": "Revaluation",
+    "summary": "Initiate request",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Student Applies Online",
+        "description": "Initiate request",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Verify Eligibility & Fee",
+        "description": "Check criteria",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Assign New Evaluator",
+        "description": "Independent review",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Re-evaluate Answer Script",
+        "description": "Re-assess",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Marks Changed → Update Result",
+        "description": "Revise",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "No Change → Notify Student",
+        "description": "Communicate",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Publish Revised Result",
+        "description": "Finalize",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "internal-exam",
+    "moduleKey": "examinations",
+    "name": "Internal Exam",
+    "summary": "Exam type, passing rules, grade scheme, and assessment pattern",
+    "steps": [
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Configure Examination",
+        "description": "Exam type, passing rules, grade scheme, and assessment pattern",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Exam Scheduling",
+        "description": "Date, time, hall, and invigilator allocation with conflict detection",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Hall Tickets",
+        "description": "Eligibility-verified tickets with QR code and digital signature",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Seating Arrangement",
+        "description": "Alternate, roll-number, and random seating plans",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Question Paper Management",
+        "description": "Creation, review, encryption, and secure release",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Marks Entry",
+        "description": "Internal/external marks with validation and verification",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Moderation",
+        "description": "Department verification with grace marks, scaling, and normalization",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Grade Calculation",
+        "description": "Grade points and letter grades with regulation compliance",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "CGPA Calculation",
+        "description": "Semester GPA and overall CGPA computation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-11",
+        "order": 11,
+        "title": "Degree Audit",
+        "description": "Credit requirement verification with pending course identification",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-12",
+        "order": 12,
+        "title": "Result Publishing",
+        "description": "Portal publication with multi-channel notifications",
+        "type": "notification",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-13",
+        "order": 13,
+        "title": "Revaluation",
+        "description": "Online application with independent evaluator assignment",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-14",
+        "order": 14,
+        "title": "Transcript",
+        "description": "Multi-semester academic record with digital signature",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-15",
+        "order": 15,
+        "title": "Internal Exam",
+        "description": "Test/assignment scheduling, evaluation, and marks transfer",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-16",
+        "order": 16,
+        "title": "AI Exam Insights",
+        "description": "Performance analytics and trend detection",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-17",
+        "order": 17,
+        "title": "Reports",
+        "description": "Comprehensive examination operation reports",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  }
+],
+} as const satisfies ModuleWorkflowCatalog;

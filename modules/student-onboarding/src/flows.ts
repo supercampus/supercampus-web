@@ -1,0 +1,684 @@
+import type { ModuleWorkflowCatalog } from "@supercampus/contracts";
+
+export const studentOnboardingWorkflowCatalog = {
+  moduleKey: "student-onboarding",
+  source: "docs/workflows/Student_Onboarding_Workflow.md",
+  deliveryTargets: [
+  "flutter-student-app",
+  "flutter-parent-app",
+  "flutter-staff-app",
+  "web-admin"
+],
+  overview: "The Student Onboarding module guides newly admitted students through a structured journey — from admission confirmation and document verification to fee payment, ID card generation, orientation, course registration, and final document collection — ensuring a seamless transition into academic life.",
+  navigation: [
+  "Admission Confirmation",
+  "Document Verification",
+  "Fee & Enrollment",
+  "ID Card & Credentials",
+  "Orientation",
+  "Course Registration",
+  "Document Collection"
+],
+  workflows: [
+  {
+    "id": "admission-confirmation",
+    "moduleKey": "student-onboarding",
+    "name": "Admission Confirmation",
+    "summary": "Offer letter sent via email/portal",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Student Receives Admission Offer",
+        "description": "Offer letter sent via email/portal",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Login to Admission Portal",
+        "description": "Student accesses the system",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "View Offer & Admission Details",
+        "description": "Review programme, fees, and terms",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Accept / Decline Admission",
+        "description": "Student makes a decision",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Accepted → Upload Required Documents",
+        "description": "Submit academic and identity documents",
+        "type": "approval",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Declined → Close Application",
+        "description": "Application archived",
+        "type": "delete",
+        "crud": [
+          "delete"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Pay Admission Confirmation Fee",
+        "description": "If applicable, pay to secure seat",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Admission Confirmed",
+        "description": "Status updated in system",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Proceed to Document Verification",
+        "description": "Move to next stage",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "document-verification",
+    "moduleKey": "student-onboarding",
+    "name": "Document Verification",
+    "summary": "Student Uploads Required Documents",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Student Uploads Required Documents",
+        "description": "Student Uploads Required Documents",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Validate Document Completeness",
+        "description": "Validate Document Completeness",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Documents Complete Missing Documents",
+        "description": "Documents Complete Missing Documents",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Verify Authenticity Request Resubmission",
+        "description": "Verify Authenticity Request Resubmission",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Verification by Admission Office",
+        "description": "Verification by Admission Office",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Approved Rejected",
+        "description": "Approved Rejected",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Continue Enrollment Notify Student",
+        "description": "Continue Enrollment Notify Student",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Proceed to Fee Payment",
+        "description": "Proceed to Fee Payment",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fee-and-enrollment",
+    "moduleKey": "student-onboarding",
+    "name": "Fee & Enrollment",
+    "summary": "System calculates total fees",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Generate Fee Structure",
+        "description": "System calculates total fees",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Apply Scholarships / Concessions",
+        "description": "Deduct eligible discounts",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Select Payment Method",
+        "description": "Online / Bank / Installment",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Process Payment",
+        "description": "Execute the transaction",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Successful → Generate Receipt",
+        "description": "Auto-generate payment receipt",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Failed → Retry Payment",
+        "description": "Allow re-attempt",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Student Enrollment Completed",
+        "description": "Academic record created",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "id-card-and-credentials",
+    "moduleKey": "student-onboarding",
+    "name": "ID Card & Credentials",
+    "summary": "Student Enrollment Confirmed",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Student Enrollment Confirmed",
+        "description": "Student Enrollment Confirmed",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Generate Student Registration No.",
+        "description": "Generate Student Registration No.",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Create ERP User Account",
+        "description": "Create ERP User Account",
+        "type": "integration",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Generate Email & Login Credentials",
+        "description": "Generate Email & Login Credentials",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Generate Student ID Card",
+        "description": "Generate Student ID Card",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Physical ID Digital ID QR Code",
+        "description": "Physical ID Digital ID QR Code",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Send Credentials to Student",
+        "description": "Send Credentials to Student",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Student Account Activated",
+        "description": "Student Account Activated",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "orientation",
+    "moduleKey": "student-onboarding",
+    "name": "Orientation",
+    "summary": "Admin plans orientation sessions",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Create Orientation Schedule",
+        "description": "Admin plans orientation sessions",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Assign Students to Sessions",
+        "description": "Batch-wise allocation",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Send Orientation Invitation",
+        "description": "Notify students via email/SMS",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Student Attends Orientation",
+        "description": "Physical or virtual attendance",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Activities",
+        "description": "Campus Tour / Academic Briefing / ERP Training",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Attendance Recorded",
+        "description": "Log student participation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Orientation Completed",
+        "description": "Status updated",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "course-registration",
+    "moduleKey": "student-onboarding",
+    "name": "Course Registration",
+    "summary": "Open Registration Window",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Open Registration Window",
+        "description": "Open Registration Window",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Student Login to ERP Portal",
+        "description": "Student Login to ERP Portal",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Display Eligible Courses",
+        "description": "Display Eligible Courses",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Select Core & Elective Courses",
+        "description": "Select Core & Elective Courses",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Validate Eligibility Rules",
+        "description": "Validate Eligibility Rules",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Eligible Not Eligible",
+        "description": "Eligible Not Eligible",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Register Courses Show Validation Error",
+        "description": "Register Courses Show Validation Error",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Faculty Advisor Approval (Optional)",
+        "description": "Faculty Advisor Approval (Optional)",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Generate Final Course Schedule",
+        "description": "Generate Final Course Schedule",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "Registration Completed",
+        "description": "Registration Completed",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "document-collection",
+    "moduleKey": "student-onboarding",
+    "name": "Document Collection",
+    "summary": "System lists originals needed",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Generate Required Document List",
+        "description": "System lists originals needed",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Student Submits Original Documents",
+        "description": "Physical submission at office",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Admission Office Receives Documents",
+        "description": "Log receipt",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Verify Against Uploaded Copies",
+        "description": "Cross-check with digital uploads",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Verified → Update Student Record",
+        "description": "Mark documents as received",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Discrepancy Found → Request Clarification",
+        "description": "Follow up with student",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Acknowledge Document Receipt",
+        "description": "Issue acknowledgement slip",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Store Documents Digitally",
+        "description": "Scan and archive",
+        "type": "delete",
+        "crud": [
+          "delete"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Document Collection Completed",
+        "description": "Onboarding finalized",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  }
+],
+} as const satisfies ModuleWorkflowCatalog;

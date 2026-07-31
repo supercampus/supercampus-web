@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import type { Lead } from '@/lib/kanban/kanban-data';
-import { Bell, X, User, ArrowRight, Archive, MessageSquare, Phone, Mail } from 'lucide-react';
+import { Bell, X, ArrowRight, MessageSquare } from 'lucide-react';
 
 interface ActivityFeedProps {
   leads: Lead[];
@@ -49,7 +49,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
             </div>
 
             {/* Filters */}
-            <div className="flex gap-1 px-4 py-2 border-b border-[var(--crm-border)] overflow-x-auto">
+            <div className="flex gap-1 px-4 py-2 border-b border-[var(--crm-border)] overflow-x-auto kanban-scroll-hidden">
               {['All', 'Moves', 'Calls', 'Notes'].map((f) => (
                 <button
                   key={f}
@@ -61,7 +61,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
             </div>
 
             {/* Feed */}
-            <div className="max-h-[320px] overflow-y-auto">
+            <div className="max-h-[320px] overflow-y-auto kanban-scroll-hidden">
               {allActivity.length === 0 ? (
                 <div className="text-center py-8">
                   <Bell size={24} className="mx-auto text-[var(--crm-muted)] mb-2" />
@@ -69,10 +69,9 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
                 </div>
               ) : (
                 allActivity.map((entry) => {
-                  const isArchive = entry.to === 'archived';
                   const isMove = entry.from && entry.to;
-                  const iconColor = isArchive ? '#ff005c' : isMove ? '#776cf5' : '#10b981';
-                  const Icon = isArchive ? Archive : isMove ? ArrowRight : MessageSquare;
+                  const iconColor = isMove ? '#776cf5' : '#10b981';
+                  const Icon = isMove ? ArrowRight : MessageSquare;
                   return (
                     <div key={entry.id} className="flex items-start gap-3 px-4 py-3 hover:bg-[var(--crm-panel)] transition-colors border-b border-[var(--crm-border)] last:border-0">
                       <div
@@ -84,9 +83,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium text-[var(--crm-text)]">
                           <span className="font-semibold">{entry.byName}</span>
-                          {isArchive
-                            ? ` archived ${entry.leadName}`
-                            : isMove
+                          {isMove
                             ? ` moved ${entry.leadName}`
                             : ` added ${entry.leadName}`}
                         </p>

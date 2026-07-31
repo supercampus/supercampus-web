@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "student-self-service",
+    "name":  "Student Self Service",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "student-self-service.read",
+                        "student-self-service.create",
+                        "student-self-service.update",
+                        "student-self-service.delete",
+                        "student-self-service.configure",
+                        "student-self-service.reports.read"
+                    ],
+    "capabilities":  [
+                         "profile",
+                         "fees",
+                         "attendance",
+                         "requests",
+                         "documents"
+                     ]
+}

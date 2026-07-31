@@ -1,0 +1,1248 @@
+{
+  "moduleKey": "no-due",
+  "source": "docs/workflows/No_Due_Management_Workflow.md",
+  "deliveryTargets": [
+    "flutter-student-app",
+    "flutter-staff-app",
+    "web-admin",
+    "web-staff"
+  ],
+  "overview": "The No Due Management module automates the clearance process for students and staff exiting the institution — routing requests through all relevant departments (Library, Accounts, Hostel, Transport, Laboratory, HOD, Examination, Placement, IT, Assets, HR, Administration) and generating a final No Due Certificate upon complete clearance.",
+  "navigation": [
+    "Configure No Due",
+    "No Due Requests",
+    "Department Clearances",
+    "Approval Workflow",
+    "Certificate Generator",
+    "Library Clearance",
+    "Accounts / Fees Clearance",
+    "Hostel Clearance",
+    "Transport Clearance",
+    "Laboratory Clearance",
+    "Department / HOD Clearance",
+    "Examination Clearance",
+    "Placement Cell Clearance",
+    "IT / System Clearance",
+    "Asset Clearance",
+    "HR Clearance (Staff)",
+    "Administration Clearance",
+    "Notifications & Alerts",
+    "Reports & Analytics"
+  ],
+  "workflows": [
+    {
+      "id": "configure-no-due",
+      "moduleKey": "no-due",
+      "name": "Configure No Due",
+      "summary": "Set active year",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Academic Year",
+          "description": "Set active year",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Semester",
+          "description": "Pick semester",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Select Programme / Department",
+          "description": "Target group",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Configure Clearance Modules",
+          "description": "Library / Hostel / Transport / Accounts / Laboratory / Placement / Examination / IT Assets",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Configure Approval Rules",
+          "description": "Define approvers and conditions",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Configure Certificate Format",
+          "description": "Design template",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Save & Activate",
+          "description": "System ready",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "no-due-requests",
+      "moduleKey": "no-due",
+      "name": "No Due Requests",
+      "summary": "Student / Staff Login",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Student / Staff Login",
+          "description": "Student / Staff Login",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select No Due Category",
+          "description": "Select No Due Category",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Graduation Transfer Staff Exit",
+          "description": "Graduation Transfer Staff Exit",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Verify Eligibility",
+          "description": "Verify Eligibility",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Submit No Due Request",
+          "description": "Submit No Due Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Request Sent for Processing",
+          "description": "Request Sent for Processing",
+          "type": "create",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "department-clearances",
+      "moduleKey": "no-due",
+      "name": "Department Clearances",
+      "summary": "System captures",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "No Due Request Received",
+          "description": "System captures",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Identify Required Departments",
+          "description": "Auto-determine based on category",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Send Clearance Requests",
+          "description": "Route to all departments",
+          "type": "create",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Update Clearance Status",
+          "description": "Track progress",
+          "type": "update",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Overall Clearance Progress",
+          "description": "Consolidated view",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "approval-workflow",
+      "moduleKey": "no-due",
+      "name": "Approval Workflow",
+      "summary": "Department Receives Request",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Department Receives Request",
+          "description": "Department Receives Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Review Outstanding Dues",
+          "description": "Review Outstanding Dues",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "No Due Dues Found",
+          "description": "No Due Dues Found",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Approve Clearance Reject / Hold Request",
+          "description": "Approve Clearance Reject / Hold Request",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Notify Student / Staff",
+          "description": "Notify Student / Staff",
+          "type": "notification",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Overall No Due Status",
+          "description": "Update Overall No Due Status",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "certificate-generator",
+      "moduleKey": "no-due",
+      "name": "Certificate Generator",
+      "summary": "Check status",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "All Clearances Completed",
+          "description": "Check status",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify Approval Status",
+          "description": "Confirm all approved",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Generate No Due Certificate",
+          "description": "Auto-create",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Digital Signature / QR Validation",
+          "description": "Authenticate",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Download / Print / Share",
+          "description": "Export",
+          "type": "integration",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "library-clearance",
+      "moduleKey": "no-due",
+      "name": "Library Clearance",
+      "summary": "Receive Clearance Request",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Clearance Request",
+          "description": "Receive Clearance Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Check Borrowed Books",
+          "description": "Check Borrowed Books",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Check Pending Library Fine",
+          "description": "Check Pending Library Fine",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "No Dues Dues Pending",
+          "description": "No Dues Dues Pending",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Approve Return Books / Pay Fine",
+          "description": "Approve Return Books / Pay Fine",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Clearance Status",
+          "description": "Update Clearance Status",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "accounts-fees-clearance",
+      "moduleKey": "no-due",
+      "name": "Accounts / Fees Clearance",
+      "summary": "System alert",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Clearance Request",
+          "description": "System alert",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Check Fee Ledger",
+          "description": "Review records",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Verify Outstanding Balance",
+          "description": "Check dues",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "No Balance → Approve",
+          "description": "Clear",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Pending Fees → Payment Required",
+          "description": "Request settlement",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Clearance Status",
+          "description": "Record outcome",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hostel-clearance",
+      "moduleKey": "no-due",
+      "name": "Hostel Clearance",
+      "summary": "Receive Hostel Clearance",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Hostel Clearance",
+          "description": "Receive Hostel Clearance",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Room Inspection",
+          "description": "Room Inspection",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Check Damages & Dues",
+          "description": "Check Damages & Dues",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "No Issues Damage/Fine",
+          "description": "No Issues Damage/Fine",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Approve Collect Charges",
+          "description": "Approve Collect Charges",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Clearance Status",
+          "description": "Update Clearance Status",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "transport-clearance",
+      "moduleKey": "no-due",
+      "name": "Transport Clearance",
+      "summary": "System alert",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Clearance Request",
+          "description": "System alert",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Check Transport Dues",
+          "description": "Review fees",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Verify Pass Submission",
+          "description": "Check pass return",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Cleared → Approve",
+          "description": "No dues",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Pending Dues → Collect Payment",
+          "description": "Settle",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Clearance Status",
+          "description": "Record",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laboratory-clearance",
+      "moduleKey": "no-due",
+      "name": "Laboratory Clearance",
+      "summary": "Receive Clearance Request",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Clearance Request",
+          "description": "Receive Clearance Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Check Lab Equipment Return",
+          "description": "Check Lab Equipment Return",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Verify Damage Status",
+          "description": "Verify Damage Status",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Cleared Damage Found",
+          "description": "Cleared Damage Found",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Approve Collect Charges",
+          "description": "Approve Collect Charges",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Clearance Status",
+          "description": "Update Clearance Status",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "department-hod-clearance",
+      "moduleKey": "no-due",
+      "name": "Department / HOD Clearance",
+      "summary": "System alert",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Clearance Request",
+          "description": "System alert",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify Academic Requirements",
+          "description": "Check completion",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Verify Project Submission",
+          "description": "Confirm deliverables",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Completed → Approve",
+          "description": "Clear",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Pending Items → Hold Clearance",
+          "description": "Request completion",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Department Status",
+          "description": "Record",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "examination-clearance",
+      "moduleKey": "no-due",
+      "name": "Examination Clearance",
+      "summary": "Receive Clearance Request",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Clearance Request",
+          "description": "Receive Clearance Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Check Exam Eligibility",
+          "description": "Check Exam Eligibility",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Verify Pending Records",
+          "description": "Verify Pending Records",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Cleared Pending Issue",
+          "description": "Cleared Pending Issue",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Approve Resolve Issue",
+          "description": "Approve Resolve Issue",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Clearance Status",
+          "description": "Update Clearance Status",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "placement-cell-clearance",
+      "moduleKey": "no-due",
+      "name": "Placement Cell Clearance",
+      "summary": "System alert",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Clearance Request",
+          "description": "System alert",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify Placement Assets",
+          "description": "Check returns",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Verify Placement Records",
+          "description": "Confirm status",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Cleared → Approve",
+          "description": "No issues",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Pending Items → Resolve Issue",
+          "description": "Follow up",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Clearance Status",
+          "description": "Record",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "it-system-clearance",
+      "moduleKey": "no-due",
+      "name": "IT / System Clearance",
+      "summary": "Receive Clearance Request",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Clearance Request",
+          "description": "Receive Clearance Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify Device Return",
+          "description": "Verify Device Return",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Check Software Licenses",
+          "description": "Check Software Licenses",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Cleared Asset Pending",
+          "description": "Cleared Asset Pending",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Approve Recover Asset",
+          "description": "Approve Recover Asset",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Clearance Status",
+          "description": "Update Clearance Status",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "asset-clearance",
+      "moduleKey": "no-due",
+      "name": "Asset Clearance",
+      "summary": "System alert",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Clearance Request",
+          "description": "System alert",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify Assigned Assets",
+          "description": "Check inventory",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Collect Returned Assets",
+          "description": "Physical return",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Returned → Approve",
+          "description": "Clear",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Missing Asset → Recover / Charge",
+          "description": "Settle",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Update Clearance Status",
+          "description": "Record",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hr-clearance-staff",
+      "moduleKey": "no-due",
+      "name": "HR Clearance (Staff)",
+      "summary": "Staff Exit Initiated",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Staff Exit Initiated",
+          "description": "Staff Exit Initiated",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify Employee Records",
+          "description": "Verify Employee Records",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Verify Leave & Payroll",
+          "description": "Verify Leave & Payroll",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Verify Asset Return",
+          "description": "Verify Asset Return",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Cleared Pending Items",
+          "description": "Cleared Pending Items",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Approve Resolve Issues",
+          "description": "Approve Resolve Issues",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "HR Exit Completed",
+          "description": "HR Exit Completed",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "administration-clearance",
+      "moduleKey": "no-due",
+      "name": "Administration Clearance",
+      "summary": "Last department",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Receive Final Clearance",
+          "description": "Last department",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify All Departments",
+          "description": "Cross-check",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Check Pending Approvals",
+          "description": "Ensure completeness",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "All Approved → Final Approval",
+          "description": "Sign off",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Pending Approval → Return to Department",
+          "description": "Follow up",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Generate Final No Due Status",
+          "description": "Complete",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    }
+  ]
+}

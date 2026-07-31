@@ -20,7 +20,7 @@ function groupOf(id: NavId) {
 }
 
 export default function Sidebar() {
-  const { state, nav, student } = useApp();
+  const { state, nav, student, tenantBrand } = useApp();
   const currentStudent = student ?? STUDENT;
   const hosteller = state.persona === 'hosteller';
   const dues = duesTotal(state.paid);
@@ -80,7 +80,10 @@ export default function Sidebar() {
 
       {/* Panel */}
       <div className="sc-panel">
-        <div className="sc-panel__brand">Super Campus</div>
+        <div className={`sc-panel__brand ${tenantBrand.logoDataUrl ? 'sc-panel__brand--logo' : ''}`}>
+          {tenantBrand.logoDataUrl && <img src={tenantBrand.logoDataUrl} alt={`${currentStudent.college} logo`} />}
+          <span>{currentStudent.college}</span>
+        </div>
         {curGroupItems.map(id => {
           const on = state.active === id;
           const badge = badges[id];

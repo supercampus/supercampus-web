@@ -1,0 +1,726 @@
+import type { ModuleWorkflowCatalog } from "@supercampus/contracts";
+
+export const vendorManagementWorkflowCatalog = {
+  moduleKey: "vendor-management",
+  source: "docs/workflows/Vendor_Management_Workflow.md",
+  deliveryTargets: [
+  "flutter-staff-app",
+  "web-admin",
+  "web-staff"
+],
+  overview: "The Vendor Management module handles the complete vendor lifecycle — from creation and categorization to contracts, purchase orders, goods receipt, payment processing, work orders, performance evaluation, and AI-driven vendor insights.",
+  navigation: [
+  "Vendor Creation",
+  "Vendor Categories",
+  "Contracts & AMCs",
+  "Purchase Orders",
+  "Goods Receipt (GRN)",
+  "Payments & History",
+  "Work Orders",
+  "Work History",
+  "Vendor Performance",
+  "AI Vendor Insights",
+  "Notifications & Alerts",
+  "Reports & Analytics"
+],
+  workflows: [
+  {
+    "id": "vendor-creation",
+    "moduleKey": "vendor-management",
+    "name": "Vendor Creation",
+    "summary": "Access vendor registry",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Open Vendor Master",
+        "description": "Access vendor registry",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Enter Vendor Basic Details",
+        "description": "Company Name • Contact Person • GST/VAT • PAN/Tax ID • Address • Email • Phone",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Select Vendor Category",
+        "description": "Classify vendor type",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Upload Required Documents",
+        "description": "GST • PAN • Bank Details • Licenses",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Configure Payment Terms",
+        "description": "Credit period, advance rules",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Verify & Validate Information",
+        "description": "Data quality check",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Valid Data → Generate Vendor ID",
+        "description": "Create unique ID",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Invalid Data → Correct Details",
+        "description": "Resubmit",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Save Vendor",
+        "description": "Persist record",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "Vendor Available for Use",
+        "description": "Ready for transactions",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vendor-categories",
+    "moduleKey": "vendor-management",
+    "name": "Vendor Categories",
+    "summary": "Open Category Management",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Open Category Management",
+        "description": "Open Category Management",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Create / Select Category",
+        "description": "Create / Select Category",
+        "type": "create",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Define Category Information",
+        "description": "Define Category Information",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Stationery IT Equipment Maintenance",
+        "description": "Stationery IT Equipment Maintenance",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Transportation Housekeeping Laboratory",
+        "description": "Transportation Housekeeping Laboratory",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Assign Vendors to Category",
+        "description": "Assign Vendors to Category",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Configure Category Rules",
+        "description": "Configure Category Rules",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Save Category Mapping",
+        "description": "Save Category Mapping",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "contracts-and-amcs",
+    "moduleKey": "vendor-management",
+    "name": "Contracts & AMCs",
+    "summary": "Choose partner",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Vendor",
+        "description": "Choose partner",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Create Contract / AMC",
+        "description": "Initiate agreement",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Enter Contract Information",
+        "description": "Start Date • End Date • Value • SLA",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Upload Agreement Document",
+        "description": "Attach signed copy",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Approval Workflow",
+        "description": "Route for sign-off",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Approved → Activate Contract",
+        "description": "Go live",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Rejected → Return for Review",
+        "description": "Revise",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "AMC Renewal Reminder Engine",
+        "description": "Auto-alerts before expiry",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Contract Monitoring Dashboard",
+        "description": "Track all active contracts",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "purchase-orders",
+    "moduleKey": "vendor-management",
+    "name": "Purchase Orders",
+    "summary": "Purchase Request Approved",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Purchase Request Approved",
+        "description": "Purchase Request Approved",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Vendor",
+        "description": "Select Vendor",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Create Purchase Order",
+        "description": "Create Purchase Order",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Add Items • Quantity • Price",
+        "description": "Add Items • Quantity • Price",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Verify Budget Availability",
+        "description": "Verify Budget Availability",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Budget OK Budget Exceeded",
+        "description": "Budget OK Budget Exceeded",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Approval Workflow Additional Approval",
+        "description": "Approval Workflow Additional Approval",
+        "type": "approval",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Generate Purchase Order",
+        "description": "Generate Purchase Order",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Send PO to Vendor",
+        "description": "Send PO to Vendor",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "Await Delivery Status",
+        "description": "Await Delivery Status",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "payments-and-history",
+    "moduleKey": "vendor-management",
+    "name": "Payments & History",
+    "summary": "Confirm delivery",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Goods/Service Received",
+        "description": "Confirm delivery",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Vendor Invoice Submitted",
+        "description": "Receive bill",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Invoice Verification",
+        "description": "Match with PO and GRN",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Invoice Match → Payment Approval",
+        "description": "Proceed",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Invoice Mismatch → Resolve Issue",
+        "description": "Reconcile",
+        "type": "action",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Process Payment",
+        "description": "Execute transaction",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Update Payment History Ledger",
+        "description": "Record in system",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Generate Payment Reports",
+        "description": "Compile analytics",
+        "type": "report",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "work-order",
+    "moduleKey": "vendor-management",
+    "name": "Work Order",
+    "summary": "Maintenance/Service Request",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Maintenance/Service Request",
+        "description": "Maintenance/Service Request",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Vendor",
+        "description": "Select Vendor",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Create Work Order",
+        "description": "Create Work Order",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Define Scope of Work (SOW)",
+        "description": "Define Scope of Work (SOW)",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Set Priority • Due Date • Location",
+        "description": "Set Priority • Due Date • Location",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Approval & Vendor Assignment",
+        "description": "Approval & Vendor Assignment",
+        "type": "approval",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Work Order Sent to Vendor",
+        "description": "Work Order Sent to Vendor",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Vendor Starts Assigned Work",
+        "description": "Vendor Starts Assigned Work",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "work-history",
+    "moduleKey": "vendor-management",
+    "name": "Work History",
+    "summary": "Vendor finishes",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Work Order Completed",
+        "description": "Vendor finishes",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Vendor Submits Completion",
+        "description": "Log completion",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Inspection & Verification",
+        "description": "Quality check",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Accepted → Close Work Order",
+        "description": "Finalize",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Rework Needed → Reassign Vendor",
+        "description": "Fix issues",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Record Work History",
+        "description": "Archive",
+        "type": "delete",
+        "crud": [
+          "delete"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Update Vendor Performance Score",
+        "description": "Rate vendor",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Reports • Analytics • Audit Trail",
+        "description": "Generate insights",
+        "type": "report",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  }
+],
+} as const satisfies ModuleWorkflowCatalog;

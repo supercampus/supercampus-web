@@ -129,10 +129,20 @@ export interface Tenant {
   city: string;
 }
 
+export interface TenantBrand {
+  logoDataUrl: string | null;
+  primary: string;
+  secondary: string;
+  surface: string;
+}
+
 export interface AuthStudent extends Student {
   id: string;
   tenantId: string;
   email: string;
+  role: string;
+  team: string;
+  access: string[];
   fullCollege: string;
   tenant: Tenant;
 }

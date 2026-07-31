@@ -41,12 +41,12 @@ requests proxy to `http://127.0.0.1:4000/api` by default. Open
 - `packages/api-client` — typed HTTP transport.
 - `packages/contracts` — shared TypeScript runtime contracts.
 - `packages/module-sdk` — frontend module registration contract.
-- `packages/runtime` — dynamic form/view/workflow/report renderers and permissions.
+- `packages/runtime` — dynamic form/view/dashboard/report renderers and permissions.
 - `packages/state` — framework-light shared state utilities.
 - `packages/testing` — shared fixtures and test helpers.
 - `packages/ui` — reusable UI foundations and design tokens.
 - `modules/*` — independently bounded domain frontend packages.
-- `contracts` — JSON Schemas for configuration, forms, workflows, and manifests.
+- `contracts` — JSON Schemas for configuration, forms, and manifests.
 - `tooling` — module validation and code-generation commands.
 - `tests` — cross-workspace accessibility, contract, e2e, permission, and visual tests.
 

@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "feedback-grievance",
+    "name":  "Feedback \u0026 Grievance",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "feedback-grievance.read",
+                        "feedback-grievance.create",
+                        "feedback-grievance.update",
+                        "feedback-grievance.delete",
+                        "feedback-grievance.configure",
+                        "feedback-grievance.reports.read"
+                    ],
+    "capabilities":  [
+                         "feedback",
+                         "grievances",
+                         "routing",
+                         "resolution",
+                         "analytics"
+                     ]
+}

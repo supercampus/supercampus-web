@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "timetable",
+    "name":  "Timetable",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "timetable.read",
+                        "timetable.create",
+                        "timetable.update",
+                        "timetable.delete",
+                        "timetable.configure",
+                        "timetable.reports.read"
+                    ],
+    "capabilities":  [
+                         "schedules",
+                         "rooms",
+                         "faculty-allocation",
+                         "substitutions",
+                         "publishing"
+                     ]
+}

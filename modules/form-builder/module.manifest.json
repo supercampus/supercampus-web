@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "form-builder",
+    "name":  "Form Builder",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "form-builder.read",
+                        "form-builder.create",
+                        "form-builder.update",
+                        "form-builder.delete",
+                        "form-builder.configure",
+                        "form-builder.reports.read"
+                    ],
+    "capabilities":  [
+                         "forms",
+                         "fields",
+                         "publishing",
+                         "approval-routing",
+                         "erp-mapping"
+                     ]
+}

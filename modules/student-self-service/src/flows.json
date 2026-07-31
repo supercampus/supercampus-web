@@ -1,0 +1,1674 @@
+{
+  "moduleKey": "student-self-service",
+  "source": "docs/workflows/Student_Self_Service_Workflow.md",
+  "deliveryTargets": [
+    "flutter-student-app",
+    "web-admin"
+  ],
+  "overview": "",
+  "navigation": [
+    "Profile",
+    "Digital ID Card",
+    "Academic History",
+    "Documents Submitted",
+    "Scholarship",
+    "Emergency Contacts",
+    "Parent Details",
+    "Medical Information",
+    "Bonafide Certificate Generator",
+    "Hostel",
+    "Transport",
+    "Certificates",
+    "Absence Alert",
+    "Timetable",
+    "Attendance",
+    "Assignments",
+    "Fees",
+    "Results",
+    "Notifications",
+    "Certificate Generation",
+    "Document Upload",
+    "Document Verification",
+    "Grievances",
+    "Leave Applications",
+    "Gate Pass",
+    "Helpdesk",
+    "Lost & Found",
+    "Wall"
+  ],
+  "workflows": [
+    {
+      "id": "profile",
+      "moduleKey": "student-self-service",
+      "name": "PROFILE",
+      "summary": "Student Login",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Student Login",
+          "description": "Student Login",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "View Personal Profile",
+          "description": "View Personal Profile",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Edit Allowed Information",
+          "description": "Edit Allowed Information",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Upload Supporting Documents",
+          "description": "Upload Supporting Documents",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Validation & Verification",
+          "description": "Validation & Verification",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Approved Rejected",
+          "description": "Approved Rejected",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Profile Updated Request Correction",
+          "description": "Profile Updated Request Correction",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "digital-id-card",
+      "moduleKey": "student-self-service",
+      "name": "DIGITAL ID CARD",
+      "summary": "Student Login",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Student Login",
+          "description": "Student Login",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Fetch Verified Student Data",
+          "description": "Fetch Verified Student Data",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Generate Digital ID Card",
+          "description": "Generate Digital ID Card",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "QR Code / Barcode Generated",
+          "description": "QR Code / Barcode Generated",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "View • Download • Mobile Wallet",
+          "description": "View • Download • Mobile Wallet",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "academic-history",
+      "moduleKey": "student-self-service",
+      "name": "ACADEMIC HISTORY",
+      "summary": "Student Dashboard",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Student Dashboard",
+          "description": "Student Dashboard",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Academic Year",
+          "description": "Select Academic Year",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "View Semester Records",
+          "description": "View Semester Records",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Subjects • Grades • Credits",
+          "description": "Subjects • Grades • Credits",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "GPA / CGPA Calculation",
+          "description": "GPA / CGPA Calculation",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Academic Performance Summary",
+          "description": "Academic Performance Summary",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "documents-submitted",
+      "moduleKey": "student-self-service",
+      "name": "DOCUMENTS SUBMITTED",
+      "summary": "Student Dashboard",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Student Dashboard",
+          "description": "Student Dashboard",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "View Submitted Documents",
+          "description": "View Submitted Documents",
+          "type": "create",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Check Verification Status",
+          "description": "Check Verification Status",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Verified Pending Review",
+          "description": "Verified Pending Review",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Download Copy Await Verification",
+          "description": "Download Copy Await Verification",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scholarship",
+      "moduleKey": "student-self-service",
+      "name": "SCHOLARSHIP",
+      "summary": "View Available Scholarships",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "View Available Scholarships",
+          "description": "View Available Scholarships",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Check Eligibility Criteria",
+          "description": "Check Eligibility Criteria",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Submit Application",
+          "description": "Submit Application",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Upload Required Documents",
+          "description": "Upload Required Documents",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Verification Process",
+          "description": "Verification Process",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Approved Rejected",
+          "description": "Approved Rejected",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-7",
+          "order": 7,
+          "title": "Scholarship Granted Notify Student",
+          "description": "Scholarship Granted Notify Student",
+          "type": "notification",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "emergency-contacts",
+      "moduleKey": "student-self-service",
+      "name": "EMERGENCY CONTACTS",
+      "summary": "View Contact Details",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "View Contact Details",
+          "description": "View Contact Details",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Add / Update Contact",
+          "description": "Add / Update Contact",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Validate Information",
+          "description": "Validate Information",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Save Contact",
+          "description": "Save Contact",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parent-details",
+      "moduleKey": "student-self-service",
+      "name": "PARENT DETAILS",
+      "summary": "View Parent Records",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "View Parent Records",
+          "description": "View Parent Records",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Add / Update Information",
+          "description": "Add / Update Information",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Submit for Approval",
+          "description": "Submit for Approval",
+          "type": "approval",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Parent Details Updated",
+          "description": "Parent Details Updated",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medical-information",
+      "moduleKey": "student-self-service",
+      "name": "MEDICAL INFORMATION",
+      "summary": "Enter Medical Details",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Enter Medical Details",
+          "description": "Enter Medical Details",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Upload Reports / Insurance Details",
+          "description": "Upload Reports / Insurance Details",
+          "type": "report",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Medical Office Verification",
+          "description": "Medical Office Verification",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Medical Record Successfully Saved",
+          "description": "Medical Record Successfully Saved",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bonafide-certificate",
+      "moduleKey": "student-self-service",
+      "name": "BONAFIDE CERTIFICATE",
+      "summary": "Select Certificate Type",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Certificate Type",
+          "description": "Select Certificate Type",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify Student Eligibility",
+          "description": "Verify Student Eligibility",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Generate Certificate",
+          "description": "Generate Certificate",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Digital Signature Applied",
+          "description": "Digital Signature Applied",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Download / Share Certificate",
+          "description": "Download / Share Certificate",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hostel",
+      "moduleKey": "student-self-service",
+      "name": "HOSTEL",
+      "summary": "View Hostel Details",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "View Hostel Details",
+          "description": "View Hostel Details",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Apply / Room Allocation Request",
+          "description": "Apply / Room Allocation Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Hostel Administration Review",
+          "description": "Hostel Administration Review",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Approved Rejected",
+          "description": "Approved Rejected",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Room Allocated Notify Student",
+          "description": "Room Allocated Notify Student",
+          "type": "notification",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "transport",
+      "moduleKey": "student-self-service",
+      "name": "TRANSPORT",
+      "summary": "View Transport Routes",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "View Transport Routes",
+          "description": "View Transport Routes",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Submit Transport Request",
+          "description": "Submit Transport Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Route & Seat Availability",
+          "description": "Route & Seat Availability",
+          "type": "action",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Transport Allocation",
+          "description": "Transport Allocation",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Pass Generated Digitally",
+          "description": "Pass Generated Digitally",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "certificates",
+      "moduleKey": "student-self-service",
+      "name": "CERTIFICATES",
+      "summary": "Select Certificate Required",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Certificate Required",
+          "description": "Select Certificate Required",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify Eligibility & Records",
+          "description": "Verify Eligibility & Records",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Generate / Request Approval",
+          "description": "Generate / Request Approval",
+          "type": "approval",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Download Digital Certificate",
+          "description": "Download Digital Certificate",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "absence-alert",
+      "moduleKey": "student-self-service",
+      "name": "ABSENCE ALERT",
+      "summary": "Attendance Processing Completed",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Attendance Processing Completed",
+          "description": "Attendance Processing Completed",
+          "type": "action",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Attendance Below Threshold?",
+          "description": "Attendance Below Threshold?",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "No Yes",
+          "description": "No Yes",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Continue Generate Alert",
+          "description": "Continue Generate Alert",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Student • Parent • Mentor Notification",
+          "description": "Student • Parent • Mentor Notification",
+          "type": "notification",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "timetable",
+      "moduleKey": "student-self-service",
+      "name": "TIMETABLE",
+      "summary": "Select Semester",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Semester",
+          "description": "Select Semester",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Fetch Class Timetable",
+          "description": "Fetch Class Timetable",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "View Daily / Weekly Schedule",
+          "description": "View Daily / Weekly Schedule",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Download / Calendar Sync",
+          "description": "Download / Calendar Sync",
+          "type": "integration",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "attendance",
+      "moduleKey": "student-self-service",
+      "name": "ATTENDANCE",
+      "summary": "Select Semester",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Semester",
+          "description": "Select Semester",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "View Subject-wise Attendance",
+          "description": "View Subject-wise Attendance",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Attendance Percentage",
+          "description": "Attendance Percentage",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "AI Attendance Prediction",
+          "description": "AI Attendance Prediction",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "assignments",
+      "moduleKey": "student-self-service",
+      "name": "ASSIGNMENTS",
+      "summary": "View Assigned Work",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "View Assigned Work",
+          "description": "View Assigned Work",
+          "type": "update",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Download Assignment",
+          "description": "Download Assignment",
+          "type": "update",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Upload Submission",
+          "description": "Upload Submission",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Faculty Evaluation & Marks",
+          "description": "Faculty Evaluation & Marks",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fees",
+      "moduleKey": "student-self-service",
+      "name": "FEES",
+      "summary": "View Fee Structure",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "View Fee Structure",
+          "description": "View Fee Structure",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Outstanding Balance",
+          "description": "Outstanding Balance",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Online Fee Payment",
+          "description": "Online Fee Payment",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Receipt Generated Automatically",
+          "description": "Receipt Generated Automatically",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "moduleKey": "student-self-service",
+      "name": "RESULTS",
+      "summary": "Select Examination",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Examination",
+          "description": "Select Examination",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "View Marks & Grades",
+          "description": "View Marks & Grades",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "GPA / CGPA Calculation",
+          "description": "GPA / CGPA Calculation",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Download Grade Sheet",
+          "description": "Download Grade Sheet",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "notifications",
+      "moduleKey": "student-self-service",
+      "name": "NOTIFICATIONS",
+      "summary": "System Generates Notification",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "System Generates Notification",
+          "description": "System Generates Notification",
+          "type": "notification",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Student Notification Center",
+          "description": "Student Notification Center",
+          "type": "notification",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Read • Archive • Mark Important",
+          "description": "Read • Archive • Mark Important",
+          "type": "integration",
+          "crud": [
+            "delete"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "certificate-generation",
+      "moduleKey": "student-self-service",
+      "name": "CERTIFICATE GENERATION",
+      "summary": "Select Certificate Type",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Certificate Type",
+          "description": "Select Certificate Type",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verify Student Records",
+          "description": "Verify Student Records",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Auto Generate Certificate",
+          "description": "Auto Generate Certificate",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Digital Signature & QR Code",
+          "description": "Digital Signature & QR Code",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Download / Email Certificate",
+          "description": "Download / Email Certificate",
+          "type": "notification",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-upload",
+      "moduleKey": "student-self-service",
+      "name": "DOCUMENT UPLOAD",
+      "summary": "Select Document Category",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Select Document Category",
+          "description": "Select Document Category",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Upload File",
+          "description": "Upload File",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "File Format Validation",
+          "description": "File Format Validation",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Save Successfully",
+          "description": "Save Successfully",
+          "type": "action",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Await Verification Status",
+          "description": "Await Verification Status",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-verification",
+      "moduleKey": "student-self-service",
+      "name": "DOCUMENT VERIFICATION",
+      "summary": "Submitted Document Received",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Submitted Document Received",
+          "description": "Submitted Document Received",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Verification by Admin",
+          "description": "Verification by Admin",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Verified Rejected",
+          "description": "Verified Rejected",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Update Status Request Resubmission",
+          "description": "Update Status Request Resubmission",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grievances",
+      "moduleKey": "student-self-service",
+      "name": "GRIEVANCES",
+      "summary": "Submit Grievance",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Submit Grievance",
+          "description": "Submit Grievance",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Category",
+          "description": "Select Category",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Assign Concerned Officer",
+          "description": "Assign Concerned Officer",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Investigation & Resolution",
+          "description": "Investigation & Resolution",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Student Feedback & Closure",
+          "description": "Student Feedback & Closure",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leave-application",
+      "moduleKey": "student-self-service",
+      "name": "LEAVE APPLICATION",
+      "summary": "Apply for Leave",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Apply for Leave",
+          "description": "Apply for Leave",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Leave Type & Dates",
+          "description": "Select Leave Type & Dates",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Upload Supporting Documents",
+          "description": "Upload Supporting Documents",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Faculty / Mentor Approval",
+          "description": "Faculty / Mentor Approval",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Approved Rejected",
+          "description": "Approved Rejected",
+          "type": "approval",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-6",
+          "order": 6,
+          "title": "Attendance Updated Notify Student",
+          "description": "Attendance Updated Notify Student",
+          "type": "notification",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gate-pass",
+      "moduleKey": "student-self-service",
+      "name": "GATE PASS",
+      "summary": "Submit Gate Pass Request",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Submit Gate Pass Request",
+          "description": "Submit Gate Pass Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Mention Purpose & Duration",
+          "description": "Mention Purpose & Duration",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Warden / Faculty Approval",
+          "description": "Warden / Faculty Approval",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "QR-Based Gate Pass Generated",
+          "description": "QR-Based Gate Pass Generated",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Security Verification",
+          "description": "Security Verification",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "helpdesk",
+      "moduleKey": "student-self-service",
+      "name": "HELPDESK",
+      "summary": "Raise Support Ticket",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Raise Support Ticket",
+          "description": "Raise Support Ticket",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Select Issue Category",
+          "description": "Select Issue Category",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Assign Support Executive",
+          "description": "Assign Support Executive",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Resolution & Ticket Closure",
+          "description": "Resolution & Ticket Closure",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lost-and-found",
+      "moduleKey": "student-self-service",
+      "name": "LOST & FOUND",
+      "summary": "Report Lost / Found Item",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Report Lost / Found Item",
+          "description": "Report Lost / Found Item",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Upload Item Details & Photo",
+          "description": "Upload Item Details & Photo",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Admin Verification",
+          "description": "Admin Verification",
+          "type": "approval",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Match Lost & Found Records",
+          "description": "Match Lost & Found Records",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-5",
+          "order": 5,
+          "title": "Claim & Close Request",
+          "description": "Claim & Close Request",
+          "type": "create",
+          "crud": [
+            "create",
+            "read"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wall",
+      "moduleKey": "student-self-service",
+      "name": "WALL",
+      "summary": "View Campus Feed",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "View Campus Feed",
+          "description": "View Campus Feed",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Posts • Events • Announcements",
+          "description": "Posts • Events • Announcements",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Like • Comment • Share (Optional)",
+          "description": "Like • Comment • Share (Optional)",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-4",
+          "order": 4,
+          "title": "Personalized Feed & Updates",
+          "description": "Personalized Feed & Updates",
+          "type": "update",
+          "crud": [
+            "read",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "student-self-service",
+      "moduleKey": "student-self-service",
+      "name": "STUDENT SELF SERVICE",
+      "summary": "Student Login Portal",
+      "steps": [
+        {
+          "id": "step-1",
+          "order": 1,
+          "title": "Student Login Portal",
+          "description": "Student Login Portal",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-2",
+          "order": 2,
+          "title": "Student Dashboard",
+          "description": "Student Dashboard",
+          "type": "report",
+          "crud": [
+            "read"
+          ]
+        },
+        {
+          "id": "step-3",
+          "order": 3,
+          "title": "Profile Academics Services Communication",
+          "description": "Profile Academics Services Communication",
+          "type": "action",
+          "crud": [
+            "read"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,769 @@
+import type { ModuleWorkflowCatalog } from "@supercampus/contracts";
+
+export const communicationsWorkflowCatalog = {
+  moduleKey: "communications",
+  source: "docs/workflows/Communication_Management_Workflow.md",
+  deliveryTargets: [
+  "flutter-student-app",
+  "flutter-parent-app",
+  "flutter-staff-app",
+  "web-admin"
+],
+  overview: "The Communication Management module provides a unified platform for multi-channel institutional communication — Push Notifications, Email, SMS, WhatsApp, Digital Notices, and Emergency Broadcasts — with audience targeting, delivery tracking, mandatory acknowledgments, and AI-driven insights.",
+  navigation: [
+  "Push Notifications",
+  "Email",
+  "SMS",
+  "WhatsApp",
+  "Digital Notices & Circulars",
+  "Emergency Broadcast",
+  "Role & User Specific Communication",
+  "Announcements",
+  "Mandatory Acknowledgment",
+  "Communication Templates",
+  "Scheduled Communications",
+  "Delivery Status & Tracking",
+  "Communication History",
+  "AI Communication Insights",
+  "Reports & Analytics"
+],
+  workflows: [
+  {
+    "id": "push-notifications-with-status",
+    "moduleKey": "communications",
+    "name": "Push Notifications with Status",
+    "summary": "Draft the message",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Create Notification",
+        "description": "Draft the message",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Target Audience",
+        "description": "Choose recipients",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Set Priority Level",
+        "description": "Normal • Important • Critical",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Schedule or Send Immediately",
+        "description": "Timing control",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Push Notification Delivered",
+        "description": "Sent to devices",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Track Delivery Status",
+        "description": "Monitor outcome",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Status",
+        "description": "Delivered / Read / Failed",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Notification Analytics",
+        "description": "Generate insights",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "email",
+    "moduleKey": "communications",
+    "name": "Email",
+    "summary": "Create Email Template",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Create Email Template",
+        "description": "Create Email Template",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Recipients",
+        "description": "Select Recipients",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Add Subject & Email Content",
+        "description": "Add Subject & Email Content",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Attach Files (Optional)",
+        "description": "Attach Files (Optional)",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Schedule or Send Immediately",
+        "description": "Schedule or Send Immediately",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Email Delivery",
+        "description": "Email Delivery",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Open & Bounce Tracking",
+        "description": "Open & Bounce Tracking",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Delivery Reports",
+        "description": "Delivery Reports",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "sms",
+    "moduleKey": "communications",
+    "name": "SMS",
+    "summary": "Draft text (160 chars)",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Create SMS Message",
+        "description": "Draft text (160 chars)",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Recipient Group",
+        "description": "Target audience",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Validate Mobile Numbers",
+        "description": "Check format and validity",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Send SMS Gateway",
+        "description": "Route through provider",
+        "type": "notification",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Delivery Status",
+        "description": "Delivered / Pending / Failed",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "SMS Reports",
+        "description": "Generate analytics",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "whatsapp",
+    "moduleKey": "communications",
+    "name": "WhatsApp",
+    "summary": "Select Approved Template",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select Approved Template",
+        "description": "Select Approved Template",
+        "type": "approval",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Recipient Group",
+        "description": "Select Recipient Group",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Personalize Message Variables",
+        "description": "Personalize Message Variables",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Attach Media/Documents (Optional)",
+        "description": "Attach Media/Documents (Optional)",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Send via WhatsApp API",
+        "description": "Send via WhatsApp API",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Delivery & Read Status",
+        "description": "Delivery & Read Status",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "WhatsApp Analytics",
+        "description": "WhatsApp Analytics",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "digital-notices-and-circulars",
+    "moduleKey": "communications",
+    "name": "Digital Notices & Circulars",
+    "summary": "Draft the circular",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Create Notice",
+        "description": "Draft the circular",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Notice Category",
+        "description": "Classify the notice",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Attach Documents (Optional)",
+        "description": "Upload supporting files",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Publish to Student Portal",
+        "description": "Make visible online",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Available on Web & Mobile App",
+        "description": "Multi-platform access",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "View & Download Notice",
+        "description": "User interaction",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Notice View Reports",
+        "description": "Track engagement",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "emergency-broadcast",
+    "moduleKey": "communications",
+    "name": "Emergency Broadcast",
+    "summary": "Create Emergency Alert",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Create Emergency Alert",
+        "description": "Create Emergency Alert",
+        "type": "notification",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Severity Level",
+        "description": "Select Severity Level",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Low Medium Critical",
+        "description": "Low Medium Critical",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Select Broadcast Channels",
+        "description": "Select Broadcast Channels",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Push SMS Email WhatsApp",
+        "description": "Push SMS Email WhatsApp",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Immediate Mass Delivery",
+        "description": "Immediate Mass Delivery",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Delivery Confirmation Status",
+        "description": "Delivery Confirmation Status",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Emergency Report Log",
+        "description": "Emergency Report Log",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "role-and-user-specific-communication",
+    "moduleKey": "communications",
+    "name": "Role & User Specific Communication",
+    "summary": "Student / Faculty / Parent / Staff",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Select User Category",
+        "description": "Student / Faculty / Parent / Staff",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Apply Filters (Optional)",
+        "description": "Department • Semester • Section • Course • Hostel • Transport",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Compose Message",
+        "description": "Draft targeted content",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Select Communication Channel",
+        "description": "Choose delivery method",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Send Communication",
+        "description": "Dispatch message",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Delivery Status Report",
+        "description": "Track outcome",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "announcements",
+    "moduleKey": "communications",
+    "name": "Announcements",
+    "summary": "Create Announcement",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Create Announcement",
+        "description": "Create Announcement",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Select Announcement Type",
+        "description": "Select Announcement Type",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "General • Academic • Event • Exam",
+        "description": "General • Academic • Event • Exam",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Set Start & End Date",
+        "description": "Set Start & End Date",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Publish Announcement",
+        "description": "Publish Announcement",
+        "type": "update",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Display on Dashboard & App",
+        "description": "Display on Dashboard & App",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "View Announcement Statistics",
+        "description": "View Announcement Statistics",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mandatory-acknowledgment",
+    "moduleKey": "communications",
+    "name": "Mandatory Acknowledgment",
+    "summary": "Mark as acknowledgment-required",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Create Mandatory Notice",
+        "description": "Mark as acknowledgment-required",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Enable Acknowledgment Required",
+        "description": "Force user action",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Send to Target Audience",
+        "description": "Deliver to recipients",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "User Opens Notification",
+        "description": "View the notice",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Read & Click Acknowledge",
+        "description": "User confirms",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Acknowledged → Record Timestamp",
+        "description": "Log confirmation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Not Acknowledged → Send Reminder",
+        "description": "Follow up",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Acknowledgment Report",
+        "description": "Generate compliance report",
+        "type": "report",
+        "crud": [
+          "create",
+          "read"
+        ]
+      }
+    ]
+  }
+],
+} as const satisfies ModuleWorkflowCatalog;

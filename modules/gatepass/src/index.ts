@@ -1,8 +1,10 @@
 import { defineModule } from "@supercampus/module-sdk";
+import { gatepassWorkflowCatalog } from "./flows";
 
 export const gatepassModule = defineModule({
   key: "gatepass",
   version: "0.1.0",
+  workflowCatalog: gatepassWorkflowCatalog,
   navigation: [{
     id: "gatepass",
     label: "Gate Pass",

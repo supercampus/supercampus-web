@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "student-onboarding",
+    "name":  "Student Onboarding",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "student-onboarding.read",
+                        "student-onboarding.create",
+                        "student-onboarding.update",
+                        "student-onboarding.delete",
+                        "student-onboarding.configure",
+                        "student-onboarding.reports.read"
+                    ],
+    "capabilities":  [
+                         "admission-handoff",
+                         "profile-creation",
+                         "documents",
+                         "fee-start",
+                         "erp-sync"
+                     ]
+}

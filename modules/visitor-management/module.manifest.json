@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "visitor-management",
+    "name":  "Visitor Management",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "visitor-management.read",
+                        "visitor-management.create",
+                        "visitor-management.update",
+                        "visitor-management.delete",
+                        "visitor-management.configure",
+                        "visitor-management.reports.read"
+                    ],
+    "capabilities":  [
+                         "visitor-log",
+                         "appointments",
+                         "badges",
+                         "host-approval",
+                         "reports"
+                     ]
+}

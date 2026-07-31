@@ -1,0 +1,618 @@
+import type { ModuleWorkflowCatalog } from "@supercampus/contracts";
+
+export const analyticsWorkflowCatalog = {
+  moduleKey: "analytics",
+  source: "docs/workflows/Analytics_BI_Workflow.md",
+  deliveryTargets: [
+  "flutter-staff-app",
+  "web-admin",
+  "web-staff"
+],
+  overview: "The Analytics & BI module aggregates data from all ERP modules, validates and processes it through a central analytics engine, and delivers predictive insights, AI-generated reports, interactive dashboards, and management decision support across attendance, fees, placements, and faculty performance.",
+  navigation: [
+  "Attendance Analytics",
+  "Fee Analytics",
+  "Placement Analytics",
+  "Faculty Performance",
+  "Predictive Analytics",
+  "AI Report Generator",
+  "KPI Dashboard",
+  "Reports & Visualizations",
+  "Data Export"
+],
+  workflows: [
+  {
+    "id": "attendance-analytics",
+    "moduleKey": "analytics",
+    "name": "Attendance Analytics",
+    "summary": "Ingest all attendance records",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Read Attendance Database",
+        "description": "Ingest all attendance records",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Validate Attendance Records",
+        "description": "Check for anomalies and gaps",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Calculate Attendance Metrics",
+        "description": "Student % • Class-wise % • Department %",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Analyze Attendance Trends",
+        "description": "Semester-wise and year-wise patterns",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Identify Attendance Risks",
+        "description": "Flag at-risk students",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Frequent Absentees",
+        "description": "List chronic absentees",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Low Attendance Students",
+        "description": "Flag below-threshold students",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Defaulters",
+        "description": "Identify attendance defaulters",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "AI Attendance Insights",
+        "description": "Generate predictive recommendations",
+        "type": "report",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "Dashboard • Alerts • Reports",
+        "description": "Present insights",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fee-analytics",
+    "moduleKey": "analytics",
+    "name": "Fee Analytics",
+    "summary": "Read Fee Collection Data",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Read Fee Collection Data",
+        "description": "Read Fee Collection Data",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Validate Payment Records",
+        "description": "Validate Payment Records",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Calculate Financial Metrics",
+        "description": "Calculate Financial Metrics",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Collection Outstanding Fees Scholarships",
+        "description": "Collection Outstanding Fees Scholarships",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Revenue & Collection Trends",
+        "description": "Revenue & Collection Trends",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "AI Financial Insights",
+        "description": "AI Financial Insights",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Payment Risk Fee Recovery Cash Flow",
+        "description": "Payment Risk Fee Recovery Cash Flow",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Prediction Analysis Forecast",
+        "description": "Prediction Analysis Forecast",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Dashboard • Reports • Charts",
+        "description": "Dashboard • Reports • Charts",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "placement-analytics",
+    "moduleKey": "analytics",
+    "name": "Placement Analytics",
+    "summary": "Ingest placement records",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Read Placement Database",
+        "description": "Ingest placement records",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Validate Student Placement Data",
+        "description": "Check accuracy",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Calculate Placement Metrics",
+        "description": "Placement % • Highest Package • Average Package",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Company-wise Performance",
+        "description": "Analyze recruiter trends",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Department-wise Analysis",
+        "description": "Compare branch performance",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "AI Placement Insights",
+        "description": "Forecast and gap analysis",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Placement Forecast",
+        "description": "Predict future trends",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Skill Gap Analysis",
+        "description": "Identify training needs",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Hiring Trend Prediction",
+        "description": "Forecast recruiter demand",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-10",
+        "order": 10,
+        "title": "Dashboards • Reports • KPIs",
+        "description": "Present insights",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "faculty-performance",
+    "moduleKey": "analytics",
+    "name": "Faculty Performance",
+    "summary": "Collect Faculty Performance Data",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Collect Faculty Performance Data",
+        "description": "Collect Faculty Performance Data",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Read Multiple Performance Sources",
+        "description": "Read Multiple Performance Sources",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Attendance Student Feedback Workload",
+        "description": "Attendance Student Feedback Workload",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Teaching Performance Analysis",
+        "description": "Teaching Performance Analysis",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Research Result Analysis Activity Score",
+        "description": "Research Result Analysis Activity Score",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "AI Performance Evaluation",
+        "description": "AI Performance Evaluation",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Performance Dashboard",
+        "description": "Performance Dashboard",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "Promotion • Training • Recognition",
+        "description": "Promotion • Training • Recognition",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "predictive-analytics",
+    "moduleKey": "analytics",
+    "name": "Predictive Analytics",
+    "summary": "Aggregate multi-year data",
+    "steps": [
+      {
+        "id": "step-1",
+        "order": 1,
+        "title": "Collect Historical ERP Data",
+        "description": "Aggregate multi-year data",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "AI & Machine Learning Engine",
+        "description": "Process through ML models",
+        "type": "action",
+        "crud": [
+          "read",
+          "update"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Attendance Prediction",
+        "description": "Forecast attendance risks",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Fee Default Prediction",
+        "description": "Predict payment defaulters",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Placement Prediction",
+        "description": "Forecast placement outcomes",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Student Risk Analysis",
+        "description": "Identify dropout risks",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "Generate Risk Scores",
+        "description": "Low Risk / Medium Risk / High Risk",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "AI Recommendations Generated",
+        "description": "Suggest interventions",
+        "type": "create",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Dashboard • Alerts • Action Plan",
+        "description": "Deliver insights",
+        "type": "notification",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ai-report-generator",
+    "moduleKey": "analytics",
+    "name": "AI Report Generator",
+    "summary": "Student, class-wise, and department-wise attendance metrics with risk identification",
+    "steps": [
+      {
+        "id": "step-2",
+        "order": 2,
+        "title": "Attendance Analytics",
+        "description": "Student, class-wise, and department-wise attendance metrics with risk identification",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-3",
+        "order": 3,
+        "title": "Fee Analytics",
+        "description": "Collection trends, outstanding tracking, and cash flow forecasting",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-4",
+        "order": 4,
+        "title": "Placement Analytics",
+        "description": "Placement percentage, package analysis, company-wise and department-wise performance",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-5",
+        "order": 5,
+        "title": "Faculty Performance",
+        "description": "Multi-source evaluation (attendance, feedback, workload, research, results)",
+        "type": "action",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-6",
+        "order": 6,
+        "title": "Predictive Analytics",
+        "description": "ML-driven risk scoring for attendance, fees, placement, and student dropout",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-7",
+        "order": 7,
+        "title": "AI Report Generator",
+        "description": "Auto-generated reports with charts, visualizations, and smart insights",
+        "type": "report",
+        "crud": [
+          "create",
+          "read"
+        ]
+      },
+      {
+        "id": "step-8",
+        "order": 8,
+        "title": "KPI Dashboard",
+        "description": "Interactive dashboards for real-time monitoring",
+        "type": "report",
+        "crud": [
+          "read"
+        ]
+      },
+      {
+        "id": "step-9",
+        "order": 9,
+        "title": "Data Export",
+        "description": "PDF, Excel, CSV, and dashboard export options",
+        "type": "integration",
+        "crud": [
+          "read"
+        ]
+      }
+    ]
+  }
+],
+} as const satisfies ModuleWorkflowCatalog;

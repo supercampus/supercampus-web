@@ -1,0 +1,22 @@
+﻿{
+    "$schema":  "../../contracts/module-manifest.schema.json",
+    "key":  "analytics",
+    "name":  "Analytics \u0026 BI",
+    "version":  "0.1.0",
+    "frontendEntry":  "./src/index.ts",
+    "permissions":  [
+                        "analytics.read",
+                        "analytics.create",
+                        "analytics.update",
+                        "analytics.delete",
+                        "analytics.configure",
+                        "analytics.reports.read"
+                    ],
+    "capabilities":  [
+                         "dashboards",
+                         "reports",
+                         "metrics",
+                         "exports",
+                         "insights"
+                     ]
+}

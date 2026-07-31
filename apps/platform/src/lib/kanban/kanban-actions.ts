@@ -1,4 +1,4 @@
-import type { Lead, MoveLog, UserRole, ActivityEntry } from './kanban-data';
+import type { Lead, MoveLog, ActivityEntry } from './kanban-data';
 import { COLUMN_IDS, ROLES } from './kanban-data';
 
 export function canMoveLead(
@@ -10,11 +10,6 @@ export function canMoveLead(
   if (!role) return { allowed: false, reason: 'Unknown role' };
 
   if (role.id === 'principal') return { allowed: true };
-
-  if (toColumn === 'archived') {
-    if (role.permissions.includes(fromColumn)) return { allowed: true };
-    return { allowed: false, reason: `You don't have permission to archive leads from this column` };
-  }
 
   const fromIndex = COLUMN_IDS.indexOf(fromColumn);
   const toIndex = COLUMN_IDS.indexOf(toColumn);
@@ -30,8 +25,6 @@ export function canMoveLead(
   if (!allowedSet.has(toColumn)) {
     return { allowed: false, reason: `You don't have permission to move leads to "${toColumn}"` };
   }
-
-  if (toColumn === 'archived') return { allowed: true };
 
   if (Math.abs(toIndex - fromIndex) > 3) {
     return { allowed: false, reason: 'Cannot jump too many stages at once' };
@@ -89,8 +82,8 @@ export function isKeyStageMove(from: string, to: string): boolean {
     ['enquiry', 'contact-attempted'],
     ['qualified', 'application'],
     ['application', 'application-status'],
-    ['application-status', 'deposit-payment'],
-    ['deposit-payment', 'admitted'],
+    ['application-status', 'offer-status'],
+    ['offer-status', 'archived'],
   ];
   return keyMoves.some(([f, t]) => f === from && t === to);
 }
@@ -104,8 +97,7 @@ export function getColumnTitle(id: string): string {
     qualified: 'Qualified',
     application: 'Application',
     'application-status': 'Application Status',
-    'deposit-payment': 'Deposit Payment',
-    admitted: 'Admitted',
+    'offer-status': 'Offer / Status',
     archived: 'Archived',
   };
   return map[id] ?? id;

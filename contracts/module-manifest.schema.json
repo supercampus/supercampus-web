@@ -6,7 +6,7 @@
   "required": ["key", "name", "version", "frontendEntry", "permissions", "capabilities"],
   "properties": {
     "key": {
-      "enum": ["crm", "admissions", "academics", "attendance", "documents", "examinations", "fees", "gatepass", "hostel", "library", "placement", "transport"]
+      "enum": ["academics", "admissions", "alumni", "analytics", "attendance", "communications", "counselling-wellness", "crm", "documents", "employee-self-service", "examinations", "feedback-grievance", "fees", "form-builder", "gatepass", "hostel", "library", "no-due", "parents-self-service", "placement", "repairs-maintenance", "roles-modules", "sick-room-medical-records", "student-onboarding", "student-self-service", "timetable", "transport", "vendor-management", "visitor-management"]
     },
     "name": { "type": "string", "minLength": 1 },
     "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },

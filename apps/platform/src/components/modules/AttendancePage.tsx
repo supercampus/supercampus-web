@@ -116,7 +116,7 @@ export default function AttendancePage() {
           )}
           {cond === 'pending' && (
             <div style={{ marginTop: 14 }}>
-              <span style={{ display: 'inline-flex', font: "700 11px 'Plus Jakarta Sans'", padding: '5px 12px', borderRadius: 20, background: 'rgba(251,191,36,.14)', color: '#d97706' }}>Pending review</span>
+              <span style={{ display: 'inline-flex', fontWeight: 700, fontSize: 11, padding: '5px 12px', borderRadius: 20, background: 'rgba(251,191,36,.14)', color: '#d97706' }}>Pending review</span>
             </div>
           )}
           {cond === 'approved' && (

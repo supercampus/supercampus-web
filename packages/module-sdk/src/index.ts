@@ -1,8 +1,9 @@
-import type { ModuleKey, NavigationItem, RuntimeContext } from "@supercampus/contracts";
+import type { ModuleKey, ModuleWorkflowCatalog, NavigationItem, RuntimeContext } from "@supercampus/contracts";
 
 export interface FrontendModule {
   key: ModuleKey;
   version: string;
+  workflowCatalog?: ModuleWorkflowCatalog;
   navigation: NavigationItem[];
   canActivate(context: RuntimeContext): boolean;
 }

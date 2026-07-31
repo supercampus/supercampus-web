@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect, useMemo, useState } from 'react';
-import type { AppState, AuthStatus, AuthStudent, BackendStatus, LoginCredentials, NavId, PersistedAppState } from '@/lib/types';
+import type { AppState, AuthStatus, AuthStudent, BackendStatus, LoginCredentials, NavId, PersistedAppState, TenantBrand } from '@/lib/types';
 import { ApiRequestError, getAppState, getSession, login as loginRequest, logout as logoutRequest, saveAppState, toPersistedState } from '@/lib/api';
 
 const initialState: AppState = {
@@ -15,6 +15,23 @@ const initialState: AppState = {
   docReq: [{ id: 'DOC-4410', type: 'Bonafide Certificate', on: '18 Jul', status: 'Ready' }],
   placeApp: 0, feedback: 0,
 };
+
+const defaultTenantBrand: TenantBrand = {
+  logoDataUrl: null,
+  primary: '#0b3d2e',
+  secondary: '#b9f43b',
+  surface: '#eef7e8',
+};
+
+function readTenantBrand(): TenantBrand {
+  if (typeof window === 'undefined') return defaultTenantBrand;
+  try {
+    const raw = window.localStorage.getItem('supercampus:tenant-brand');
+    return raw ? { ...defaultTenantBrand, ...JSON.parse(raw) } : defaultTenantBrand;
+  } catch {
+    return defaultTenantBrand;
+  }
+}
 
 type Action =
   | { type: 'SET_ACTIVE'; id: NavId } | { type: 'TOGGLE_NOTIF' } | { type: 'SET_TOAST'; msg: string | null }
@@ -72,10 +89,12 @@ function reducer(state: AppState, action: Action): AppState {
 interface AppContextValue {
   state: AppState;
   student: AuthStudent | null;
+  tenantBrand: TenantBrand;
   authStatus: AuthStatus;
   backendStatus: BackendStatus;
   nav: (id: NavId) => void;
   toast: (msg: string) => void;
+  setTenantBrand: (brand: TenantBrand) => void;
   dispatch: React.Dispatch<Action>;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
@@ -85,6 +104,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, baseDispatch] = useReducer(reducer, initialState);
   const [student, setStudent] = useState<AuthStudent | null>(null);
+  const [tenantBrand, setTenantBrandState] = useState<TenantBrand>(defaultTenantBrand);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('checking');
   const [backendStatus, setBackendStatus] = useState<BackendStatus>('connecting');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -92,6 +112,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const hydrated = useRef(false);
   const skipNextSave = useRef(false);
   const lastAction = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    queueMicrotask(() => setTenantBrandState(readTenantBrand()));
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--tenant-primary', tenantBrand.primary);
+    root.style.setProperty('--tenant-secondary', tenantBrand.secondary);
+    root.style.setProperty('--tenant-surface', tenantBrand.surface);
+    root.style.setProperty('--primary', tenantBrand.primary);
+    root.style.setProperty('--primary-grad', `linear-gradient(135deg, ${tenantBrand.primary}, ${tenantBrand.secondary})`);
+  }, [tenantBrand]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally excludes transient fields
   const persistentState = useMemo(() => toPersistedState(state), [
@@ -177,13 +210,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const nav = useCallback((id: NavId) => baseDispatch({ type: 'SET_ACTIVE', id }), []);
+  const setTenantBrand = useCallback((brand: TenantBrand) => {
+    setTenantBrandState(brand);
+    try { window.localStorage.setItem('supercampus:tenant-brand', JSON.stringify(brand)); } catch {}
+  }, []);
   const showToast = useCallback((msg: string) => {
     baseDispatch({ type: 'SET_TOAST', msg });
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => baseDispatch({ type: 'SET_TOAST', msg: null }), 2600);
   }, []);
 
-  return <AppContext.Provider value={{ state, student, authStatus, backendStatus, nav, toast: showToast, dispatch, login, logout }}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={{ state, student, tenantBrand, authStatus, backendStatus, nav, toast: showToast, setTenantBrand, dispatch, login, logout }}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {
