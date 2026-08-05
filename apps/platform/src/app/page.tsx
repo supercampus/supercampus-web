@@ -22,7 +22,8 @@ import LoginPage from '@/components/auth/LoginPage';
 
 function DashboardContent() {
   const { state, authStatus, student } = useApp();
-  const shouldOpenStaffWorkspace = authStatus === 'authenticated' && Boolean(student?.role) && student?.role !== 'Student';
+  const studentRoles = new Set(['student', 'prospective_student']);
+  const shouldOpenStaffWorkspace = authStatus === 'authenticated' && Boolean(student?.role) && !studentRoles.has(student!.role.toLowerCase());
 
   useEffect(() => {
     if (shouldOpenStaffWorkspace) {

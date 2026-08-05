@@ -60,6 +60,7 @@ export interface Lead {
   nextFollowUp: string | null;
   lastContact: string;
   parent: { name: string; phone: string; relation: string };
+  createdAt?: string;
   moveHistory: MoveLog[];
   communications?: Communication[];
   tags?: string[];

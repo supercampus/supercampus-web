@@ -5,14 +5,12 @@ import type { AppState, AuthStatus, AuthStudent, BackendStatus, LoginCredentials
 import { ApiRequestError, getAppState, getSession, login as loginRequest, logout as logoutRequest, saveAppState, toPersistedState } from '@/lib/api';
 
 const initialState: AppState = {
-  persona: 'hosteller', active: 'home', notifOpen: false, toast: null, countdown: 5048,
-  gp: { status: 'pending', type: 'Weekend Leave', early: true, step: 2 },
-  paid: { tuition: true, hostel: false, transport: true, exam: false },
+  persona: 'dayscholar', active: 'home', notifOpen: false, toast: null, countdown: 0,
+  gp: { status: 'none', type: null, early: false, step: 0 },
+  paid: { tuition: false, hostel: false, transport: false, exam: false },
   pay: { comp: null, step: 0, plan: null, mode: null }, refunds: {}, condonation: 'none',
-  examReg: 0, reval: {}, asg: { a3: 'none' }, changeNotice: true, mess: true, hostelLeave: 0,
-  hostelTickets: [{ id: 'HST-2291', cat: 'Electrical', text: 'Tube light not working in Room B-214', status: 'In Progress' }],
-  tripStep: 1, breakdown: true,
-  docReq: [{ id: 'DOC-4410', type: 'Bonafide Certificate', on: '18 Jul', status: 'Ready' }],
+  examReg: 0, reval: {}, asg: { a3: 'none' }, changeNotice: false, mess: false, hostelLeave: 0,
+  hostelTickets: [], tripStep: 0, breakdown: false, docReq: [],
   placeApp: 0, feedback: 0,
 };
 
@@ -52,7 +50,7 @@ function reducer(state: AppState, action: Action): AppState {
     case 'SET_ACTIVE': return { ...state, active: action.id, notifOpen: false };
     case 'TOGGLE_NOTIF': return { ...state, notifOpen: !state.notifOpen };
     case 'SET_TOAST': return { ...state, toast: action.msg };
-    case 'TICK': return { ...state, countdown: state.countdown > 0 ? state.countdown - 1 : 5048 };
+    case 'TICK': return { ...state, countdown: Math.max(0, state.countdown - 1) };
     case 'TOGGLE_PERSONA': return { ...state, persona: state.persona === 'hosteller' ? 'dayscholar' : 'hosteller' };
     case 'GP_APPLY': return { ...state, gp: { status: 'pending', type: action.gpType, early: action.early, step: 0 } };
     case 'GP_ADVANCE': {

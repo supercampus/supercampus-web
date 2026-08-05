@@ -1,55 +1,102 @@
-import type { AppState, AuthStudent, LoginCredentials, PersistedAppState, Tenant } from './types';
+import type { AppState, AuthStudent, LoginCredentials, PersistedAppState } from './types';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? '/api').replace(/\/$/, '');
+let refreshPromise: Promise<void> | null = null;
 
 export class ApiRequestError extends Error {
-  constructor(message: string, public status: number) { super(message); }
+  constructor(message: string, public status: number) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let response: Response;
+function errorMessage(body: unknown, status: number) {
+  if (!body || typeof body !== 'object') return `API request failed (${status})`;
+  const value = body as { error?: string | { message?: string }; message?: string };
+  if (typeof value.error === 'string') return value.error;
+  if (value.error && typeof value.error.message === 'string') return value.error.message;
+  return value.message ?? `API request failed (${status})`;
+}
+
+function canRefresh(path: string) {
+  return !['/auth/login', '/auth/refresh', '/auth/logout'].includes(path);
+}
+
+async function send(path: string, init?: RequestInit) {
+  const headers = new Headers(init?.headers);
+  if (init?.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   try {
-    response = await fetch(`${API_URL}${path}`, {
-      ...init,
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
-    });
+    return await fetch(`${API_URL}${path}`, { ...init, headers, credentials: 'include' });
   } catch {
-    throw new ApiRequestError('Authentication service is unavailable. Please try again later.', 503);
+    throw new ApiRequestError('The SuperCampus API is unavailable. Please try again later.', 503);
+  }
+}
+
+export async function apiRequest<T>(path: string, init?: RequestInit, retryAuth = true): Promise<T> {
+  let response = await send(path, init);
+  if (response.status === 401 && retryAuth && canRefresh(path)) {
+    refreshPromise ??= apiRequest<unknown>('/auth/refresh', { method: 'POST' }, false)
+      .then(() => undefined)
+      .finally(() => { refreshPromise = null; });
+    try {
+      await refreshPromise;
+      response = await send(path, init);
+    } catch {
+      // The original 401 is returned below with a stable authentication error.
+    }
   }
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new ApiRequestError(body?.error ?? `API request failed (${response.status})`, response.status);
+    const body: unknown = await response.json().catch(() => null);
+    throw new ApiRequestError(errorMessage(body, response.status), response.status);
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 
-export function getTenants() {
-  return request<{ data: Tenant[] }>('/auth/tenants');
-}
+
 export function login(credentials: LoginCredentials) {
-  return request<{ data: { student: AuthStudent } }>('/auth/login', { method: 'POST', body: JSON.stringify(credentials) });
+  return apiRequest<{ data: { student: AuthStudent; roles: string[]; expiresAt: string } }>(
+    '/auth/login',
+    { method: 'POST', body: JSON.stringify(credentials) },
+    false,
+  );
 }
+
 export function getSession() {
-  return request<{ data: { student: AuthStudent } }>('/auth/me');
+  return apiRequest<{ data: { student: AuthStudent; roles: string[]; sessionId: string } }>('/auth/me');
 }
+
 export function logout() {
-  return request<void>('/auth/logout', { method: 'POST' });
+  return apiRequest<void>('/auth/logout', { method: 'POST' }, false);
 }
+
 export function getAppState() {
-  return request<{ data: { state: PersistedAppState; version: number; updatedAt: string } }>('/state');
+  return apiRequest<{ data: { state: PersistedAppState; version: number; updatedAt: string } }>('/state');
 }
+
 export function saveAppState(state: PersistedAppState, action?: string) {
-  return request('/state', { method: 'PUT', body: JSON.stringify({ state, action }) });
+  return apiRequest('/state', { method: 'PUT', body: JSON.stringify({ state, action }) });
 }
 
 export function toPersistedState(state: AppState): PersistedAppState {
   return {
-    persona: state.persona, gp: state.gp, paid: state.paid, pay: state.pay,
-    refunds: state.refunds, condonation: state.condonation, examReg: state.examReg,
-    reval: state.reval, asg: state.asg, changeNotice: state.changeNotice, mess: state.mess,
-    hostelLeave: state.hostelLeave, hostelTickets: state.hostelTickets, tripStep: state.tripStep,
-    breakdown: state.breakdown, docReq: state.docReq, placeApp: state.placeApp, feedback: state.feedback,
+    persona: state.persona,
+    gp: state.gp,
+    paid: state.paid,
+    pay: state.pay,
+    refunds: state.refunds,
+    condonation: state.condonation,
+    examReg: state.examReg,
+    reval: state.reval,
+    asg: state.asg,
+    changeNotice: state.changeNotice,
+    mess: state.mess,
+    hostelLeave: state.hostelLeave,
+    hostelTickets: state.hostelTickets,
+    tripStep: state.tripStep,
+    breakdown: state.breakdown,
+    docReq: state.docReq,
+    placeApp: state.placeApp,
+    feedback: state.feedback,
   };
 }

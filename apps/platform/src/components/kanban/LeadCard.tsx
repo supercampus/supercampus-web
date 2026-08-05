@@ -10,15 +10,16 @@ interface LeadCardProps {
   lead: Lead;
   columnAccent: string;
   onClick: (lead: Lead) => void;
+  canDrag: boolean;
   isOverdue?: boolean;
 }
 
-function LeadCardContent({ lead, columnAccent, onClick, isOverdue, className = '', style }: LeadCardProps & { className?: string; style?: React.CSSProperties }) {
+function LeadCardContent({ lead, columnAccent, onClick, canDrag, isOverdue, className = '', style }: LeadCardProps & { className?: string; style?: React.CSSProperties }) {
   return (
     <div
       style={style}
       onClick={() => onClick(lead)}
-      className={`crm-lead-card bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-3 shadow-sm cursor-grab active:cursor-grabbing group ${className}`}
+      className={`crm-lead-card bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-3 shadow-sm group ${canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${className}`}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = columnAccent;
       }}
@@ -87,7 +88,7 @@ function LeadCardContent({ lead, columnAccent, onClick, isOverdue, className = '
   );
 }
 
-function LeadCard({ lead, columnAccent, onClick, isOverdue }: LeadCardProps) {
+function LeadCard({ lead, columnAccent, onClick, canDrag, isOverdue }: LeadCardProps) {
   const animateLayoutChanges: AnimateLayoutChanges = (args) =>
     defaultAnimateLayoutChanges({ ...args, wasDragging: true });
 
@@ -102,6 +103,7 @@ function LeadCard({ lead, columnAccent, onClick, isOverdue }: LeadCardProps) {
     id: lead.id,
     data: { lead, columnId: lead.status },
     animateLayoutChanges,
+    disabled: !canDrag,
   });
 
   const style = {
@@ -115,13 +117,14 @@ function LeadCard({ lead, columnAccent, onClick, isOverdue }: LeadCardProps) {
   return (
     <div
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
+      {...(canDrag ? attributes : {})}
+      {...(canDrag ? listeners : {})}
     >
       <LeadCardContent
         lead={lead}
         columnAccent={columnAccent}
         onClick={onClick}
+        canDrag={canDrag}
         isOverdue={isOverdue}
         className={isDragging ? 'crm-lead-card--dragging' : ''}
         style={style}
