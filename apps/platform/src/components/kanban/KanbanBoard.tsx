@@ -17,7 +17,8 @@ import {
 } from '@dnd-kit/core';
 import type { Lead } from '@/lib/kanban/kanban-data';
 import { COLUMNS, COLUMN_IDS } from '@/lib/kanban/kanban-data';
-import { canMoveLead, isKeyStageMove, getColumnTitle } from '@/lib/kanban/kanban-actions';
+import { isKeyStageMove, getColumnTitle } from '@/lib/kanban/kanban-actions';
+import { moveCrmLead, updateCrmLead } from '@/lib/crm-api';
 import KanbanColumn from './KanbanColumn';
 import LeadCard from './LeadCard';
 import LeadDetailSidebar from './LeadDetailSidebar';
@@ -28,10 +29,19 @@ interface KanbanBoardProps {
   leads: Lead[];
   setLeads: React.Dispatch<React.SetStateAction<Lead[]>>;
   roleId: string;
+  canUpdateLeads: boolean;
+  canMoveLeadStage: boolean;
   onShowToast: (msg: string) => void;
 }
 
-export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: KanbanBoardProps) {
+export default function KanbanBoard({
+  leads,
+  setLeads,
+  roleId,
+  canUpdateLeads,
+  canMoveLeadStage,
+  onShowToast,
+}: KanbanBoardProps) {
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -96,43 +106,42 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
     };
   }, [leads]);
 
+  const persistMove = useCallback(async (lead: Lead, toColumn: string, note?: string) => {
+    try {
+      const stageKey = toColumn.replaceAll('-', '_');
+      let targetSubstate: string | undefined;
+      if (stageKey === 'application_status') {
+        targetSubstate = 'awaiting_decision';
+      }
+      const response = await moveCrmLead(lead.id, stageKey, note, targetSubstate);
+      const nextStatus = response.data.stageKey.replaceAll('_', '-');
+      setLeads((previous) => previous.map((item) => item.id === lead.id ? { ...item, status: nextStatus, lastContact: 'just now' } : item));
+      setSelectedLead((current) => current?.id === lead.id ? { ...current, status: nextStatus, lastContact: 'just now' } : current);
+      onShowToast(`Moved ${lead.name} to ${getColumnTitle(nextStatus)}`);
+      return true;
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : 'Unable to move lead');
+      return false;
+    }
+  }, [onShowToast, setLeads]);
+
   const moveLead = useCallback((lead: Lead, toColumn: string) => {
+    if (!canMoveLeadStage) {
+      onShowToast('You do not have permission to move leads');
+      return;
+    }
+
     const fromColumn = lead.status;
     if (fromColumn === toColumn) return;
 
-    const fromIndex = COLUMN_IDS.indexOf(fromColumn);
-    const toIndex = COLUMN_IDS.indexOf(toColumn);
-    if (fromIndex < 0 || toIndex < 0) {
-      onShowToast('Invalid pipeline stage');
-      return;
-    }
-    if (toIndex <= fromIndex) {
-      onShowToast('Leads can only move forward in the pipeline');
-      return;
-    }
-
-    const permission = canMoveLead(roleId, fromColumn, toColumn);
-    if (!permission.allowed) {
-      onShowToast(permission.reason ?? 'Permission denied');
-      return;
-    }
-
-    if (isKeyStageMove(fromColumn, toColumn)) {
-      setMoveLogModal({ lead, from: fromColumn, to: toColumn });
-      return;
-    }
-
-    setLeads((prev) =>
-      prev.map((l) => (l.id === lead.id ? { ...l, status: toColumn, lastContact: 'just now' } : l))
-    );
-    setSelectedLead((current) => (current?.id === lead.id ? { ...current, status: toColumn, lastContact: 'just now' } : current));
-    onShowToast(`Moved ${lead.name} to ${getColumnTitle(toColumn)}`);
-  }, [roleId, setLeads, onShowToast]);
+    setMoveLogModal({ lead, from: fromColumn, to: toColumn });
+  }, [canMoveLeadStage, onShowToast]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
+    if (!canMoveLeadStage) return;
     const lead = leads.find((item) => item.id === event.active.id);
     setActiveLead(lead ?? null);
-  }, [leads]);
+  }, [canMoveLeadStage, leads]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -157,22 +166,39 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
     setActiveLead(null);
   }, []);
 
-  const updateLead = useCallback((leadId: string, updates: Partial<Lead>) => {
-    setLeads((prev) =>
-      prev.map((lead) => (lead.id === leadId ? { ...lead, ...updates } : lead))
-    );
-    setSelectedLead((current) => (current?.id === leadId ? { ...current, ...updates } : current));
-    onShowToast('Lead data updated');
-  }, [setLeads, onShowToast]);
+  const updateLead = useCallback(async (leadId: string, updates: Partial<Lead>) => {
+    if (!canUpdateLeads) {
+      onShowToast('You do not have permission to update leads');
+      return;
+    }
+
+    try {
+      await updateCrmLead(leadId, {
+        fullName: updates.name,
+        email: updates.email,
+        phone: updates.phone,
+        parentName: updates.parent?.name,
+        parentPhone: updates.parent?.phone,
+        followUpAt: updates.nextFollowUp,
+      });
+      setLeads((previous) => previous.map((lead) => lead.id === leadId ? { ...lead, ...updates } : lead));
+      setSelectedLead((current) => current?.id === leadId ? { ...current, ...updates } : current);
+      onShowToast('Lead data saved');
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : 'Unable to save lead');
+    }
+  }, [canUpdateLeads, onShowToast, setLeads]);
 
   function handleLeadClick(lead: Lead) {
     setSelectedLead(lead);
     setSidebarOpen(true);
   }
 
-  function handleMoveConfirm(note: string) {
+  async function handleMoveConfirm(note: string) {
     if (!moveLogModal) return;
     const { lead, from, to } = moveLogModal;
+    const moved = await persistMove(lead, to, note);
+    if (!moved) return;
     setLeads((prev) =>
       prev.map((l) =>
         l.id === lead.id
@@ -186,7 +212,6 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
         : current
     );
     setMoveLogModal(null);
-    onShowToast(`Moved ${lead.name} to ${getColumnTitle(to)}`);
   }
 
   return (
@@ -198,8 +223,8 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="flex items-center gap-3 mb-4 flex-wrap">
-        <div className="relative flex-1 max-w-xs">
+      <div className="campus-kanban-toolbar flex items-center gap-3 mb-4 flex-wrap">
+        <div className="campus-kanban-search relative flex-1 max-w-xs">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--crm-muted)]" />
           <input
             type="text"
@@ -210,7 +235,7 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="campus-kanban-filters flex items-center gap-2">
           <Filter size={14} className="text-[var(--crm-muted)]" />
           <select
             value={filterSource ?? ''}
@@ -252,6 +277,7 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
               column={column}
               leads={leadsByColumn[column.id] ?? []}
               onLeadClick={handleLeadClick}
+              canDrag={canMoveLeadStage}
             />
           ))}
         </div>
@@ -264,6 +290,10 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
           lead={selectedLead}
           onClose={() => { setSidebarOpen(false); setSelectedLead(null); }}
           onOfferDecision={(lead, decision) => {
+            if (!canMoveLeadStage) {
+              onShowToast('You do not have permission to change offer status');
+              return;
+            }
             setLeads((prev) => prev.map((l) => (
               l.id === lead.id
                 ? { ...l, status: 'offer-status', offerDecision: decision, lastContact: 'just now' }
@@ -277,6 +307,8 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
             onShowToast(`Offer status set to ${decision.replace('-', ' ')}`);
           }}
           onUpdate={updateLead}
+          canUpdateLead={canUpdateLeads}
+          canMoveLeadStage={canMoveLeadStage}
         />
       )}
 
@@ -298,6 +330,7 @@ export default function KanbanBoard({ leads, setLeads, roleId, onShowToast }: Ka
               lead={activeLead}
               columnAccent="#776cf5"
               onClick={() => {}}
+              canDrag={false}
             />
           </div>
         ) : null}

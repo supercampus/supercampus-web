@@ -137,6 +137,20 @@ function iconFor(kind: string) {
   return FileText;
 }
 
+function StepIcon({ kind, size }: { kind: string; size: number }) {
+  if (kind === 'login') return <LockKeyhole size={size} />;
+  if (kind === 'select') return <ListChecks size={size} />;
+  if (kind === 'upload') return <Upload size={size} />;
+  if (kind === 'payment') return <CreditCard size={size} />;
+  if (kind === 'receipt') return <QrCode size={size} />;
+  if (kind === 'approval') return <ShieldCheck size={size} />;
+  if (kind === 'notification') return <Bell size={size} />;
+  if (kind === 'report') return <PieChart size={size} />;
+  if (kind === 'route') return <MapPin size={size} />;
+  if (kind === 'profile') return <UserRound size={size} />;
+  return <FileText size={size} />;
+}
+
 function MobileFrame({ children }: { children: React.ReactNode }) {
   return (
     <main className="min-h-screen bg-[#ded8d0] px-0 py-0 text-[#111111] sm:px-6 sm:py-8">
@@ -295,12 +309,11 @@ function ModuleScreen({
 function StepVisual({ step, moduleKey, completed }: { step: FlowStep; moduleKey: string; completed: boolean }) {
   const kind = screenKind(step);
   const color = primaryFor(moduleKey);
-  const Icon = iconFor(kind);
 
   if (kind === 'login') {
     return (
       <div className="rounded-[24px] bg-white p-4 shadow-sm">
-        <div className="grid h-14 w-14 place-items-center rounded-[18px] text-white" style={{ background: color }}><Icon size={24} /></div>
+        <div className="grid h-14 w-14 place-items-center rounded-[18px] text-white" style={{ background: color }}><StepIcon kind={kind} size={24} /></div>
         <h3 className="mt-5 text-xl font-normal">Secure login</h3>
         <div className="mt-4 grid gap-3">
           <div className="rounded-[14px] border border-[#e0d6ca] px-3 py-3 text-sm text-[#746a78]">Student ID / Mobile number</div>
@@ -479,7 +492,7 @@ function StepVisual({ step, moduleKey, completed }: { step: FlowStep; moduleKey:
 
   return (
     <div className="rounded-[24px] bg-white p-4 shadow-sm">
-      <div className="grid h-14 w-14 place-items-center rounded-[18px] text-white" style={{ background: color }}><Icon size={23} /></div>
+      <div className="grid h-14 w-14 place-items-center rounded-[18px] text-white" style={{ background: color }}><StepIcon kind={kind} size={23} /></div>
       <h3 className="mt-4 text-xl font-normal">{step.title}</h3>
       <div className="mt-4 grid gap-3">
         <div className="rounded-[14px] border border-[#e0d6ca] px-3 py-3 text-sm text-[#746a78]">Enter details</div>

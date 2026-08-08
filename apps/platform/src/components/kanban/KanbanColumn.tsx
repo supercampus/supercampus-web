@@ -11,14 +11,16 @@ interface KanbanColumnProps {
   column: Column;
   leads: Lead[];
   onLeadClick: (lead: Lead) => void;
+  canDrag: boolean;
 }
 
 export default function KanbanColumn({
   column,
   leads,
   onLeadClick,
+  canDrag,
 }: KanbanColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: column.id });
+  const { setNodeRef, isOver } = useDroppable({ id: column.id, disabled: !canDrag });
 
   return (
     <div
@@ -74,7 +76,7 @@ export default function KanbanColumn({
                   <path d="M4 7h16M4 12h10M4 17h7" />
                 </svg>
               </div>
-              <p className="text-xs text-[var(--crm-muted)] font-medium">Drop a lead here</p>
+              <p className="text-xs text-[var(--crm-muted)] font-medium">{canDrag ? 'Drop a lead here' : 'No leads'}</p>
             </div>
           ) : (
             leads.map((lead) => (
@@ -83,6 +85,7 @@ export default function KanbanColumn({
                 lead={lead}
                 columnAccent={column.accent}
                 onClick={onLeadClick}
+                canDrag={canDrag}
               />
             ))
           )}

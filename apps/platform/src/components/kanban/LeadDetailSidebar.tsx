@@ -10,6 +10,8 @@ interface LeadDetailSidebarProps {
   onClose: () => void;
   onOfferDecision: (lead: Lead, decision: OfferDecision) => void;
   onUpdate: (leadId: string, updates: Partial<Lead>) => void;
+  canUpdateLead: boolean;
+  canMoveLeadStage: boolean;
 }
 
 type EditDraft = Pick<Lead, 'name' | 'phone' | 'email' | 'course' | 'intake' | 'city'> & {
@@ -21,7 +23,14 @@ type EditDraft = Pick<Lead, 'name' | 'phone' | 'email' | 'course' | 'intake' | '
 
 const cleanPhone = (phone: string) => phone.replace(/[^0-9]/g, '');
 
-export default function LeadDetailSidebar({ lead, onClose, onOfferDecision, onUpdate }: LeadDetailSidebarProps) {
+export default function LeadDetailSidebar({
+  lead,
+  onClose,
+  onOfferDecision,
+  onUpdate,
+  canUpdateLead,
+  canMoveLeadStage,
+}: LeadDetailSidebarProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'moves' | 'notes'>('all');
   const [commTab, setCommTab] = useState<'call' | 'email' | 'sms' | 'whatsapp' | 'note'>('call');
   const [isEditing, setIsEditing] = useState(false);
@@ -63,6 +72,7 @@ export default function LeadDetailSidebar({ lead, onClose, onOfferDecision, onUp
   }
 
   function handleSaveLead() {
+    if (!canUpdateLead) return;
     const nextName = draft.name.trim() || lead.name;
     onUpdate(lead.id, {
       name: nextName,
@@ -109,7 +119,7 @@ export default function LeadDetailSidebar({ lead, onClose, onOfferDecision, onUp
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100]" onClick={onClose} />
 
       <aside
-        className="fixed right-0 top-0 h-full w-[440px] bg-[var(--crm-surface)] border-l border-[var(--crm-border)] z-[110] shadow-2xl flex flex-col overflow-hidden animate-slide-in"
+        className="campus-lead-sidebar fixed right-0 top-0 h-full w-full max-w-[440px] bg-[var(--crm-surface)] border-l border-[var(--crm-border)] z-[110] shadow-2xl flex flex-col overflow-hidden animate-slide-in"
         style={{ animation: 'slideIn 0.25s ease-out' }}
       >
         <div className="px-5 py-4 border-b border-[var(--crm-border)] flex items-center justify-between shrink-0">
@@ -140,20 +150,22 @@ export default function LeadDetailSidebar({ lead, onClose, onOfferDecision, onUp
                 </div>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => setIsEditing((editing) => !editing)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] text-[11px] font-bold text-[var(--crm-muted)] hover:text-[var(--crm-text)]"
-            >
-              <Pencil size={12} />
-              Edit
-            </button>
+            {canUpdateLead && (
+              <button
+                type="button"
+                onClick={() => setIsEditing((editing) => !editing)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] text-[11px] font-bold text-[var(--crm-muted)] hover:text-[var(--crm-text)]"
+              >
+                <Pencil size={12} />
+                Edit
+              </button>
+            )}
           </div>
 
-          {isEditing && (
+          {isEditing && canUpdateLead && (
             <div className="bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-4">
               <h4 className="text-xs font-bold text-[var(--crm-muted)] uppercase tracking-wider mb-3">Edit Lead Data</h4>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="campus-lead-form-grid grid grid-cols-2 gap-3">
                 {[
                   ['name', 'Student name'],
                   ['phone', 'Phone'],
@@ -205,7 +217,7 @@ export default function LeadDetailSidebar({ lead, onClose, onOfferDecision, onUp
             </a>
           </div>
 
-          {lead.status === 'offer-status' && (
+          {lead.status === 'offer-status' && canMoveLeadStage && (
             <div className="bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-4">
               <h4 className="text-xs font-bold text-[var(--crm-muted)] uppercase tracking-wider mb-3">Offer Status</h4>
               <div className="grid grid-cols-2 gap-2">
