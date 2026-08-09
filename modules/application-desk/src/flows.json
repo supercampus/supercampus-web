@@ -1,0 +1,65 @@
+{
+  "moduleKey": "application-desk",
+  "source": "docs/workflows/Application_Desk_Workflow.md",
+  "deliveryTargets": ["flutter-staff-app", "web-admin", "web-staff"],
+  "overview": "The Application Desk is the controlled bridge between Admissions and the operational SuperCampus system. It takes a confirmed admitted applicant and orchestrates identity resolution, document verification, academic and finance mapping, approval, student-number generation, Student Master creation, user-account provisioning and access assignment — driven by tenant configuration rather than hard-coded rules.",
+  "navigation": [
+    "Onboarding Queue",
+    "Case Record",
+    "Document Verification",
+    "Academic Mapping",
+    "Finance Verification",
+    "Approvals",
+    "Exceptions",
+    "Application Desk Settings"
+  ],
+  "workflows": [
+    {
+      "id": "standard-onboarding",
+      "moduleKey": "application-desk",
+      "name": "Standard Onboarding",
+      "summary": "Confirmed admission through to an activated SuperCampus student",
+      "steps": [
+        { "id": "step-1", "order": 1, "title": "Admission Trigger", "description": "Listen for a confirmed admission and evaluate intake rules", "type": "integration", "crud": ["read"] },
+        { "id": "step-2", "order": 2, "title": "Onboarding Case Creation", "description": "Create the onboarding case after duplicate protection passes", "type": "create", "crud": ["create", "read"] },
+        { "id": "step-3", "order": 3, "title": "Applicant Data Review", "description": "Operator reviews imported admission data under field-level rules", "type": "action", "crud": ["read", "update"] },
+        { "id": "step-4", "order": 4, "title": "Identity Verification", "description": "Match against existing people and classify duplicates", "type": "approval", "crud": ["read"] },
+        { "id": "step-5", "order": 5, "title": "Document Verification", "description": "Verify every mandatory document on the configured checklist", "type": "approval", "crud": ["read", "update"] },
+        { "id": "step-6", "order": 6, "title": "Academic Mapping", "description": "Map the applicant onto campus, department, program, year and batch", "type": "update", "crud": ["read", "update"] },
+        { "id": "step-7", "order": 7, "title": "Section Allocation", "description": "Allocate a section subject to capacity and allocation rules", "type": "update", "crud": ["read", "update"] },
+        { "id": "step-8", "order": 8, "title": "Finance Mapping", "description": "Link the applicable fee structure and confirm finance state", "type": "integration", "crud": ["read"] },
+        { "id": "step-9", "order": 9, "title": "Approval", "description": "Run the configured approval chain", "type": "approval", "crud": ["read", "update"] },
+        { "id": "step-10", "order": 10, "title": "Student Number Generation", "description": "Transactionally allocate the institutional student number", "type": "create", "crud": ["create", "read"] },
+        { "id": "step-11", "order": 11, "title": "Student Master Creation", "description": "Create the Student Master record owned by Core Administration", "type": "create", "crud": ["create", "read"] },
+        { "id": "step-12", "order": 12, "title": "User Account Creation", "description": "Provision the platform account and link it to the student profile", "type": "create", "crud": ["create", "read"] },
+        { "id": "step-13", "order": 13, "title": "Module Access Provisioning", "description": "Assign the student role and tenant-enabled module access", "type": "integration", "crud": ["create", "read"] },
+        { "id": "step-14", "order": 14, "title": "Welcome Communication", "description": "Send activation details to student and guardian", "type": "notification", "crud": ["read"] },
+        { "id": "step-15", "order": 15, "title": "Onboarding Completed", "description": "Close the case and emit OnboardingCompleted", "type": "update", "crud": ["read", "update"] }
+      ]
+    },
+    {
+      "id": "hold-and-resume",
+      "moduleKey": "application-desk",
+      "name": "Hold & Resume",
+      "summary": "Pause a case against a blocking reason and resume from the last valid stage",
+      "steps": [
+        { "id": "step-1", "order": 1, "title": "Raise Hold", "description": "Record reason, owner and resume condition", "type": "update", "crud": ["read", "update"] },
+        { "id": "step-2", "order": 2, "title": "Notify Responsible Team", "description": "Alert the team that owns the blocking action", "type": "notification", "crud": ["read"] },
+        { "id": "step-3", "order": 3, "title": "Resolve Blocking Condition", "description": "Missing document uploaded, finance cleared or mapping corrected", "type": "action", "crud": ["read", "update"] },
+        { "id": "step-4", "order": 4, "title": "Resume Workflow", "description": "Return the case to its recorded resume stage, not to the beginning", "type": "update", "crud": ["read", "update"] }
+      ]
+    },
+    {
+      "id": "exception-handling",
+      "moduleKey": "application-desk",
+      "name": "Exception Handling",
+      "summary": "Duplicate, mapping, finance and provisioning failures without breaking the workflow",
+      "steps": [
+        { "id": "step-1", "order": 1, "title": "Detect Exception", "description": "Guard failure or integration error raises a typed exception", "type": "action", "crud": ["read"] },
+        { "id": "step-2", "order": 2, "title": "Route to Exception Queue", "description": "Assign to the team that owns the failing area", "type": "update", "crud": ["read", "update"] },
+        { "id": "step-3", "order": 3, "title": "Manual Resolution", "description": "Operator resolves the duplicate, mapping or finance block", "type": "action", "crud": ["read", "update"] },
+        { "id": "step-4", "order": 4, "title": "Retry Provisioning", "description": "Replay the failed effect using its idempotency key", "type": "integration", "crud": ["create", "read"] }
+      ]
+    }
+  ]
+}

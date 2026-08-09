@@ -1,10 +1,14 @@
 'use client';
 
 import { availableStaffNavigation, type StaffNavigationId } from '@/lib/staff-access';
+import { useState } from 'react';
 import {
   BarChart3,
+  ChevronDown,
+  ChevronRight,
   ClipboardList,
   Database,
+  IdCard,
   Kanban,
   Layers,
   LayoutDashboard,
@@ -18,11 +22,26 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-const items: Array<{ id: StaffNavigationId; label: string; icon: LucideIcon }> = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'crm', label: 'CRM', icon: Target },
-  { id: 'pipeline', label: 'Pipeline', icon: Kanban },
-  { id: 'admissions', label: 'Admissions', icon: ClipboardList },
+interface NavEntry {
+  id: StaffNavigationId;
+  label: string;
+  icon: LucideIcon;
+  /** Present on a group; the entry then renders as a collapsible parent. */
+  children?: NavEntry[];
+}
+
+const items: NavEntry[] = [
+  {
+    id: 'admissions',
+    label: 'Admissions',
+    icon: ClipboardList,
+    children: [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'crm', label: 'CRM', icon: Target },
+      { id: 'pipeline', label: 'Pipeline', icon: Kanban },
+      { id: 'application-desk', label: 'Application Desk', icon: IdCard },
+    ],
+  },
   { id: 'students', label: 'Students', icon: Users },
   { id: 'academics', label: 'Academics', icon: ListChecks },
   { id: 'fees', label: 'Fees & Finance', icon: Database },
@@ -59,7 +78,21 @@ export function AdmissionsSidebar({
   user,
 }: AdmissionsSidebarProps) {
   const allowedNavigation = availableStaffNavigation(permissions);
-  const visibleItems = items.filter((item) => allowedNavigation.includes(item.id));
+
+  /** Keep a group whose header is permitted, or that still has a usable child. */
+  const visibleItems = items
+    .map((item) => ({
+      ...item,
+      children: item.children?.filter((child) => allowedNavigation.includes(child.id)),
+    }))
+    .filter((item) => allowedNavigation.includes(item.id) || (item.children?.length ?? 0) > 0);
+
+  const [collapsedGroups, setCollapsedGroups] = useState<StaffNavigationId[]>([]);
+  const toggleGroup = (id: StaffNavigationId) =>
+    setCollapsedGroups((current) =>
+      current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id],
+    );
+
   const select = (id: StaffNavigationId) => {
     onSelect(id);
   };
@@ -110,23 +143,87 @@ export function AdmissionsSidebar({
         {visibleItems.map((item) => {
           const Icon = item.icon;
           const selected = active === item.id;
+          const leafClasses = (isSelected: boolean, indented = false) =>
+            `w-full flex items-center ${
+              collapsed ? 'justify-center px-0' : `gap-3 ${indented ? 'pl-6 pr-3' : 'px-3'}`
+            } py-2.5 rounded-xl text-xs font-bold transition-all ${
+              isSelected
+                ? 'text-white shadow-xs'
+                : 'text-[var(--crm-muted)] hover:bg-[var(--crm-panel)] hover:text-[var(--crm-text)]'
+            }`;
+
+          if (!item.children?.length) {
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => select(item.id)}
+                title={item.label}
+                aria-current={selected ? 'page' : undefined}
+                className={leafClasses(selected)}
+                style={selected ? { background: brandGradient } : undefined}
+              >
+                <Icon size={17} />
+                {!collapsed && <span className="campus-admin-sidebar-label">{item.label}</span>}
+              </button>
+            );
+          }
+
+          // A collapsed rail has no room for a disclosure, so children sit flat.
+          const expanded = collapsed || !collapsedGroups.includes(item.id);
+          const headerSelectable = allowedNavigation.includes(item.id);
+
           return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => select(item.id)}
-              title={item.label}
-              aria-current={selected ? 'page' : undefined}
-              className={`w-full flex items-center ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-xl text-xs font-bold transition-all ${
-                selected
-                  ? 'text-white shadow-xs'
-                  : 'text-[var(--crm-muted)] hover:bg-[var(--crm-panel)] hover:text-[var(--crm-text)]'
-              }`}
-              style={selected ? { background: brandGradient } : undefined}
-            >
-              <Icon size={17} />
-              {!collapsed && <span className="campus-admin-sidebar-label">{item.label}</span>}
-            </button>
+            <div key={item.id} className="space-y-1">
+              {!collapsed && (
+                <div
+                  className={`flex items-center rounded-xl transition-all ${
+                    selected ? 'text-white shadow-xs' : 'text-[var(--crm-muted)] hover:bg-[var(--crm-panel)]'
+                  }`}
+                  style={selected ? { background: brandGradient } : undefined}
+                >
+                  <button
+                    type="button"
+                    onClick={() => (headerSelectable ? select(item.id) : toggleGroup(item.id))}
+                    title={item.label}
+                    aria-current={selected ? 'page' : undefined}
+                    className="flex flex-1 items-center gap-3 px-3 py-2.5 text-xs font-bold"
+                  >
+                    <Icon size={17} />
+                    <span className="campus-admin-sidebar-label">{item.label}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(item.id)}
+                    aria-expanded={expanded}
+                    aria-label={`${expanded ? 'Collapse' : 'Expand'} ${item.label}`}
+                    className="campus-admin-sidebar-disclosure px-2 py-2.5"
+                  >
+                    {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </button>
+                </div>
+              )}
+
+              {expanded &&
+                item.children.map((child) => {
+                  const ChildIcon = child.icon;
+                  const childSelected = active === child.id;
+                  return (
+                    <button
+                      key={child.id}
+                      type="button"
+                      onClick={() => select(child.id)}
+                      title={child.label}
+                      aria-current={childSelected ? 'page' : undefined}
+                      className={leafClasses(childSelected, true)}
+                      style={childSelected ? { background: brandGradient } : undefined}
+                    >
+                      <ChildIcon size={16} />
+                      {!collapsed && <span className="campus-admin-sidebar-label">{child.label}</span>}
+                    </button>
+                  );
+                })}
+            </div>
           );
         })}
       </nav>

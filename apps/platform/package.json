@@ -17,6 +17,7 @@
     "@supercampus/academics": "*",
     "@supercampus/admissions": "*",
     "@supercampus/api-client": "*",
+    "@supercampus/application-desk": "*",
     "@supercampus/attendance": "*",
     "@supercampus/contracts": "*",
     "@supercampus/crm": "*",

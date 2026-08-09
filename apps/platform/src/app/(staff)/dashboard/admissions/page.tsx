@@ -6,6 +6,7 @@ import { COLUMNS } from '@/lib/kanban/kanban-data';
 import KanbanBoard from '@/components/kanban/KanbanBoard';
 import ActivityFeed from '@/components/kanban/ActivityFeed';
 import { AdmissionsSidebar } from '@/components/modules/AdmissionsSidebar';
+import { ApplicationDeskWorkspace } from '@/components/modules/ApplicationDeskWorkspace';
 import {
   availableStaffNavigation,
   availableStaffSettings,
@@ -562,6 +563,7 @@ const NAV_TITLES: Record<NavSection, string> = {
   crm: 'CRM',
   pipeline: 'Admissions Pipeline',
   admissions: 'Admissions',
+  'application-desk': 'Application Desk',
   students: 'Students',
   academics: 'Academics',
   fees: 'Fees & Finance',
@@ -2777,6 +2779,8 @@ export default function AdmissionsPage() {
             )}
           </section>
         )}
+
+        {activeNav === 'application-desk' && <ApplicationDeskWorkspace embedded />}
 
         {activeNav === 'dashboard' && (
           <section className="campus-dashboard flex-1 overflow-y-auto kanban-scroll-hidden bg-[#fafafa] dark:bg-[var(--crm-bg)] p-6 space-y-6">

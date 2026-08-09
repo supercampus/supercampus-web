@@ -13,6 +13,10 @@ const productionSecurityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Dev-only: allow HMR and other dev endpoints when the portal is opened over the LAN IP.
+  allowedDevOrigins: ["172.168.2.230", "*.local"],
+  // Workspace modules ship TypeScript sources, so Next has to compile them.
+  transpilePackages: ["@supercampus/application-desk"],
   outputFileTracingRoot: path.join(__dirname, "../.."),
   poweredByHeader: false,
   async headers() {

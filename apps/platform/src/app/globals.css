@@ -2021,11 +2021,20 @@ button:focus-visible, input:focus-visible {
     padding-inline: 8px;
   }
 
+  /* Grouped nav nests its children one level deeper than flat items. */
   .campus-admin-sidebar nav > button,
+  .campus-admin-sidebar nav > div > button,
+  .campus-admin-sidebar nav > div > div,
+  .campus-admin-sidebar nav > div > div > button,
   .campus-admin-sidebar > div:last-child > div,
   .campus-admin-sidebar > div:last-child > button {
     justify-content: center;
     padding-inline: 0;
+  }
+
+  /* No room for a disclosure control on the icon rail. */
+  .campus-admin-sidebar-disclosure {
+    display: none !important;
   }
 
   .campus-admin-sidebar > div:last-child {

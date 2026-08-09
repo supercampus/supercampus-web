@@ -2,7 +2,8 @@ import { access, readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const expected = [
-  "academics", "admissions", "alumni", "analytics", "attendance", "communications",
+  "academics", "admissions", "alumni", "analytics", "application-desk",
+  "attendance", "communications",
   "counselling-wellness", "crm", "documents", "employee-self-service",
   "examinations", "feedback-grievance", "fees", "form-builder", "gatepass",
   "hostel", "library", "no-due", "parents-self-service", "placement",

@@ -3,6 +3,7 @@ export type StaffNavigationId =
   | 'crm'
   | 'pipeline'
   | 'admissions'
+  | 'application-desk'
   | 'students'
   | 'academics'
   | 'fees'
@@ -18,6 +19,7 @@ const NAVIGATION_ORDER: StaffNavigationId[] = [
   'crm',
   'pipeline',
   'admissions',
+  'application-desk',
   'students',
   'academics',
   'fees',
@@ -52,6 +54,8 @@ export function canOpenStaffNavigation(
     case 'admissions':
       return hasModulePermission(permissions, 'admissions')
         || hasPermission(permissions, 'crm.erp.handoff');
+    case 'application-desk':
+      return hasModulePermission(permissions, 'application-desk');
     case 'students':
       return hasModulePermission(permissions, 'students');
     case 'academics':
@@ -91,6 +95,25 @@ export function availableStaffSettings(permissions: readonly string[]): StaffSet
     settings.push('theme');
   }
   return settings;
+}
+
+/**
+ * Application Desk actions are permission-gated individually, so verification,
+ * approval and activation can sit with different teams.
+ */
+export function applicationDeskCapabilities(permissions: readonly string[]) {
+  return {
+    view: hasPermission(permissions, 'application-desk.view'),
+    edit: hasPermission(permissions, 'application-desk.edit'),
+    verify: hasPermission(permissions, 'application-desk.verify'),
+    assign: hasPermission(permissions, 'application-desk.assign'),
+    approve: hasPermission(permissions, 'application-desk.approve'),
+    reject: hasPermission(permissions, 'application-desk.reject'),
+    hold: hasPermission(permissions, 'application-desk.hold'),
+    resume: hasPermission(permissions, 'application-desk.resume'),
+    activate: hasPermission(permissions, 'application-desk.activate'),
+    configure: hasPermission(permissions, 'application-desk.manage_settings'),
+  };
 }
 
 export function dashboardCapabilities(permissions: readonly string[]) {

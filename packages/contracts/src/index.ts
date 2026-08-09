@@ -5,6 +5,7 @@ export type ModuleKey =
   | "admissions"
   | "alumni"
   | "analytics"
+  | "application-desk"
   | "attendance"
   | "communications"
   | "counselling-wellness"
