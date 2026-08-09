@@ -16,6 +16,7 @@ export interface AdmissionTrigger {
   applicantId: string;
   applicationId: string;
   admissionId: string;
+  crmLeadId?: string;
   admissionStatus: string;
   academicYear?: string;
   admissionCategory?: string;
@@ -96,6 +97,7 @@ export function createCase(
     applicantId: trigger.applicantId,
     applicationId: trigger.applicationId,
     admissionId: trigger.admissionId,
+    crmLeadId: trigger.crmLeadId,
     stage: "DATA_REVIEW",
     status: "ACTIVE",
     workflowId: definition.id,

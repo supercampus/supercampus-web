@@ -51,12 +51,24 @@ const items: NavEntry[] = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
+/** Server sections carry an icon name; this maps it onto the bundled icon set. */
+const iconByName: Record<string, LucideIcon> = {
+  LayoutDashboard, Target, Kanban, ClipboardList, IdCard, Users,
+  ListChecks, Database, Layers, BarChart3, UserCog, Settings,
+};
+
 interface AdmissionsSidebarProps {
   active: StaffNavigationId;
   collapsed: boolean;
   onToggle: () => void;
   onSelect: (id: StaffNavigationId) => void;
   permissions: string[];
+  /**
+   * Sections resolved by the API from the tenant's navigation configuration and the
+   * caller's grants. When present it is authoritative; the local permission
+   * derivation is only a fallback for when the API cannot be reached.
+   */
+  sections?: Array<{ key: string; label: string; icon: string | null }> | null;
   brandGradient: string;
   logoDataUrl?: string | null;
   user?: {
@@ -73,19 +85,49 @@ export function AdmissionsSidebar({
   onToggle,
   onSelect,
   permissions,
+  sections,
   brandGradient,
   logoDataUrl,
   user,
 }: AdmissionsSidebarProps) {
-  const allowedNavigation = availableStaffNavigation(permissions);
+  const configuredSections = sections
+    ? new Map(sections.map((section) => [section.key, section]))
+    : null;
+  const permissionNavigation = availableStaffNavigation(permissions);
+  const allowedNavigation = configuredSections
+    ? [
+        ...configuredSections.keys(),
+        // Compatibility for tenants whose server-driven navigation rows predate
+        // Application Desk. The API still authorizes every operation independently.
+        ...(permissionNavigation.includes('application-desk') && !configuredSections.has('application-desk')
+          ? ['application-desk' as const]
+          : []),
+      ] as StaffNavigationId[]
+    : permissionNavigation;
 
   /** Keep a group whose header is permitted, or that still has a usable child. */
   const visibleItems = items
-    .map((item) => ({
-      ...item,
-      children: item.children?.filter((child) => allowedNavigation.includes(child.id)),
-    }))
-    .filter((item) => allowedNavigation.includes(item.id) || (item.children?.length ?? 0) > 0);
+    .map((item) => {
+      const configured = configuredSections?.get(item.id);
+      return {
+        ...item,
+        label: configured?.label ?? item.label,
+        icon: (configured?.icon ? iconByName[configured.icon] : undefined) ?? item.icon,
+        children: item.children
+          ?.filter((child) => allowedNavigation.includes(child.id))
+          .map((child) => {
+            const childConfigured = configuredSections?.get(child.id);
+            return {
+              ...child,
+              label: childConfigured?.label ?? child.label,
+              icon: (childConfigured?.icon ? iconByName[childConfigured.icon] : undefined) ?? child.icon,
+            };
+          }),
+      };
+    })
+    .filter((item) => item.children
+      ? item.children.length > 0
+      : allowedNavigation.includes(item.id));
 
   const [collapsedGroups, setCollapsedGroups] = useState<StaffNavigationId[]>([]);
   const toggleGroup = (id: StaffNavigationId) =>
@@ -171,8 +213,6 @@ export function AdmissionsSidebar({
 
           // A collapsed rail has no room for a disclosure, so children sit flat.
           const expanded = collapsed || !collapsedGroups.includes(item.id);
-          const headerSelectable = allowedNavigation.includes(item.id);
-
           return (
             <div key={item.id} className="space-y-1">
               {!collapsed && (
@@ -184,9 +224,9 @@ export function AdmissionsSidebar({
                 >
                   <button
                     type="button"
-                    onClick={() => (headerSelectable ? select(item.id) : toggleGroup(item.id))}
+                    onClick={() => toggleGroup(item.id)}
                     title={item.label}
-                    aria-current={selected ? 'page' : undefined}
+                    aria-expanded={expanded}
                     className="flex flex-1 items-center gap-3 px-3 py-2.5 text-xs font-bold"
                   >
                     <Icon size={17} />

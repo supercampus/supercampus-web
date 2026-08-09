@@ -10,11 +10,20 @@ import { ApplicationDeskWorkspace } from '@/components/modules/ApplicationDeskWo
 import {
   availableStaffNavigation,
   availableStaffSettings,
+  canOpenStaffNavigation,
   dashboardCapabilities,
   hasPermission,
+  NAVIGATION_ORDER,
+  SETTINGS_ORDER,
   type StaffNavigationId,
   type StaffSettingsId,
 } from '@/lib/staff-access';
+import {
+  toStaffNavigationIds,
+  toStaffSettingsIds,
+  useNavigation,
+} from '@/lib/navigation-api';
+import { useCrmEvents, type CrmEvent } from '@/lib/crm-events';
 import { useApp } from '@/lib/context';
 import {
   bulkImportCrmLeads,
@@ -58,6 +67,7 @@ type OperationModule = {
   id: string;
   name: string;
   features: string[];
+  permissionKeys?: string[];
   permissionCells?: Record<string, Partial<Record<CrudAction, string[]>>>;
 };
 type StaffUser = { id: string; name: string; email: string; initials: string; role: string; roleId: string; roleIds: string[]; team: string; access: string[] };
@@ -473,14 +483,22 @@ function toKanbanLead(lead: CrmLead): Lead {
     city: city ?? 'Not provided',
     assignedTo: { name: lead.assignedTo ?? 'Unassigned' },
     status: pipelineStatus(lead.stageKey),
+    globalStatus: lead.globalStatus,
+    globalStatusData: lead.globalStatusData,
     documents: { uploaded: lead.documentsVerified ? 1 : 0, required: 1 },
     communicationCount: 0,
     nextFollowUp: lead.followUpAt,
     lastContact: new Date(lead.updatedAt).toLocaleString(),
     parent: { name: lead.parentName ?? 'Not provided', phone: lead.parentPhone ?? '', relation: 'Parent' },
     createdAt: lead.createdAt,
+    updatedAt: lead.updatedAt,
     moveHistory: [],
     tags: [lead.priority],
+    whatsapp: lead.whatsapp ?? '',
+    // Carried through so the published-form editor can read and write bespoke fields.
+    interest: interestRecord as Record<string, unknown>,
+    academic: lead.academic ?? {},
+    customFields: lead.customFields ?? {},
   };
 }
 
@@ -582,7 +600,7 @@ const ADMIN_REQUIREMENTS: Partial<Record<NavSection, RequirementPage>> = {
     groups: [
       { title: 'Lead Management', description: 'Create, import, assign, update, and archive leads.', items: ['Lead list and profile', 'Bulk import', 'Source and campaign tracking', 'Counselor assignment', 'Lead duplicate check'] },
       { title: 'Engagement', description: 'All communication and activity around a lead.', items: ['Calls, email, SMS, WhatsApp logs', 'Follow-up scheduler', 'Activity timeline', 'Templates', 'Missed follow-up alerts'] },
-      { title: 'CRM Controls', description: 'Admin-side rules for lead operations.', items: ['Pipeline stages', 'Lead scoring', 'Auto assignment rules', 'Source quality rules', 'CRM permission rules'] },
+      { title: 'CRM Controls', description: 'Admin-side rules for lead operations.', items: ['Pipeline stages', 'Lead scoring', 'First-move ownership', 'Owner movement approvals', 'CRM permission rules'] },
     ],
   },
   admissions: {
@@ -1133,9 +1151,20 @@ const featurePermissionKeys = (module: OperationModule, feature: string) => (
   Array.from(new Set(CRUD_ACTIONS.flatMap((action) => permissionKeysFor(module, feature, action.id))))
 );
 const modulePermissionKeys = (module: OperationModule) => (
-  Array.from(new Set(module.features.flatMap((feature) => featurePermissionKeys(module, feature))))
+  Array.from(new Set(module.permissionKeys
+    ?? module.features.flatMap((feature) => featurePermissionKeys(module, feature))))
 );
 const EMPTY_PERMISSION_KEYS: string[] = [];
+
+// These permission modules are presented as one workspace in navigation. Keep
+// the access editor aligned with that mental model instead of making tenant
+// administrators discover four disconnected cards for one Admissions area.
+const ADMISSIONS_WORKSPACE_MODULE_IDS = new Set([
+  'dashboard',
+  'crm',
+  'admissions',
+  'application-desk',
+]);
 
 const permissionLabel = (key: string) => key
   .split(/[._-]/)
@@ -1152,10 +1181,13 @@ function buildOperationModules(permissions: AuthorizationPermission[]): Operatio
       id: permission.moduleKey,
       name: permission.moduleKey === 'authorization' ? 'Users & Roles' : permissionLabel(permission.moduleKey),
       features: [],
+      permissionKeys: [],
       permissionCells: {},
     };
     const feature = permissionLabel(permission.featureKey);
     if (!current.features.includes(feature)) current.features.push(feature);
+    current.permissionKeys ??= [];
+    if (!current.permissionKeys.includes(permission.key)) current.permissionKeys.push(permission.key);
     current.permissionCells ??= {};
     current.permissionCells[feature] ??= {};
     permission.crudActions.forEach((action) => {
@@ -1296,13 +1328,50 @@ export default function AdmissionsPage() {
   const [crmLoading, setCrmLoading] = useState(true);
   const [crmError, setCrmError] = useState<string | null>(null);
   const permissions = useMemo(() => student?.access ?? [], [student?.access]);
-  const allowedNavigation = useMemo(() => availableStaffNavigation(permissions), [permissions]);
-  const allowedSettings = useMemo(() => availableStaffSettings(permissions), [permissions]);
+  // The API decides which sections exist for this tenant and which of them this user's
+  // grants reveal. Local derivation is kept only as a fallback for an unreachable API.
+  const { navigation: serverNavigation } = useNavigation(authStatus === 'authenticated');
+  const allowedNavigation = useMemo(() => {
+    const resolved = serverNavigation
+      ? toStaffNavigationIds(serverNavigation.workspace, NAVIGATION_ORDER)
+      : availableStaffNavigation(permissions);
+    if (
+      serverNavigation
+      && !resolved.includes('application-desk')
+      && canOpenStaffNavigation(permissions, 'application-desk')
+    ) {
+      // Compatibility for navigation documents created before Application Desk was
+      // introduced. Preserve the canonical order while the backend migration catches up.
+      return NAVIGATION_ORDER.filter((section) =>
+        resolved.includes(section) || section === 'application-desk');
+    }
+    return resolved;
+  }, [serverNavigation, permissions]);
+  const allowedSettings = useMemo(
+    () => (serverNavigation
+      ? toStaffSettingsIds(serverNavigation.settings, SETTINGS_ORDER)
+      : availableStaffSettings(permissions)),
+    [serverNavigation, permissions],
+  );
+  // Admissions is a navigation group, not a standalone workspace. Only its four
+  // children participate in active-page selection and fallback resolution.
+  const selectableNavigation = useMemo(
+    () => allowedNavigation.filter((section) => section !== 'admissions'),
+    [allowedNavigation],
+  );
   const dashboardAccess = useMemo(() => dashboardCapabilities(permissions), [permissions]);
   const roleId = student?.role ?? (hasPermission(permissions, 'authorization.roles.update') || hasPermission(permissions, 'authorization.users.create') ? 'admin' : 'counselor');
-  const [activeNav, setActiveNav] = useState<NavSection>('dashboard');
+  const [requestedNav, setActiveNav] = useState<NavSection>('dashboard');
   const [theme, setTheme] = useState<ThemeId>('classic');
-  const [settingsSection, setSettingsSection] = useState<SettingsSection>('account');
+  const [requestedSettings, setSettingsSection] = useState<SettingsSection>('account');
+  // The open section is clamped to what the administrator granted, derived rather than
+  // corrected after the fact so an ungranted section is never rendered even briefly.
+  const activeNav: NavSection = selectableNavigation.some((section) => section === requestedNav)
+    ? requestedNav
+    : (selectableNavigation[0] ?? requestedNav);
+  const settingsSection: SettingsSection = allowedSettings.includes(requestedSettings)
+    ? requestedSettings
+    : (allowedSettings[0] ?? requestedSettings);
   const canReadLeads = hasPermission(permissions, 'crm.leads.read');
   const canReadCrmDashboard = hasPermission(permissions, 'crm.dashboard.read');
   const canCreateLeads = hasPermission(permissions, 'crm.leads.create');
@@ -1357,6 +1426,10 @@ export default function AdmissionsPage() {
   const [tenantBrand, setTenantBrand] = useState<TenantBrand>(DEFAULT_TENANT_BRAND);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [accessModal, setAccessModal] = useState<AccessModal>(null);
+  // Per-module expansion in step 3. Absent means "use the default", which opens the
+  // module carried in from step 2 and collapses the rest.
+  const [expandedCrudModules, setExpandedCrudModules] = useState<Record<string, boolean>>({});
+  const [showAllCrudModules, setShowAllCrudModules] = useState(false);
   const [activeScreenByNav, setActiveScreenByNav] = useState<Record<string, string>>({});
   const [selectedRecordByScreen, setSelectedRecordByScreen] = useState<Record<string, number>>({});
   const [completedActions, setCompletedActions] = useState<Record<string, string[]>>({});
@@ -1409,15 +1482,15 @@ export default function AdmissionsPage() {
   }, []);
 
   useEffect(() => {
-    const fallbackNavigation = allowedNavigation[0];
+    const fallbackNavigation = selectableNavigation[0];
     const fallbackSettings = allowedSettings[0];
-    if (fallbackNavigation && !allowedNavigation.includes(activeNav)) {
+    if (fallbackNavigation && !selectableNavigation.some((section) => section === activeNav)) {
       queueMicrotask(() => setActiveNav(fallbackNavigation));
     }
     if (activeNav === 'settings' && fallbackSettings && !allowedSettings.includes(settingsSection)) {
       queueMicrotask(() => setSettingsSection(fallbackSettings));
     }
-  }, [activeNav, allowedNavigation, allowedSettings, settingsSection]);
+  }, [activeNav, selectableNavigation, allowedSettings, settingsSection]);
 
   const applyTheme = useCallback((nextTheme: ThemeId) => {
     setTheme(nextTheme);
@@ -1455,6 +1528,72 @@ export default function AdmissionsPage() {
       setCrmLoading(false);
     }
   }, [canReadCrmDashboard, canReadLeads, showToast]);
+
+  // Refetches the board without the loading state or a toast, so a stage move made by
+  // another user updates the columns in place instead of blanking them.
+  //
+  // Only the board is refetched on an event. The operations dashboard is a much heavier
+  // aggregate, so it is refreshed on a slower cadence rather than on every event.
+  const silentlyRefreshBoard = useCallback(async (includeDashboard = false, includeBoard = true) => {
+    try {
+      const [boardResponse, dashboardResponse] = await Promise.all([
+        includeBoard && canReadLeads ? getCrmBoard() : Promise.resolve(null),
+        includeDashboard && canReadCrmDashboard
+          ? getCrmOperationsDashboard()
+          : Promise.resolve(null),
+      ]);
+      if (boardResponse) {
+        setLeads(boardResponse.data.stages.flatMap((stage) => stage.leads.map(toKanbanLead)));
+      }
+      if (dashboardResponse) setCrmDashboard(dashboardResponse.data);
+    } catch {
+      // A failed background refresh keeps the last good board rather than surfacing an error.
+    }
+  }, [canReadCrmDashboard, canReadLeads]);
+
+  // Events arrive in bursts of up to 100, so collapse them into one refetch.
+  const realtimeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastDashboardRefresh = useRef(0);
+  const handleCrmEvent = useCallback((event: CrmEvent) => {
+    const realtimeLead = event.payload.lead as CrmLead | undefined;
+    const hasLeadSnapshot = Boolean(
+      realtimeLead
+        && typeof realtimeLead.id === 'string'
+        && typeof realtimeLead.stageKey === 'string'
+        && typeof realtimeLead.updatedAt === 'string',
+    );
+    if (hasLeadSnapshot && realtimeLead) {
+      const nextLead = toKanbanLead(realtimeLead);
+      setLeads((current) => {
+        const index = current.findIndex((lead) => lead.id === nextLead.id);
+        if (index < 0) return [...current, nextLead];
+        const existing = current[index];
+        if (existing.updatedAt && existing.updatedAt > realtimeLead.updatedAt) return current;
+        const next = [...current];
+        next[index] = nextLead;
+        return next;
+      });
+    }
+    if (realtimeTimer.current) clearTimeout(realtimeTimer.current);
+    realtimeTimer.current = setTimeout(() => {
+      // Fold the expensive dashboard aggregate in at most once every 30 seconds.
+      const now = Date.now();
+      const includeDashboard = now - lastDashboardRefresh.current > 30_000;
+      if (includeDashboard) lastDashboardRefresh.current = now;
+      // Movement events carry the authoritative lead snapshot, so the board is
+      // already current. Older event shapes still fall back to a board refetch.
+      void silentlyRefreshBoard(includeDashboard, !hasLeadSnapshot);
+    }, hasLeadSnapshot ? 50 : 250);
+  }, [silentlyRefreshBoard]);
+
+  useEffect(() => () => {
+    if (realtimeTimer.current) clearTimeout(realtimeTimer.current);
+  }, []);
+
+  const realtimeStatus = useCrmEvents({
+    enabled: authStatus === 'authenticated' && canReadCrmDashboard,
+    onEvent: handleCrmEvent,
+  });
 
   const refreshTenantConfiguration = useCallback(async () => {
     try {
@@ -1942,6 +2081,39 @@ export default function AdmissionsPage() {
     }
   };
 
+  /**
+   * Grants or revokes several modules at once.
+   *
+   * A role holds a flat set of permission keys, so multi-module access is just a
+   * larger set. Doing this in one call keeps "select all" to a single request
+   * instead of one round trip per module.
+   */
+  const setRoleModules = async (roleId: string, moduleIds: string[], enabled: boolean) => {
+    if (collegeRoles.find((role) => role.id === roleId)?.protected) {
+      showToast('The tenant admin recovery role is protected');
+      return;
+    }
+    const affectedKeys = moduleIds.flatMap((moduleId) => {
+      const moduleConfig = operationModules.find((module) => module.id === moduleId);
+      return moduleConfig ? modulePermissionKeys(moduleConfig) : [];
+    });
+    if (affectedKeys.length === 0) return;
+    const current = roleAccess[roleId] ?? [];
+    const next = enabled
+      ? Array.from(new Set([...current, ...affectedKeys]))
+      : current.filter((key) => !affectedKeys.includes(key));
+    setRoleAccess((previous) => ({ ...previous, [roleId]: next }));
+    try {
+      await saveRolePermissions(roleId, next);
+      showToast(enabled
+        ? `Granted ${moduleIds.length} module${moduleIds.length === 1 ? '' : 's'}`
+        : `Removed ${moduleIds.length} module${moduleIds.length === 1 ? '' : 's'}`);
+    } catch (error) {
+      setRoleAccess((previous) => ({ ...previous, [roleId]: current }));
+      showToast(error instanceof Error ? error.message : 'Unable to update module access');
+    }
+  };
+
   const toggleRoleModule = async (roleId: string, moduleId: string) => {
     const moduleConfig = operationModules.find((module) => module.id === moduleId);
     if (!moduleConfig) return;
@@ -2326,6 +2498,35 @@ export default function AdmissionsPage() {
   const selectedModuleEnabledCount = selectedModuleKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
   const selectedModuleFullyEnabled = selectedModuleKeys.length > 0 && selectedModuleEnabledCount === selectedModuleKeys.length;
   const selectedModulePartiallyEnabled = selectedModuleEnabledCount > 0 && !selectedModuleFullyEnabled;
+  // Every module the role can reach at all. A role is not limited to one module, so
+  // step 2 reports the full set rather than whichever card is currently focused.
+  const grantedModules = operationModules.filter((module) =>
+    modulePermissionKeys(module).some((key) => selectedRolePermissionSet.has(key)));
+  const admissionsWorkspaceModules = operationModules.filter((module) =>
+    ADMISSIONS_WORKSPACE_MODULE_IDS.has(module.id));
+  const standaloneOperationModules = operationModules.filter((module) =>
+    !ADMISSIONS_WORKSPACE_MODULE_IDS.has(module.id));
+  const admissionsWorkspaceKeys = Array.from(new Set(admissionsWorkspaceModules.flatMap(modulePermissionKeys)));
+  const admissionsWorkspaceEnabledCount = admissionsWorkspaceKeys.filter((key) =>
+    selectedRolePermissionSet.has(key)).length;
+  const admissionsWorkspaceFullyGranted = admissionsWorkspaceKeys.length > 0
+    && admissionsWorkspaceEnabledCount === admissionsWorkspaceKeys.length;
+  const admissionsWorkspacePartiallyGranted = admissionsWorkspaceEnabledCount > 0
+    && !admissionsWorkspaceFullyGranted;
+  const admissionsWorkspaceProgress = admissionsWorkspaceKeys.length
+    ? Math.round((admissionsWorkspaceEnabledCount / admissionsWorkspaceKeys.length) * 100)
+    : 0;
+  const accessAreaCount = standaloneOperationModules.length + (admissionsWorkspaceModules.length ? 1 : 0);
+  const grantedAccessAreaCount = standaloneOperationModules.filter((module) =>
+    modulePermissionKeys(module).some((key) => selectedRolePermissionSet.has(key))).length
+    + (admissionsWorkspaceEnabledCount > 0 ? 1 : 0);
+  // Step 3 lists every granted module. The module carried in from step 2 is always
+  // included so it can be configured before it has any permissions.
+  const crudModules = showAllCrudModules
+    ? operationModules
+    : operationModules.filter((module) =>
+      grantedModules.some((granted) => granted.id === module.id)
+      || module.id === selectedAccessModuleId);
   const selectedRoleUsers = visibleStaffUsers.filter((user) => user.roleIds.includes(selectedAccessRole.id));
   const teamSummary = Object.entries(visibleStaffUsers.reduce<Record<string, number>>((summary, user) => {
     summary[user.team] = (summary[user.team] ?? 0) + 1;
@@ -2637,42 +2838,82 @@ export default function AdmissionsPage() {
     showToast(`${action} completed`);
   };
   const [pipelineTab, setPipelineTab] = useState<'leads' | 'enrolled'>('leads');
+  const [pipelineRange, setPipelineRange] = useState<'monthly' | 'weekly' | 'daily'>('monthly');
 
-  const pipelineMonths = useMemo(() => {
+  const pipelineChart = useMemo(() => {
     const now = new Date();
-    const labels: string[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      labels.push(d.toLocaleString('en-US', { month: 'short' }));
-    }
-    return labels;
-  }, []);
-
-  const monthlyPipelineData = useMemo(() => {
-    const now = new Date();
-    const counts: number[] = [];
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const targets =
       pipelineTab === 'leads'
         ? leads
         : leads.filter((lead) =>
             lead.offerDecision === 'accepted' || ['application', 'application-status', 'offer-status'].includes(lead.status),
           );
-    for (let i = 11; i >= 0; i--) {
-      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
-      counts.push(
-        targets.reduce((acc, lead) => {
-          const t = lead.createdAt ? new Date(lead.createdAt) : null;
-          return t && !Number.isNaN(t.getTime()) && t >= start && t < end ? acc + 1 : acc;
-        }, 0),
-      );
+
+    const buckets: Array<{ start: Date; end: Date; label: string; fullLabel: string }> = [];
+    if (pipelineRange === 'monthly') {
+      for (let offset = 11; offset >= 0; offset--) {
+        const start = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+        const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+        buckets.push({
+          start,
+          end,
+          label: start.toLocaleDateString('en-US', { month: 'short' }),
+          fullLabel: start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        });
+      }
+    } else if (pipelineRange === 'weekly') {
+      const currentWeek = new Date(today);
+      currentWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+      for (let offset = 7; offset >= 0; offset--) {
+        const start = new Date(currentWeek);
+        start.setDate(currentWeek.getDate() - offset * 7);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 7);
+        buckets.push({
+          start,
+          end,
+          label: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          fullLabel: `Week of ${start.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+        });
+      }
+    } else {
+      for (let offset = 13; offset >= 0; offset--) {
+        const start = new Date(today);
+        start.setDate(today.getDate() - offset);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 1);
+        buckets.push({
+          start,
+          end,
+          label: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          fullLabel: start.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
+        });
+      }
     }
-    return counts;
-  }, [leads, pipelineTab]);
+
+    const values = buckets.map(({ start, end }) => targets.reduce((count, lead) => {
+      const createdAt = lead.createdAt ? new Date(lead.createdAt) : null;
+      return createdAt && !Number.isNaN(createdAt.getTime()) && createdAt >= start && createdAt < end
+        ? count + 1
+        : count;
+    }, 0));
+
+    return {
+      values,
+      labels: buckets.map(({ label, fullLabel }) => ({ label, fullLabel })),
+    };
+  }, [leads, pipelineRange, pipelineTab]);
+
+  const pipelineRangeSubtitle = {
+    monthly: 'Monthly student inquiry velocity & enrollment movement',
+    weekly: 'Weekly student inquiry velocity & enrollment movement',
+    daily: 'Daily student inquiry velocity & enrollment movement',
+  }[pipelineRange];
 
   const areaChartPaths = useMemo(() => {
-    const data = monthlyPipelineData;
-    const maxVal = Math.max(10, ...data);
+    const data = pipelineChart.values;
+    const maxVal = Math.max(4, ...data);
     const W = 500;
     const H = 160;
     const paddingY = 20;
@@ -2680,7 +2921,7 @@ export default function AdmissionsPage() {
     const points = data.map((val, idx) => {
       const x = (idx / (data.length - 1)) * W;
       const y = H - paddingY - (val / maxVal) * (H - paddingY * 2);
-      return { x, y, val, month: pipelineMonths[idx] };
+      return { x, y, val, ...pipelineChart.labels[idx] };
     });
 
     let strokePath = `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
@@ -2697,7 +2938,7 @@ export default function AdmissionsPage() {
     const areaPath = `${strokePath} L ${W},${H} L 0,${H} Z`;
 
     return { points, strokePath, areaPath, maxVal };
-  }, [monthlyPipelineData, pipelineMonths]);
+  }, [pipelineChart]);
 
   if (!mounted) {
     return (
@@ -2707,7 +2948,7 @@ export default function AdmissionsPage() {
     );
   }
 
-  if (authStatus === 'authenticated' && allowedNavigation.length === 0) {
+  if (authStatus === 'authenticated' && selectableNavigation.length === 0) {
     return (
       <div className="grid min-h-screen place-items-center bg-[var(--crm-bg)] p-6 text-[var(--crm-text)]">
         <div className="w-full max-w-lg rounded-3xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-8 text-center shadow-sm">
@@ -2732,6 +2973,7 @@ export default function AdmissionsPage() {
         onToggle={() => setSidebarCollapsed((value) => !value)}
         onSelect={setActiveNav}
         permissions={permissions}
+        sections={serverNavigation?.workspace ?? null}
         brandGradient={brandGradient}
         logoDataUrl={tenantBrand.logoDataUrl}
         user={student}
@@ -2745,6 +2987,29 @@ export default function AdmissionsPage() {
               {theme === 'midnight' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <ActivityFeed leads={leads} />
+            {canReadCrmDashboard && (
+              <span
+                className="flex items-center gap-1.5 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[var(--crm-muted)]"
+                title={
+                  realtimeStatus === 'live'
+                    ? 'Live: pipeline changes stream in over a WebSocket'
+                    : realtimeStatus === 'connecting'
+                      ? 'Connecting to the realtime stream'
+                      : 'Realtime stream offline, reconnecting'
+                }
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    realtimeStatus === 'live'
+                      ? 'bg-emerald-500'
+                      : realtimeStatus === 'connecting'
+                        ? 'bg-amber-500 animate-pulse'
+                        : 'bg-red-500'
+                  }`}
+                />
+                {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Sync' : 'Offline'}
+              </span>
+            )}
             {(canReadLeads || canReadCrmDashboard) && (
               <button
                 type="button"
@@ -2764,6 +3029,12 @@ export default function AdmissionsPage() {
 
         {activeNav === 'pipeline' && (
           <section className="campus-admin-pipeline flex-1 overflow-hidden p-5 flex flex-col bg-[var(--crm-panel)]">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h1 className="text-lg font-semibold">Admissions pipeline</h1>
+                <p className="mt-0.5 text-xs text-[var(--crm-muted)]">The first stage movement assigns an Enquiry to you. Moving another owner&apos;s card sends a permission request.</p>
+              </div>
+            </div>
             {crmError && <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">{crmError}</div>}
             {crmLoading && leads.length === 0 ? (
               <div className="flex flex-1 items-center justify-center text-sm text-[var(--crm-muted)]">Loading live pipeline…</div>
@@ -2772,9 +3043,12 @@ export default function AdmissionsPage() {
                 leads={leads}
                 setLeads={setLeads}
                 roleId={roleId}
+                currentUserId={student?.id ?? ''}
                 canUpdateLeads={canUpdateLeads}
                 canMoveLeadStage={canMoveLeadStage}
+                canHoldLeads={canHoldLeads}
                 onShowToast={showToast}
+                onRefresh={() => void refreshCrmBoard()}
               />
             )}
           </section>
@@ -2890,24 +3164,47 @@ export default function AdmissionsPage() {
 
                 {/* Admissions Pipeline Overview Card with Area Chart */}
                 <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-6 shadow-xs animate-fade-in-up [animation-delay:250ms]">
-                  <div className="flex items-start justify-between gap-4 mb-6">
+                  <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row">
                     <div>
                       <h3 className="text-base font-bold text-[var(--crm-text)]">Admissions Pipeline Overview</h3>
-                      <p className="text-xs text-[var(--crm-muted)] mt-0.5">Monthly student inquiry velocity & enrollment movement</p>
+                      <p className="mt-0.5 text-xs text-[var(--crm-muted)]">{pipelineRangeSubtitle}</p>
                     </div>
-                    <div className="flex items-center bg-[var(--crm-bg)] p-1 rounded-xl border border-[var(--crm-border)]">
-                      <button
-                        onClick={() => setPipelineTab('leads')}
-                        className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${pipelineTab === 'leads' ? 'bg-[var(--crm-card)] text-[var(--crm-text)] shadow-xs font-bold' : 'text-[var(--crm-muted)] hover:text-[var(--crm-text)]'}`}
-                      >
-                        Leads
-                      </button>
-                      <button
-                        onClick={() => setPipelineTab('enrolled')}
-                        className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${pipelineTab === 'enrolled' ? 'bg-[var(--crm-card)] text-[var(--crm-text)] shadow-xs font-bold' : 'text-[var(--crm-muted)] hover:text-[var(--crm-text)]'}`}
-                      >
-                        Enrolled
-                      </button>
+                    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+                      <div className="flex items-center rounded-xl border border-[var(--crm-border)] bg-[var(--crm-bg)] p-1" aria-label="Pipeline time range">
+                        {([
+                          ['monthly', 'Monthly'],
+                          ['weekly', 'Weekly'],
+                          ['daily', 'Days'],
+                        ] as const).map(([range, label]) => (
+                          <button
+                            key={range}
+                            type="button"
+                            aria-pressed={pipelineRange === range}
+                            onClick={() => setPipelineRange(range)}
+                            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${pipelineRange === range ? 'bg-[var(--crm-card)] font-bold text-[var(--crm-text)] shadow-xs' : 'text-[var(--crm-muted)] hover:text-[var(--crm-text)]'}`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex items-center rounded-xl border border-[var(--crm-border)] bg-[var(--crm-bg)] p-1" aria-label="Pipeline metric">
+                        <button
+                          type="button"
+                          aria-pressed={pipelineTab === 'leads'}
+                          onClick={() => setPipelineTab('leads')}
+                          className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all ${pipelineTab === 'leads' ? 'bg-[var(--crm-card)] font-bold text-[var(--crm-text)] shadow-xs' : 'text-[var(--crm-muted)] hover:text-[var(--crm-text)]'}`}
+                        >
+                          Leads
+                        </button>
+                        <button
+                          type="button"
+                          aria-pressed={pipelineTab === 'enrolled'}
+                          onClick={() => setPipelineTab('enrolled')}
+                          className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all ${pipelineTab === 'enrolled' ? 'bg-[var(--crm-card)] font-bold text-[var(--crm-text)] shadow-xs' : 'text-[var(--crm-muted)] hover:text-[var(--crm-text)]'}`}
+                        >
+                          Enrolled
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -2931,13 +3228,13 @@ export default function AdmissionsPage() {
                           </linearGradient>
                         </defs>
                         <path
-                          key={`area-${pipelineTab}`}
+                          key={`area-${pipelineTab}-${pipelineRange}`}
                           d={areaChartPaths.areaPath}
                           fill="url(#admissionsAreaGradient)"
                           className="animate-fade-in-up transition-all duration-700 ease-out"
                         />
                         <path
-                          key={`stroke-${pipelineTab}`}
+                          key={`stroke-${pipelineTab}-${pipelineRange}`}
                           d={areaChartPaths.strokePath}
                           fill="none"
                           stroke="var(--tenant-primary)"
@@ -2946,13 +3243,17 @@ export default function AdmissionsPage() {
                           strokeLinejoin="round"
                           className="animate-draw-stroke transition-all duration-700 ease-out"
                         />
+                        {areaChartPaths.points.map((point) => (
+                          <circle key={`${point.fullLabel}-${pipelineTab}`} cx={point.x} cy={point.y} r="3" fill="var(--crm-card)" stroke="var(--tenant-primary)" strokeWidth="2">
+                            <title>{point.fullLabel}: {point.val} {pipelineTab === 'leads' ? 'leads' : 'enrolled'}</title>
+                          </circle>
+                        ))}
                       </svg>
                     </div>
 
-                    {/* X-Axis Months */}
-                    <div className="flex justify-between mt-4 pt-2 border-t border-[var(--crm-border)]/60 text-[11px] text-[var(--crm-muted)] font-medium">
-                      {pipelineMonths.map((month) => (
-                        <span key={month}>{month}</span>
+                    <div className="mt-4 grid border-t border-[var(--crm-border)]/60 pt-2 text-center text-[10px] font-medium text-[var(--crm-muted)] sm:text-[11px]" style={{ gridTemplateColumns: `repeat(${pipelineChart.labels.length}, minmax(0, 1fr))` }}>
+                      {pipelineChart.labels.map(({ label, fullLabel }) => (
+                        <span key={fullLabel} title={fullLabel} className="truncate px-0.5">{label}</span>
                       ))}
                     </div>
                   </div>
@@ -3421,7 +3722,9 @@ export default function AdmissionsPage() {
                         <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
                           <h4 className="text-sm">Stage automation</h4>
                           <div className="mt-4 space-y-2">
-                            {(crmDashboard?.automations ?? []).map((automation) => {
+                            {(crmDashboard?.automations ?? [])
+                              .filter((automation) => automation.action !== 'auto_assign_digital_leads')
+                              .map((automation) => {
                               const automationText = `${automation.label} ${automation.action}`.toLowerCase();
                               const canRunAutomation = automationText.includes('assign')
                                 ? canAssignLeads
@@ -4407,8 +4710,8 @@ export default function AdmissionsPage() {
                 <div className="campus-module-stats grid grid-cols-4 gap-4">
                   {[
                     ['1', 'Select role', selectedAccessRole.name, ShieldCheck, () => setAccessModal('role')],
-                    ['2', 'Select module', selectedAccessModule.name, Layers, () => setAccessModal('module')],
-                    ['3', 'Set feature CRUD', `${selectedModuleEnabledCount}/${selectedModuleKeys.length} actions`, ListChecks, () => setAccessModal('crud')],
+                    ['2', 'Select modules', `${grantedAccessAreaCount} of ${accessAreaCount} access areas`, Layers, () => setAccessModal('module')],
+                    ['3', 'Set feature CRUD', `${selectedAccessModule.name}: ${selectedModuleEnabledCount}/${selectedModuleKeys.length} actions`, ListChecks, () => setAccessModal('crud')],
                     ['4', 'Assign users', `${selectedRoleUsers.length} users`, Users, () => setAccessModal('users')],
                   ].map(([step, title, value, Icon, onClick]) => (
                     <button
@@ -5199,7 +5502,7 @@ export default function AdmissionsPage() {
                   </div>
                   <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
                     <h4 className="text-sm">Routing Rules</h4>
-                    {['Digital sources auto-assign', 'Walk-In waits for manager', 'Referral assigned manually', 'Reassignment requires reason'].map((rule) => (
+                    {['Every new lead appears in Enquiry', 'First stage movement assigns the card owner', 'Other users request owner approval to move', 'Each approval authorizes one movement'].map((rule) => (
                       <div key={rule} className="mt-2 rounded-xl bg-[var(--crm-card)] p-3 text-xs">{rule}</div>
                     ))}
                   </div>
@@ -5657,92 +5960,293 @@ export default function AdmissionsPage() {
               )}
 
               {accessModal === 'module' && (
-                <div className="grid gap-3 md:grid-cols-3">
-                  {operationModules.map((module) => {
-                    const moduleKeys = modulePermissionKeys(module);
-                    const enabledCount = moduleKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
-                    const progress = moduleKeys.length ? Math.round((enabledCount / moduleKeys.length) * 100) : 0;
-                    return (
+                <div>
+                  {/* A role holds permissions across any number of modules, so the tick
+                      boxes grant access while the card body opens that module in step 3. */}
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm">
+                        {grantedAccessAreaCount} of {accessAreaCount} access areas granted to {selectedAccessRole.name}
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--crm-muted)]">
+                        Admissions keeps its connected modules together. Expand access precisely, then configure feature CRUD in step 3.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <button
-                        key={module.id}
                         type="button"
-                        onClick={() => {
-                          setSelectedAccessModuleId(module.id);
-                          setFeatureModuleId(module.id);
-                        }}
-                        className={`rounded-xl border p-4 text-left ${selectedAccessModule.id === module.id ? 'border-[var(--tenant-primary)] bg-[color-mix(in_srgb,var(--tenant-primary)_8%,var(--crm-surface))]' : 'border-[var(--crm-border)] bg-[var(--crm-surface)]'}`}
+                        disabled={!canUpdateRoles || grantedModules.length === operationModules.length}
+                        onClick={() => void setRoleModules(selectedAccessRole.id, operationModules.map((m) => m.id), true)}
+                        className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-xs text-[var(--crm-muted)] disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="truncate text-sm">{module.name}</p>
-                          <span className="text-[10px] text-[var(--crm-muted)]">{progress}%</span>
-                        </div>
-                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--crm-card)]">
-                          <span className="block h-full rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--tenant-primary), var(--tenant-secondary))' }} />
-                        </div>
-                        <p className="mt-3 line-clamp-2 text-[11px] text-[var(--crm-muted)]">{module.features.slice(0, 4).join(', ')}</p>
+                        Select all
                       </button>
-                    );
-                  })}
+                      <button
+                        type="button"
+                        disabled={!canUpdateRoles || grantedModules.length === 0}
+                        onClick={() => void setRoleModules(selectedAccessRole.id, operationModules.map((m) => m.id), false)}
+                        className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-xs text-[var(--crm-muted)] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {admissionsWorkspaceModules.length > 0 && (
+                      <div className="overflow-hidden rounded-2xl border border-[var(--tenant-primary)] bg-[color-mix(in_srgb,var(--tenant-primary)_7%,var(--crm-surface))] shadow-sm md:col-span-2 xl:col-span-3">
+                        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--tenant-primary)_22%,var(--crm-border))] p-4 sm:p-5">
+                          <div className="flex min-w-0 flex-1 items-start gap-3">
+                            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white" style={{ background: brandGradient }}>
+                              <Layers size={18} />
+                            </span>
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="text-base">Admissions workspace</h4>
+                                <span className="rounded-full bg-[var(--crm-card)] px-2.5 py-1 text-[9px] uppercase tracking-wider text-[var(--tenant-primary)]">
+                                  {admissionsWorkspaceModules.length} contained modules
+                                </span>
+                              </div>
+                              <p className="mt-1 text-xs leading-5 text-[var(--crm-muted)]">
+                                Dashboard, lead pipeline, admissions operations, and application processing stay under one access area.
+                              </p>
+                            </div>
+                          </div>
+                          <label className="flex items-center gap-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs" title={admissionsWorkspaceFullyGranted ? 'Remove the Admissions workspace' : 'Grant the complete Admissions workspace'}>
+                            <input
+                              type="checkbox"
+                              checked={admissionsWorkspaceFullyGranted}
+                              disabled={!canUpdateRoles}
+                              ref={(input) => {
+                                if (input) input.indeterminate = admissionsWorkspacePartiallyGranted;
+                              }}
+                              onChange={() => void setRoleModules(
+                                selectedAccessRole.id,
+                                admissionsWorkspaceModules.map((module) => module.id),
+                                !admissionsWorkspaceFullyGranted,
+                              )}
+                              className="h-4 w-4 accent-[var(--tenant-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+                            />
+                            <span>{admissionsWorkspaceFullyGranted ? 'Full access' : admissionsWorkspacePartiallyGranted ? 'Partial access' : 'Enable all'}</span>
+                          </label>
+                        </div>
+
+                        <div className="p-4 sm:p-5">
+                          <div className="mb-4 flex items-center gap-3">
+                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--crm-card)]">
+                              <span className="block h-full rounded-full transition-[width] duration-300" style={{ width: `${admissionsWorkspaceProgress}%`, background: 'linear-gradient(90deg, var(--tenant-primary), var(--tenant-secondary))' }} />
+                            </div>
+                            <span className="w-9 text-right text-[10px] text-[var(--crm-muted)]">{admissionsWorkspaceProgress}%</span>
+                          </div>
+
+                          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            {admissionsWorkspaceModules.map((module) => {
+                              const moduleKeys = modulePermissionKeys(module);
+                              const enabledCount = moduleKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
+                              const fullyGranted = moduleKeys.length > 0 && enabledCount === moduleKeys.length;
+                              const partiallyGranted = enabledCount > 0 && !fullyGranted;
+                              const focused = selectedAccessModule.id === module.id;
+                              return (
+                                <div key={module.id} className={`rounded-xl border p-3.5 transition-colors ${focused ? 'border-[var(--tenant-primary)] bg-[var(--crm-card)] shadow-sm' : 'border-[var(--crm-border)] bg-[color-mix(in_srgb,var(--crm-card)_72%,transparent)] hover:border-[color-mix(in_srgb,var(--tenant-primary)_55%,var(--crm-border))]'}`}>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <label className="flex min-w-0 flex-1 items-start gap-2 text-xs" title={fullyGranted ? `Remove ${module.name}` : `Grant ${module.name}`}>
+                                      <input
+                                        type="checkbox"
+                                        checked={fullyGranted}
+                                        disabled={!canUpdateRoles}
+                                        ref={(input) => {
+                                          if (input) input.indeterminate = partiallyGranted;
+                                        }}
+                                        onChange={() => void setRoleModules(selectedAccessRole.id, [module.id], !fullyGranted)}
+                                        className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--tenant-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+                                      />
+                                      <span className="truncate">{module.name}</span>
+                                    </label>
+                                    <span className="text-[9px] text-[var(--crm-muted)]">{enabledCount}/{moduleKeys.length}</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedAccessModuleId(module.id);
+                                      setFeatureModuleId(module.id);
+                                    }}
+                                    className="mt-3 block w-full text-left"
+                                  >
+                                    <span className="line-clamp-2 min-h-8 text-[10px] leading-4 text-[var(--crm-muted)]">{module.features.slice(0, 3).join(', ') || 'Specialized actions'}</span>
+                                    <span className="mt-2 block text-[10px] font-semibold text-[var(--tenant-primary)]">
+                                      {focused ? 'Selected for step 3 ->' : 'Configure ->'}
+                                    </span>
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {standaloneOperationModules.map((module) => {
+                      const moduleKeys = modulePermissionKeys(module);
+                      const enabledCount = moduleKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
+                      const progress = moduleKeys.length ? Math.round((enabledCount / moduleKeys.length) * 100) : 0;
+                      const fullyGranted = moduleKeys.length > 0 && enabledCount === moduleKeys.length;
+                      const partiallyGranted = enabledCount > 0 && !fullyGranted;
+                      const focused = selectedAccessModule.id === module.id;
+                      return (
+                        <div
+                          key={module.id}
+                          className={`rounded-xl border p-4 transition-colors ${focused ? 'border-[var(--tenant-primary)] bg-[color-mix(in_srgb,var(--tenant-primary)_8%,var(--crm-surface))] shadow-sm' : 'border-[var(--crm-border)] bg-[var(--crm-surface)] hover:border-[color-mix(in_srgb,var(--tenant-primary)_45%,var(--crm-border))]'}`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <label className="flex min-w-0 flex-1 items-start gap-2.5" title={fullyGranted ? 'Remove this module from the role' : 'Grant this module to the role'}>
+                              <input
+                                type="checkbox"
+                                checked={fullyGranted}
+                                disabled={!canUpdateRoles}
+                                ref={(input) => {
+                                  if (input) input.indeterminate = partiallyGranted;
+                                }}
+                                onChange={() => void setRoleModules(selectedAccessRole.id, [module.id], !fullyGranted)}
+                                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--tenant-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+                              />
+                              <span className="truncate text-sm">{module.name}</span>
+                            </label>
+                            <span className="shrink-0 text-[10px] text-[var(--crm-muted)]">{progress}%</span>
+                          </div>
+                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--crm-card)]">
+                            <span className="block h-full rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--tenant-primary), var(--tenant-secondary))' }} />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedAccessModuleId(module.id);
+                              setFeatureModuleId(module.id);
+                            }}
+                            className="mt-3 block w-full text-left"
+                          >
+                            <span className="line-clamp-2 text-[11px] text-[var(--crm-muted)]">{module.features.slice(0, 4).join(', ')}</span>
+                            <span className="mt-1.5 block text-[10px] font-semibold text-[var(--tenant-primary)]">
+                              {focused ? 'Open in step 3 ->' : 'Set CRUD ->'}
+                            </span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
               {accessModal === 'crud' && (
                 <div>
+                  {/* A role spans many modules, so this step covers all of them rather
+                      than only whichever card was last clicked in step 2. */}
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm">{selectedAccessModule.name}</p>
+                      <p className="text-sm">
+                        {crudModules.length} module{crudModules.length === 1 ? '' : 's'} for {selectedAccessRole.name}
+                      </p>
                       <p className="mt-1 text-xs text-[var(--crm-muted)]">Choose API-backed Create, Read, Update, and Delete permissions. N/A means that operation does not exist for the feature.</p>
                     </div>
-                    <button type="button" onClick={() => toggleRoleModule(selectedAccessRole.id, selectedAccessModule.id)} disabled={!canUpdateRoles} className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-4 py-2 text-xs text-[var(--crm-muted)] disabled:cursor-not-allowed disabled:opacity-40">
-                      {selectedModuleFullyEnabled ? 'Clear module' : 'Enable module'}
-                    </button>
+                    <label className="flex items-center gap-2 text-xs text-[var(--crm-muted)]">
+                      <input
+                        type="checkbox"
+                        checked={showAllCrudModules}
+                        onChange={(event) => setShowAllCrudModules(event.target.checked)}
+                        className="h-4 w-4 accent-[var(--tenant-primary)]"
+                      />
+                      Show ungranted modules
+                    </label>
                   </div>
-                  <div className="grid gap-3">
-                    {selectedAccessModule.features.map((feature) => {
-                      const crudKeys = featurePermissionKeys(selectedAccessModule, feature);
-                      const enabledCount = crudKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
-                      return (
-                        <div key={feature} className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm">{feature}</p>
-                              <p className="mt-1 text-[10px] text-[var(--crm-muted)]">{enabledCount}/{crudKeys.length} permission enabled</p>
+
+                  {crudModules.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-surface)] p-6 text-xs text-[var(--crm-muted)]">
+                      This role has no modules yet. Grant one in step 2, or tick “Show ungranted modules” to configure from here.
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {crudModules.map((module) => {
+                        const moduleKeys = modulePermissionKeys(module);
+                        const moduleEnabled = moduleKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
+                        const fullyEnabled = moduleKeys.length > 0 && moduleEnabled === moduleKeys.length;
+                        // Default-open the module carried in from step 2; everything else
+                        // stays collapsed so a role with many modules is still scannable.
+                        const open = expandedCrudModules[module.id] ?? module.id === selectedAccessModule.id;
+                        return (
+                          <div key={module.id} className="overflow-hidden rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)]">
+                            <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+                              <button
+                                type="button"
+                                onClick={() => setExpandedCrudModules((current) => ({ ...current, [module.id]: !open }))}
+                                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                                aria-expanded={open}
+                              >
+                                {open ? <ChevronUp size={14} className="shrink-0 text-[var(--crm-muted)]" /> : <ChevronDown size={14} className="shrink-0 text-[var(--crm-muted)]" />}
+                                <span className="truncate text-sm">{module.name}</span>
+                                <span className="shrink-0 text-[10px] text-[var(--crm-muted)]">{moduleEnabled}/{moduleKeys.length}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => toggleRoleModule(selectedAccessRole.id, module.id)}
+                                disabled={!canUpdateRoles}
+                                className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-1.5 text-xs text-[var(--crm-muted)] disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                {fullyEnabled ? 'Clear module' : 'Enable module'}
+                              </button>
                             </div>
-                            <div className="grid grid-cols-4 gap-2">
-                              {CRUD_ACTIONS.map((action) => {
-                                const permissionKeys = permissionKeysFor(selectedAccessModule, feature, action.id);
-                                if (!permissionKeys.length) {
+
+                            {open && (
+                              <div className="grid gap-3 border-t border-[var(--crm-border)] p-4">
+                                {module.features.map((feature) => {
+                                  const crudKeys = featurePermissionKeys(module, feature);
+                                  const enabledCount = crudKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
                                   return (
-                                    <span
-                                      key={action.id}
-                                      className="grid h-10 w-10 place-items-center rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-card)] text-[8px] text-[var(--crm-muted)] opacity-60"
-                                      aria-label={`${action.id} is not applicable for ${feature}`}
-                                      title={`No ${action.id} operation is registered for ${feature}`}
-                                    >
-                                      N/A
-                                    </span>
+                                    <div key={feature} className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4">
+                                      <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                          <p className="text-sm">{feature}</p>
+                                          <p className="mt-1 text-[10px] text-[var(--crm-muted)]">{enabledCount}/{crudKeys.length} permission enabled</p>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-2">
+                                          {CRUD_ACTIONS.map((action) => {
+                                            const permissionKeys = permissionKeysFor(module, feature, action.id);
+                                            if (!permissionKeys.length) {
+                                              return (
+                                                <span
+                                                  key={action.id}
+                                                  className="grid h-10 w-10 place-items-center rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-surface)] text-[8px] text-[var(--crm-muted)] opacity-60"
+                                                  aria-label={`${action.id} is not applicable for ${feature}`}
+                                                  title={`No ${action.id} operation is registered for ${feature}`}
+                                                >
+                                                  N/A
+                                                </span>
+                                              );
+                                            }
+                                            const enabled = permissionKeys.every((permissionKey) => selectedRolePermissionSet.has(permissionKey));
+                                            return (
+                                              <button
+                                                key={action.id}
+                                                type="button"
+                                                onClick={() => toggleRolePermissions(selectedAccessRole.id, permissionKeys)}
+                                                title={`${action.id}: ${permissionKeys.join(', ')}`}
+                                                disabled={!canUpdateRoles}
+                                                className={`h-10 w-10 rounded-xl border text-xs disabled:cursor-not-allowed disabled:opacity-40 ${enabled ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)] text-white' : 'border-[var(--crm-border)] bg-[var(--crm-surface)] text-[var(--crm-muted)]'}`}
+                                              >
+                                                {action.label}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </div>
                                   );
-                                }
-                                const enabled = permissionKeys.every((permissionKey) => selectedRolePermissionSet.has(permissionKey));
-                                return (
-                                  <button
-                                    key={action.id}
-                                    type="button"
-                                    onClick={() => toggleRolePermissions(selectedAccessRole.id, permissionKeys)}
-                                    title={`${action.id}: ${permissionKeys.join(', ')}`}
-                                    disabled={!canUpdateRoles}
-                                    className={`h-10 w-10 rounded-xl border text-xs disabled:cursor-not-allowed disabled:opacity-40 ${enabled ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)] text-white' : 'border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-muted)]'}`}
-                                  >
-                                    {action.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                                })}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -5783,7 +6287,11 @@ export default function AdmissionsPage() {
             </div>
 
             <div className="flex items-center justify-between border-t border-[var(--crm-border)] px-5 py-4">
-              <p className="text-xs text-[var(--crm-muted)]">{selectedAccessRole.name} / {selectedAccessModule.name}</p>
+              <p className="text-xs text-[var(--crm-muted)]">
+                {accessModal === 'module'
+                  ? `${selectedAccessRole.name} / ${grantedAccessAreaCount} access area${grantedAccessAreaCount === 1 ? '' : 's'} granted`
+                  : `${selectedAccessRole.name} / ${selectedAccessModule.name}`}
+              </p>
               <button type="button" onClick={() => setAccessModal(null)} className="rounded-xl px-4 py-2 text-xs text-white" style={{ background: brandGradient }}>Done</button>
             </div>
           </div>

@@ -106,6 +106,7 @@ export interface CreateCampaignInput {
   status?: 'draft' | 'active' | 'paused' | 'completed';
   startsOn?: string;
   endsOn?: string;
+  formId?: string;
 }
 
 export interface CrmBoardStage {
@@ -118,7 +119,7 @@ export interface CrmBoardStage {
 
 export interface CrmBoard {
   pipeline: { key: string; name: string };
-  scope: 'all' | 'assigned';
+  scope: 'all' | 'assigned' | 'collaborative';
   stages: CrmBoardStage[];
   total: number;
 }
@@ -174,6 +175,40 @@ export function getCrmBoard(search?: string) {
   return apiRequest<{ data: CrmBoard }>(`${CRM_ROOT}/kanban/board${query}`);
 }
 
+export interface CrmLeadMoveRequest {
+  id: string;
+  leadId: string;
+  leadName: string;
+  requestedBy: string;
+  ownerId: string;
+  fromStage: string;
+  fromSubstate: string;
+  toStage: string;
+  toSubstate: string;
+  reason: string | null;
+  notes: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'stale' | 'expired';
+  decisionReason: string | null;
+  expiresAt: string;
+  createdAt: string;
+  decidedAt: string | null;
+}
+
+export interface CrmActivity {
+  cursor: number;
+  eventType: string;
+  aggregateId: string;
+  leadName: string | null;
+  payload: Record<string, unknown>;
+  createdAt: string;
+}
+
+/** Unassigned Enquiry leads available for explicit self-claim. */
+export function getCrmUnassignedLeads(search?: string) {
+  const query = search?.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
+  return apiRequest<{ data: CrmLead[] }>(`${CRM_ROOT}/leads/unassigned${query}`);
+}
+
 export interface BulkImportLeadRow extends CreateLeadInput {
   rowNumber: number;
 }
@@ -215,6 +250,21 @@ export function getCrmForms() {
 
 export function getPublishedCrmLeadCaptureForm() {
   return apiRequest<{ data: CrmForm }>(`${CRM_ROOT}/forms/published/lead-capture`);
+}
+
+/** Every form the tenant administrator has published, whatever types they created. */
+export function getPublishedCrmForms() {
+  return apiRequest<{ data: CrmForm[] }>(`${CRM_ROOT}/forms/published`);
+}
+
+/**
+ * The published form of one type, for example `application` or `document_checklist`.
+ * Lets the workspace render an admin-defined form without knowing it at build time.
+ */
+export function getPublishedCrmFormByType(formType: string) {
+  return apiRequest<{ data: CrmForm }>(
+    `${CRM_ROOT}/forms/published/type/${encodeURIComponent(formType)}`,
+  );
 }
 
 
@@ -305,6 +355,7 @@ export function submitCrmForm(
   id: string,
   data: Record<string, unknown>,
   leadId?: string,
+  attribution?: { campaignId?: string; idempotencyKey?: string },
 ) {
   return apiRequest<{
     data: {
@@ -313,11 +364,406 @@ export function submitCrmForm(
       formVersion: number;
       leadId: string | null;
       createdLeadId?: string;
+      campaignId: string | null;
+      idempotencyKey: string | null;
+      processingStatus: string;
+      replayed: boolean;
       data: Record<string, unknown>;
       createdAt: string;
     };
   }>(`${CRM_ROOT}/forms/${id}/submit`, {
     method: 'POST',
-    body: JSON.stringify({ data, leadId }),
+    body: JSON.stringify({ data, leadId, ...attribution }),
   });
+}
+
+/* ------------------------------------------------------------------------- *
+ * Remaining CRM operations.
+ *
+ * Every route mounted by `modules/crm` now has a typed client. Several backend
+ * routes are aliases of one handler (`/leads/{id}/hold` and
+ * `/leads/{id}/stage/hold` hit the same code); the `/stage/` form is used
+ * throughout for consistency with `moveCrmLead`.
+ * ------------------------------------------------------------------------- */
+
+/** A single CRM lead. */
+export function getCrmLead(id: string) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}`);
+}
+
+/** Soft-deletes a lead. Responds 204 with no body. */
+export function deleteCrmLead(id: string) {
+  return apiRequest<void>(`${CRM_ROOT}/leads/${id}`, { method: 'DELETE' });
+}
+
+/** Stage, assignment and communication history for a lead. */
+export function getCrmLeadTimeline(id: string) {
+  return apiRequest<{ data: CrmLeadTimeline }>(`${CRM_ROOT}/leads/${id}/timeline`);
+}
+
+export interface CrmTimelineCommunication {
+  id: string;
+  channel: 'whatsapp' | 'email' | 'call' | 'sms' | 'note';
+  subject: string | null;
+  content: Record<string, unknown>;
+  actorId: string;
+  createdAt: string;
+}
+
+export interface CrmLeadTask {
+  id: string;
+  title: string;
+  taskType: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  dueAt: string;
+  status: string;
+  assignedTo: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CrmLeadTimeline {
+  stageHistory: Array<{ id: string; fromStage: string | null; toStage: string; actorId: string; reason: string | null; notes: string | null; createdAt: string }>;
+  communications: CrmTimelineCommunication[];
+  assignments: Array<Record<string, unknown>>;
+  formSubmissions: Array<Record<string, unknown>>;
+  automationRuns: Array<Record<string, unknown>>;
+  tasks: CrmLeadTask[];
+}
+
+export function addCrmLeadNote(id: string, content: string) {
+  return apiRequest<{ data: CrmTimelineCommunication }>(`${CRM_ROOT}/leads/${id}/notes`, {
+    method: 'POST', body: JSON.stringify({ content }),
+  });
+}
+
+export function addCrmLeadTask(id: string, input: { title: string; dueAt: string; priority?: string }) {
+  return apiRequest<{ data: CrmLeadTask }>(`${CRM_ROOT}/leads/${id}/tasks`, {
+    method: 'POST', body: JSON.stringify(input),
+  });
+}
+
+/* --- Assignment --- */
+
+export function assignCrmLead(id: string, userId: string, reason?: string) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}/assign`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, reason }),
+  });
+}
+
+export function requestCrmLeadMove(id: string, toStage: string, reason?: string, toSubstate?: string) {
+  return apiRequest<{ data: CrmLeadMoveRequest }>(`${CRM_ROOT}/leads/${id}/stage/request`, {
+    method: 'POST',
+    body: JSON.stringify({ toStage, toSubstate, reason }),
+  });
+}
+
+export function getCrmLeadMoveRequests() {
+  return apiRequest<{ data: CrmLeadMoveRequest[] }>(`${CRM_ROOT}/move-requests`);
+}
+
+export function decideCrmLeadMoveRequest(id: string, decision: 'approve' | 'reject', reason?: string) {
+  return apiRequest<{ data: CrmLeadMoveRequest }>(`${CRM_ROOT}/move-requests/${id}/${decision}`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function getCrmLeadApplication(id: string) {
+  return apiRequest<{ data: null | {
+    leadId: string;
+    caseId: string;
+    applicationId: string;
+    admissionId: string;
+    applicationStatus: string;
+    createdAt: string;
+    updatedAt: string;
+  } }>(`${CRM_ROOT}/leads/${id}/application`);
+}
+
+export function getCrmActivity() {
+  return apiRequest<{ data: CrmActivity[] }>(`${CRM_ROOT}/activity`);
+}
+
+/** Claims a lead for the authenticated caller; no target user can be supplied. */
+export function claimCrmLead(id: string, reason?: string) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}/claim`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function reassignCrmLead(id: string, userId: string, reason?: string) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}/reassign`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, reason }),
+  });
+}
+
+export interface CrmCounselorInput {
+  userId: string;
+  displayName: string;
+  active?: boolean;
+  maxCapacity?: number;
+  sourceCategories?: unknown;
+  programIds?: unknown;
+  territories?: unknown;
+  averageResponseMinutes?: number;
+  conversionRate?: number;
+}
+
+export function getCrmCounselors() {
+  return apiRequest<{ data: Array<Record<string, unknown>> }>(`${CRM_ROOT}/assignment/counselors`);
+}
+
+/** Creates or updates counselor capacity and routing configuration. */
+export function upsertCrmCounselor(input: CrmCounselorInput) {
+  return apiRequest<{ data: Record<string, unknown> }>(`${CRM_ROOT}/assignment/counselors`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+/* --- Pipeline global statuses --- */
+
+export interface CrmIntakeInput {
+  intakeYear: number;
+  programId: string;
+  intakeMonth?: string;
+  reason?: string;
+}
+
+/** Flags a qualified lead as a future-intake prospect. */
+export function markCrmLeadProspect(id: string, input: CrmIntakeInput) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}/stage/prospect`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/** Defers a lead to a later intake. */
+export function deferCrmLead(id: string, input: CrmIntakeInput) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}/stage/defer`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export interface CrmHoldInput {
+  reason: string;
+  /** ISO date. Stored, but nothing releases the hold automatically yet. */
+  holdUntil?: string;
+  reminderDate?: string;
+}
+
+export function holdCrmLead(id: string, input: CrmHoldInput) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}/stage/hold`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function releaseCrmLeadHold(id: string, reason: string) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}/stage/release-hold`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+/** Archive reason must be one of the 31 values the server accepts. */
+export function archiveCrmLead(id: string, archiveReason: string, notes?: string) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}/stage/archive`, {
+    method: 'POST',
+    body: JSON.stringify({ archiveReason, notes }),
+  });
+}
+
+export function unarchiveCrmLead(
+  id: string,
+  restoreToStage: string,
+  reason: string,
+  restoreToSubstate?: string,
+) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}/stage/unarchive`, {
+    method: 'POST',
+    body: JSON.stringify({ restoreToStage, restoreToSubstate, reason }),
+  });
+}
+
+/* --- Board and dashboard --- */
+
+/** Board filtered to the leads assigned to the caller. */
+export function getCrmMyBoard(search?: string) {
+  const query = search ? `?search=${encodeURIComponent(search)}` : '';
+  return apiRequest<{ data: CrmBoard }>(`${CRM_ROOT}/kanban/my-board${query}`);
+}
+
+/** Static stage and substate catalog. */
+export function getCrmStages() {
+  return apiRequest<{ data: Record<string, unknown> }>(`${CRM_ROOT}/kanban/stages`);
+}
+
+export function getCrmStageLeads(stage: string, search?: string) {
+  const query = search ? `?search=${encodeURIComponent(search)}` : '';
+  return apiRequest<{ data: CrmLead[] }>(
+    `${CRM_ROOT}/kanban/stages/${encodeURIComponent(stage)}/leads${query}`,
+  );
+}
+
+export function getCrmStageCount(stage: string) {
+  return apiRequest<{ data: { stage: string; count: number } }>(
+    `${CRM_ROOT}/kanban/stages/${encodeURIComponent(stage)}/count`,
+  );
+}
+
+/** Board summary. Same handler as /kanban/board. */
+export function getCrmDashboard() {
+  return apiRequest<{ data: CrmBoard }>(`${CRM_ROOT}/dashboard`);
+}
+
+/* --- Forms --- */
+
+export function getCrmForm(id: string) {
+  return apiRequest<{ data: CrmForm }>(`${CRM_ROOT}/forms/${id}`);
+}
+
+export function deleteCrmForm(id: string) {
+  return apiRequest<void>(`${CRM_ROOT}/forms/${id}`, { method: 'DELETE' });
+}
+
+export function getCrmFormSubmissions(id: string) {
+  return apiRequest<{ data: Array<Record<string, unknown>> }>(`${CRM_ROOT}/forms/${id}/submissions`);
+}
+
+/**
+ * Unauthenticated enquiry submission.
+ *
+ * The only CRM route that needs no session. It cannot infer the institution from a
+ * token, so the tenant slug is supplied explicitly; in production a public hostname
+ * or gateway sets this header.
+ */
+export function submitPublicCrmForm(
+  id: string,
+  data: Record<string, unknown>,
+  tenantId: string,
+  attribution?: { campaignId?: string; idempotencyKey?: string },
+) {
+  return apiRequest<{ data: Record<string, unknown> }>(
+    `${CRM_ROOT}/public/forms/${id}/submit`,
+    {
+      method: 'POST',
+      headers: { 'x-tenant-id': tenantId },
+      body: JSON.stringify({ data, ...attribution }),
+    },
+    false,
+  );
+}
+
+/* --- Communications --- */
+
+export interface CrmCommunicationInput {
+  leadId: string;
+  templateKey?: string;
+  subject?: string;
+  content?: Record<string, unknown>;
+  /** For calls: connected, not-answered, wrong-number, callback-requested. */
+  outcome?: string;
+}
+
+/**
+ * Records an outbound message.
+ *
+ * These persist to `crm.communications` and the transactional outbox. No provider
+ * worker drains that outbox yet, so "queued" means stored, not delivered.
+ */
+export function sendCrmWhatsapp(input: CrmCommunicationInput) {
+  return apiRequest<{ data: Record<string, unknown> }>(`${CRM_ROOT}/communications/whatsapp`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function sendCrmEmail(input: CrmCommunicationInput) {
+  return apiRequest<{ data: Record<string, unknown> }>(`${CRM_ROOT}/communications/email`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function logCrmCall(input: CrmCommunicationInput) {
+  return apiRequest<{ data: Record<string, unknown> }>(`${CRM_ROOT}/communications/calls`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/* --- Templates --- */
+
+export interface CrmTemplateInput {
+  templateKey: string;
+  channel: string;
+  name: string;
+  content: string;
+  language?: string;
+}
+
+export function getCrmTemplates() {
+  return apiRequest<{ data: Array<Record<string, unknown>> }>(`${CRM_ROOT}/templates`);
+}
+
+export function createCrmTemplate(input: CrmTemplateInput) {
+  return apiRequest<{ data: Record<string, unknown> }>(`${CRM_ROOT}/templates`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/* --- Access and configuration --- */
+
+/** Role catalog the CRM module recognises. */
+export function getCrmRoles() {
+  return apiRequest<{ data: Record<string, unknown> }>(`${CRM_ROOT}/roles`);
+}
+
+export function getCrmCampaigns() {
+  return apiRequest<{ data: Array<Record<string, unknown>> }>(`${CRM_ROOT}/campaigns`);
+}
+
+export interface CrmWorkflowToggleInput {
+  fromStage: string;
+  toStage: string;
+  allowedRoles?: unknown;
+  requiresApproval?: boolean;
+  approvalRole?: string;
+  enabled?: boolean;
+}
+
+export function setCrmWorkflowToggle(input: CrmWorkflowToggleInput) {
+  return apiRequest<{ data: Record<string, unknown> }>(
+    `${CRM_ROOT}/configuration/workflow-toggles`,
+    { method: 'PUT', body: JSON.stringify(input) },
+  );
+}
+
+export interface CrmAutomationToggleInput {
+  stage: string;
+  triggerName: string;
+  action: string;
+  templateKey?: string;
+  conditions?: unknown;
+  enabled?: boolean;
+}
+
+export function setCrmAutomationToggle(input: CrmAutomationToggleInput) {
+  return apiRequest<{ data: Record<string, unknown> }>(
+    `${CRM_ROOT}/configuration/automation-toggles`,
+    { method: 'PUT', body: JSON.stringify(input) },
+  );
+}
+
+/** CRM module liveness. Public. */
+export function getCrmHealth() {
+  return apiRequest<{ data: Record<string, unknown> }>(`${CRM_ROOT}/health`, undefined, false);
 }

@@ -144,9 +144,10 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   const [reloadToken, setReloadToken] = useState(0);
   const refresh = useCallback(() => setReloadToken((token) => token + 1), []);
 
-  // In a dev build we attempt the load even without a grant, so the demo
-  // fallback can decide whether the escape hatch applies.
-  const mayLoad = grantedView || (DEV_BUILD && authStatus !== 'checking');
+  // Never call the protected endpoint without an authenticated view grant.
+  // The previous development fallback mounted for signed-out and partially
+  // authorised users, which caused repeated 401/403 requests in the browser.
+  const mayLoad = authStatus === 'authenticated' && grantedView;
 
   useEffect(() => {
     if (!mayLoad) return;

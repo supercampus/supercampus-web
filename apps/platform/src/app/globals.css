@@ -2402,6 +2402,14 @@ textarea {
 .sc-login-card__forgot { border: 0; background: transparent; color: #0f766e; font-size: 12px; font-weight: 850; cursor: pointer; }
 .sc-login-card__forgot:hover { text-decoration: underline; }
 .sc-login-card__error { margin: -2px 0 15px; padding: 11px 13px; border: 1px solid rgba(239,68,68,.22); border-radius: 8px; background: rgba(239,68,68,.07); color: #c52f3e; font-size: 12px; line-height: 1.45; }
+.sc-login-card__notice { display: flex; align-items: flex-start; gap: 9px; margin: -2px 0 18px; padding: 12px 13px; border: 1px solid rgba(15,118,110,.22); border-radius: 8px; background: rgba(15,118,110,.07); color: #0b5f58; font-size: 12px; font-weight: 700; line-height: 1.5; }
+.sc-login-card__notice svg { flex: none; margin-top: 1px; }
+.sc-login-card__actions--center { justify-content: center; margin: 16px 0 0; }
+.sc-login-card__actions--center .sc-login-card__forgot { display: inline-flex; align-items: center; gap: 6px; }
+/* The recovery screens reuse the submit style on links back to sign-in. */
+a.sc-login-card__submit { text-decoration: none; }
+/* Single-column shell for the standalone reset-password route. */
+.sc-login--single { grid-template-columns: minmax(0, 1fr); }
 .sc-login-card__submit { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 8px; background: linear-gradient(135deg, #0f766e, #155e75); color: white; font-weight: 850; cursor: pointer; box-shadow: 0 12px 28px rgba(15,118,110,.24); transition: transform .18s, box-shadow .18s, filter .18s; }
 .sc-login-card__submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 16px 34px rgba(15,118,110,.3); filter: saturate(1.08); }.sc-login-card__submit:disabled { opacity: .65; cursor: wait; }
 .sc-login-card__credentials { margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(15,23,42,.08); }

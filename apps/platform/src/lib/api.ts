@@ -19,7 +19,7 @@ function errorMessage(body: unknown, status: number) {
 }
 
 function canRefresh(path: string) {
-  return !['/auth/login', '/auth/refresh', '/auth/logout'].includes(path);
+  return !['/auth/login', '/auth/forgot-password', '/auth/reset-password', '/auth/refresh', '/auth/logout'].includes(path);
 }
 
 async function send(path: string, init?: RequestInit) {
@@ -58,6 +58,24 @@ export function login(credentials: LoginCredentials) {
   return apiRequest<{ data: { student: AuthStudent; roles: string[]; expiresAt: string } }>(
     '/auth/login',
     { method: 'POST', body: JSON.stringify(credentials) },
+    false,
+  );
+}
+
+/** Starts a reset. Resolves the same way whether or not the address has an account. */
+export function forgotPassword(email: string) {
+  return apiRequest<{ data: { message: string } }>(
+    '/auth/forgot-password',
+    { method: 'POST', body: JSON.stringify({ email }) },
+    false,
+  );
+}
+
+/** Completes a reset with the one-time token from the emailed link. */
+export function resetPassword(token: string, password: string) {
+  return apiRequest<{ data: { message: string } }>(
+    '/auth/reset-password',
+    { method: 'POST', body: JSON.stringify({ token, password }) },
     false,
   );
 }

@@ -112,6 +112,7 @@ export interface OnboardingCase {
   applicantId: string;
   applicationId: string;
   admissionId: string;
+  crmLeadId?: string;
 
   stage: OnboardingStage;
   status: OnboardingStatus;

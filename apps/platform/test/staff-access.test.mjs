@@ -33,6 +33,15 @@ test('staff navigation is derived from effective permissions', () => {
   assert.match(accessSource, /authorization\.users\.read/);
   assert.match(sidebarSource, /availableStaffNavigation\(permissions\)/);
   assert.match(sidebarSource, /visibleItems\.map/);
+  assert.match(accessSource, /case 'application-desk':[\s\S]*application-desk\.view/);
+});
+
+test('application desk never requests protected cases without an authenticated view grant', async () => {
+  const deskSource = await readFile(
+    new URL('../src/components/modules/ApplicationDeskWorkspace.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(deskSource, /authStatus === 'authenticated' && grantedView/);
 });
 
 test('staff page avoids unauthorized configuration requests and actions', () => {
@@ -44,6 +53,14 @@ test('staff page avoids unauthorized configuration requests and actions', () => 
   assert.match(admissionsSource, /canPublishForms\s*&&/);
 });
 
+test('access setup groups admissions modules into one workspace card', () => {
+  assert.match(admissionsSource, /ADMISSIONS_WORKSPACE_MODULE_IDS/);
+  assert.match(admissionsSource, /Admissions workspace/);
+  assert.match(admissionsSource, /admissionsWorkspaceModules\.map/);
+  assert.match(admissionsSource, /contained modules/);
+  assert.match(admissionsSource, /permissionKeys\.includes\(permission\.key\)/);
+});
+
 test('pipeline mutations use dynamic effective permissions', () => {
   assert.equal(admissionsSource.includes('canUpdateLeads={canUpdateLeads}'), true);
   assert.equal(admissionsSource.includes('canMoveLeadStage={canMoveLeadStage}'), true);
@@ -51,6 +68,24 @@ test('pipeline mutations use dynamic effective permissions', () => {
   assert.equal(kanbanSource.includes('if (!canMoveLeadStage)'), true);
   assert.equal(kanbanSource.includes('canMoveLead(roleId'), false);
   assert.equal(leadCardSource.includes('disabled: !canDrag'), true);
-  assert.equal(leadSidebarSource.includes('{canUpdateLead && ('), true);
-  assert.equal(leadSidebarSource.includes('isEditing && canUpdateLead'), true);
+  assert.equal(leadSidebarSource.includes('disabled={!canUpdateLead}'), true);
+  assert.equal(leadSidebarSource.includes('editing ?'), true);
+});
+
+test('lead drawer follows the published form schema and animates from the right', () => {
+  assert.match(leadSidebarSource, /publishedSections\(leadForm\)/);
+  assert.match(leadSidebarSource, /formSections\.map/);
+  assert.match(leadSidebarSource, /leadForm\?\.name/);
+  assert.match(leadSidebarSource, /lg:w-1\/2/);
+  assert.match(leadSidebarSource, /translate-x-full/);
+  assert.match(leadSidebarSource, /window\.setTimeout\(onClose, 260\)/);
+});
+
+test('application status drawer provides accept deny and hold decisions', () => {
+  assert.match(leadSidebarSource, /lead\.status === 'application-status'/);
+  assert.match(leadSidebarSource, /decideApplication\('accept'\)/);
+  assert.match(leadSidebarSource, /decideApplication\('deny'\)/);
+  assert.match(leadSidebarSource, /decideApplication\('hold'\)/);
+  assert.match(kanbanSource, /holdCrmLead/);
+  assert.match(kanbanSource, /decision === 'accept' \? 'offer-status' : 'archived'/);
 });

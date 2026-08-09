@@ -54,6 +54,8 @@ export interface Lead {
   city: string;
   assignedTo: { name: string; avatar?: string };
   status: string;
+  globalStatus?: string | null;
+  globalStatusData?: Record<string, unknown>;
   offerDecision?: OfferDecision;
   documents: { uploaded: number; required: number; items?: LeadDocument[] };
   communicationCount: number;
@@ -61,9 +63,17 @@ export interface Lead {
   lastContact: string;
   parent: { name: string; phone: string; relation: string };
   createdAt?: string;
+  /** Server revision timestamp used to reject stale realtime replays. */
+  updatedAt?: string;
   moveHistory: MoveLog[];
   communications?: Communication[];
   tags?: string[];
+  whatsapp?: string;
+  /** Programme and intake as stored on the CRM lead, preserved so edits round-trip. */
+  interest?: Record<string, unknown>;
+  academic?: Record<string, unknown>;
+  /** Values for published form fields that have no dedicated lead column. */
+  customFields?: Record<string, unknown>;
 }
 
 export interface Column {

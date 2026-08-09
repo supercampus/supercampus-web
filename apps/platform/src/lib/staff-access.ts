@@ -14,7 +14,13 @@ export type StaffNavigationId =
 
 export type StaffSettingsId = 'account' | 'access' | 'forms' | 'workflows' | 'theme';
 
-const NAVIGATION_ORDER: StaffNavigationId[] = [
+/**
+ * Sections this build knows how to render.
+ *
+ * Visibility is decided by the API from tenant configuration and effective grants;
+ * this list only narrows the response to keys the client has a view for.
+ */
+export const NAVIGATION_ORDER: StaffNavigationId[] = [
   'dashboard',
   'crm',
   'pipeline',
@@ -28,6 +34,8 @@ const NAVIGATION_ORDER: StaffNavigationId[] = [
   'users',
   'settings',
 ];
+
+export const SETTINGS_ORDER: StaffSettingsId[] = ['account', 'access', 'forms', 'workflows', 'theme'];
 
 export function hasPermission(permissions: readonly string[], permission: string) {
   return permissions.includes('*') || permissions.includes(permission);
@@ -55,7 +63,7 @@ export function canOpenStaffNavigation(
       return hasModulePermission(permissions, 'admissions')
         || hasPermission(permissions, 'crm.erp.handoff');
     case 'application-desk':
-      return hasModulePermission(permissions, 'application-desk');
+      return hasPermission(permissions, 'application-desk.view');
     case 'students':
       return hasModulePermission(permissions, 'students');
     case 'academics':

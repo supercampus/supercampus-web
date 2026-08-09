@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import type { Lead } from '@/lib/kanban/kanban-data';
+import { getCrmActivity, type CrmActivity } from '@/lib/crm-api';
 import { Bell, X, ArrowRight, MessageSquare } from 'lucide-react';
 
 interface ActivityFeedProps {
@@ -10,6 +11,23 @@ interface ActivityFeedProps {
 
 export default function ActivityFeed({ leads }: ActivityFeedProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [activity, setActivity] = useState<CrmActivity[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const toggle = useCallback(async () => {
+    const opening = !isOpen;
+    setIsOpen(opening);
+    if (!opening) return;
+    setLoading(true);
+    try {
+      const response = await getCrmActivity();
+      setActivity(response.data);
+    } catch {
+      setActivity([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [isOpen]);
 
   // Build activity feed from all leads' moveHistory
   const allActivity = leads
@@ -26,7 +44,8 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
   return (
     <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => void toggle()}
+        aria-label="Open activity"
         className="p-2 rounded-full hover:bg-[var(--crm-panel)] transition-colors relative"
       >
         <Bell size={18} className="text-[var(--crm-text)]" />
@@ -62,7 +81,25 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
 
             {/* Feed */}
             <div className="max-h-[320px] overflow-y-auto kanban-scroll-hidden">
-              {allActivity.length === 0 ? (
+              {loading ? (
+                <div className="py-8 text-center text-xs text-[var(--crm-muted)]">Loading activity…</div>
+              ) : activity.length > 0 ? (
+                activity.map((entry) => {
+                  const actor = String(entry.payload.byUser ?? entry.payload.claimedBy ?? entry.payload.actorId ?? 'System');
+                  const action = entry.eventType.replaceAll('.', ' ').replaceAll('_', ' ');
+                  return (
+                    <div key={entry.cursor} className="flex items-start gap-3 px-4 py-3 hover:bg-[var(--crm-panel)] transition-colors border-b border-[var(--crm-border)] last:border-0">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-[var(--tenant-surface)]">
+                        <ArrowRight size={13} className="text-[var(--tenant-primary)]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-[var(--crm-text)]"><span className="font-semibold">{actor}</span> {action} {entry.leadName ?? ''}</p>
+                        <p className="text-[10px] text-[var(--crm-muted)] mt-0.5 font-medium">{new Date(entry.createdAt).toLocaleString('en-IN')}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : allActivity.length === 0 ? (
                 <div className="text-center py-8">
                   <Bell size={24} className="mx-auto text-[var(--crm-muted)] mb-2" />
                   <p className="text-xs text-[var(--crm-muted)]">No recent activity</p>

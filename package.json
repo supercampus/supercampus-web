@@ -2,8 +2,14 @@
   "name": "supercampus-web-workspace",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["apps/*", "packages/*", "modules/*"],
-  "engines": { "node": ">=20.9.0" },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "modules/*"
+  ],
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "setup": "npm install",
     "doctor": "node scripts/check-setup.mjs",
@@ -15,6 +21,7 @@
     "test:auth": "npm run test:auth --workspace @supercampus/platform",
     "typecheck:packages": "tsc -p tsconfig.packages.json",
     "validate:modules": "node tooling/validate-module/index.mjs",
-    "verify": "npm run validate:modules && npm run typecheck:packages && npm run lint && npm run build && npm run test"
+    "verify": "npm run validate:modules && npm run typecheck:packages && npm run lint && npm run build && npm run test",
+    "api:coverage": "node tooling/api-coverage.mjs"
   }
 }
