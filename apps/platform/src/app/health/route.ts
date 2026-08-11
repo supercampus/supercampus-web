@@ -1,10 +1,15 @@
 function backendHealthTarget(): URL {
-  const configured = process.env.API_PROXY_TARGET?.trim();
-  if (!configured) throw new Error("API_PROXY_TARGET is required");
+  const runtimeProcess = Reflect.get(globalThis, "process") as NodeJS.Process;
+  const runtimeEnvironment = runtimeProcess.env;
+  const configured = process.env.API_PROXY_TARGET?.trim()
+    || runtimeEnvironment.NEXT_PUBLIC_API_URL?.trim();
+  if (!configured) {
+    throw new Error("API_PROXY_TARGET or NEXT_PUBLIC_API_URL is required");
+  }
 
   const target = new URL(configured);
   if (target.protocol !== "http:" && target.protocol !== "https:") {
-    throw new Error("API_PROXY_TARGET must use http or https");
+    throw new Error("API upstream must use http or https");
   }
   target.pathname = target.pathname.replace(/\/api\/?$/, "/health");
   target.search = "";

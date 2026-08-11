@@ -16,9 +16,15 @@ type ProxyContext = {
 };
 
 function apiTarget(): URL {
-  const configured = process.env.API_PROXY_TARGET?.trim();
+  // Reading through an aliased environment object keeps NEXT_PUBLIC_API_URL
+  // runtime-readable in this server-only route instead of letting Next inline
+  // its build-time value into the standalone bundle.
+  const runtimeProcess = Reflect.get(globalThis, "process") as NodeJS.Process;
+  const runtimeEnvironment = runtimeProcess.env;
+  const configured = process.env.API_PROXY_TARGET?.trim()
+    || runtimeEnvironment.NEXT_PUBLIC_API_URL?.trim();
   if (!configured && process.env.NODE_ENV === "production") {
-    throw new Error("API_PROXY_TARGET is required in production");
+    throw new Error("API_PROXY_TARGET or NEXT_PUBLIC_API_URL is required in production");
   }
   const value = configured || "http://127.0.0.1:4000/api";
   const target = new URL(value.endsWith("/") ? value : `${value}/`);

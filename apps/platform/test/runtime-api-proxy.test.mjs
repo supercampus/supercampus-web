@@ -21,7 +21,9 @@ const dockerSource = await readFile(
 
 test("API requests use a runtime route instead of a build-time rewrite", () => {
   assert.match(routeSource, /process\.env\.API_PROXY_TARGET/);
-  assert.match(routeSource, /API_PROXY_TARGET is required in production/);
+  assert.match(routeSource, /Reflect\.get\(globalThis, "process"\)/);
+  assert.match(routeSource, /runtimeEnvironment\.NEXT_PUBLIC_API_URL/);
+  assert.match(routeSource, /API_PROXY_TARGET or NEXT_PUBLIC_API_URL is required in production/);
   assert.match(routeSource, /export const POST = proxy/);
   assert.match(routeSource, /export const dynamic = "force-dynamic"/);
   assert.doesNotMatch(configSource, /async rewrites\(\)/);
@@ -37,6 +39,7 @@ test("runtime proxy preserves streaming requests and upstream responses", () => 
 
 test("container health requires connectivity to the Rust API", () => {
   assert.match(healthSource, /process\.env\.API_PROXY_TARGET/);
+  assert.match(healthSource, /runtimeEnvironment\.NEXT_PUBLIC_API_URL/);
   assert.match(healthSource, /target\.pathname = target\.pathname\.replace/);
   assert.match(healthSource, /"\/health"/);
   assert.match(healthSource, /status: 503/);
