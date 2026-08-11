@@ -36,9 +36,8 @@ const items: NavEntry[] = [
     label: 'Admissions',
     icon: ClipboardList,
     children: [
-      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { id: 'crm', label: 'CRM', icon: Target },
-      { id: 'pipeline', label: 'Pipeline', icon: Kanban },
+      { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+      { id: 'pipeline', label: 'Lead', icon: Kanban },
       { id: 'application-desk', label: 'Application Desk', icon: IdCard },
     ],
   },

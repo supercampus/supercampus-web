@@ -142,7 +142,10 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   const [tab, setTab] = useState<'overview' | 'documents' | 'academic' | 'approvals' | 'activity'>('overview');
 
   const [reloadToken, setReloadToken] = useState(0);
-  const refresh = useCallback(() => setReloadToken((token) => token + 1), []);
+  const refresh = useCallback(() => {
+    setLoadError(null);
+    setReloadToken((token) => token + 1);
+  }, []);
 
   // Never call the protected endpoint without an authenticated view grant.
   // The previous development fallback mounted for signed-out and partially
@@ -233,6 +236,21 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
             You need the <code className="text-[var(--tenant-primary)]">application-desk.view</code> permission to open
             the onboarding queue.
           </p>
+        </div>
+      </DeskShell>
+    );
+  }
+
+  if (loadError && !snapshot) {
+    return (
+      <DeskShell embedded={embedded}>
+        <div className="mx-auto mt-16 max-w-md rounded-2xl border border-rose-200 bg-[var(--crm-card)] p-6 text-center shadow-sm">
+          <XCircle size={24} className="mx-auto text-rose-500" />
+          <h1 className="mt-3 text-lg text-[var(--crm-text)]">Application Desk could not load</h1>
+          <p className="mt-2 text-sm leading-6 text-[var(--crm-muted)]">{loadError}</p>
+          <button type="button" onClick={refresh} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white">
+            <RefreshCw size={15} /> Retry
+          </button>
         </div>
       </DeskShell>
     );

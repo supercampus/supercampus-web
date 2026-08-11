@@ -24,6 +24,7 @@ import {
   useNavigation,
 } from '@/lib/navigation-api';
 import { useCrmEvents, type CrmEvent } from '@/lib/crm-events';
+import { LEAD_SOURCES } from '@/lib/crm-catalog';
 import { useApp } from '@/lib/context';
 import {
   bulkImportCrmLeads,
@@ -483,6 +484,7 @@ function toKanbanLead(lead: CrmLead): Lead {
     city: city ?? 'Not provided',
     assignedTo: { name: lead.assignedTo ?? 'Unassigned' },
     status: pipelineStatus(lead.stageKey),
+    substate: lead.substateKey,
     globalStatus: lead.globalStatus,
     globalStatusData: lead.globalStatusData,
     documents: { uploaded: lead.documentsVerified ? 1 : 0, required: 1 },
@@ -577,9 +579,9 @@ async function extractLogoPalette(dataUrl: string) {
 
 
 const NAV_TITLES: Record<NavSection, string> = {
-  dashboard: 'Dashboard',
+  dashboard: 'Overview',
   crm: 'CRM',
-  pipeline: 'Admissions Pipeline',
+  pipeline: 'Lead',
   admissions: 'Admissions',
   'application-desk': 'Application Desk',
   students: 'Students',
@@ -1418,6 +1420,7 @@ export default function AdmissionsPage() {
   const [newRoleTeam, setNewRoleTeam] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
   const [newModuleName, setNewModuleName] = useState('');
   const [newFeatureName, setNewFeatureName] = useState('');
   const [featureModuleId, setFeatureModuleId] = useState('');
@@ -1564,8 +1567,13 @@ export default function AdmissionsPage() {
     );
     if (hasLeadSnapshot && realtimeLead) {
       const nextLead = toKanbanLead(realtimeLead);
+      const visibleOnPipeline = realtimeLead.stageKey === 'enquiry'
+        || realtimeLead.assignedTo === student?.id;
       setLeads((current) => {
         const index = current.findIndex((lead) => lead.id === nextLead.id);
+        if (!visibleOnPipeline) {
+          return index < 0 ? current : current.filter((lead) => lead.id !== nextLead.id);
+        }
         if (index < 0) return [...current, nextLead];
         const existing = current[index];
         if (existing.updatedAt && existing.updatedAt > realtimeLead.updatedAt) return current;
@@ -1584,7 +1592,7 @@ export default function AdmissionsPage() {
       // already current. Older event shapes still fall back to a board refetch.
       void silentlyRefreshBoard(includeDashboard, !hasLeadSnapshot);
     }, hasLeadSnapshot ? 50 : 250);
-  }, [silentlyRefreshBoard]);
+  }, [silentlyRefreshBoard, student?.id]);
 
   useEffect(() => () => {
     if (realtimeTimer.current) clearTimeout(realtimeTimer.current);
@@ -2190,7 +2198,11 @@ export default function AdmissionsPage() {
   const addUserUnderRole = async () => {
     const name = newUserName.trim();
     const email = newUserEmail.trim().toLowerCase();
-    if (!name || !email || !selectedAccessRole.id) return;
+    const password = newUserPassword;
+    if (!name || !email || !password || !selectedAccessRole.id) {
+      showToast('Name, email, and password are required');
+      return;
+    }
     if (!canCreateUsers) {
       showToast('You do not have permission to create users');
       return;
@@ -2199,12 +2211,21 @@ export default function AdmissionsPage() {
       showToast('Enter a valid email address');
       return;
     }
+    if (password.length < 12 || new TextEncoder().encode(password).length > 72) {
+      showToast('Password must be at least 12 characters and no more than 72 bytes');
+      return;
+    }
     if (staffUsers.some((user) => user.email.trim().toLowerCase() === email)) {
       showToast('This user already belongs to the tenant. Update the existing user role instead.');
       return;
     }
     try {
-      const response = await createTenantUser({ name, email, roleIds: [selectedAccessRole.id] });
+      const response = await createTenantUser({
+        name,
+        email,
+        password,
+        roleIds: [selectedAccessRole.id],
+      });
       const user: StaffUser = {
         id: response.data.id,
         name,
@@ -2219,13 +2240,8 @@ export default function AdmissionsPage() {
       setStaffUsers((previous) => [user, ...previous.filter((item) => item.id !== user.id)]);
       setNewUserName('');
       setNewUserEmail('');
-      const hasTemporaryPassword = Boolean(response.data.temporaryPassword);
-      showToast(
-        hasTemporaryPassword
-          ? `${name} added. Temporary password: ${response.data.temporaryPassword}`
-          : `${name} assigned to ${selectedAccessRole.name}`,
-        hasTemporaryPassword ? 5000 : 3000,
-      );
+      setNewUserPassword('');
+      showToast(`${name} added to ${selectedAccessRole.name}`);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Unable to create user');
     }
@@ -2363,6 +2379,7 @@ export default function AdmissionsPage() {
   const renderLeadField = (field: FormField) => {
     const key = field.key ?? slugify(field.label);
     const value = operationValues[key] ?? '';
+    const isSourceField = `${key} ${field.label}`.toLowerCase().includes('source');
     const isAddressField = field.type === 'Address' || field.label.toLowerCase().includes('address');
     const fieldClass = field.width === 'full' || isAddressField ? 'col-span-2' : '';
     const controlClass = 'mt-1 min-h-10 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)]';
@@ -2373,7 +2390,19 @@ export default function AdmissionsPage() {
     );
     let control: React.ReactNode;
 
-    if (field.type === 'Dropdown') {
+    if (isSourceField) {
+      control = (
+        <select
+          required={field.required}
+          value={value}
+          onChange={(event) => setOperationValues((current) => ({ ...current, [key]: event.target.value }))}
+          className={controlClass}
+        >
+          <option value="">Select lead source</option>
+          {LEAD_SOURCES.map((source) => <option key={source} value={source}>{source}</option>)}
+        </select>
+      );
+    } else if (field.type === 'Dropdown') {
       control = (
         <select
           required={field.required}
@@ -2650,6 +2679,16 @@ export default function AdmissionsPage() {
     );
   }, [openOperation, resetLeadImport]);
 
+  const openStageLeadCreation = useCallback((column: (typeof COLUMNS)[number]) => {
+    openOperation(
+      'Create lead',
+      `Lead · ${column.title}`,
+      ['Student name', 'Phone', 'WhatsApp', 'Course', 'Source', 'City'],
+      'Create lead',
+    );
+    setOperationValues({ launchStage: column.id, priority: 'high' });
+  }, [openOperation]);
+
   const handleLeadImportFile = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -2694,7 +2733,7 @@ export default function AdmissionsPage() {
       const phone = valueFor('phone');
       const whatsapp = valueFor('whatsapp');
       const program = valueFor('program');
-      const source = valueFor('source') || 'Bulk import';
+      const source = valueFor('source') || 'Other';
       const priorityValue = valueFor('priority').toLowerCase() || 'medium';
       const priority = ['high', 'medium', 'low'].includes(priorityValue) ? priorityValue : 'medium';
       const contacts = [
@@ -2707,6 +2746,7 @@ export default function AdmissionsPage() {
       if (!name) issue = 'Student name is required';
       else if (!phone && !email) issue = 'Phone or email is required';
       else if (valueFor('priority') && priorityValue !== priority) issue = 'Priority must be high, medium, or low';
+      else if (!LEAD_SOURCES.some((candidate) => candidate.toLowerCase() === source.toLowerCase())) issue = 'Lead source is not in the approved source list';
       return {
         rowNumber: index + 2,
         name,
@@ -2801,7 +2841,7 @@ export default function AdmissionsPage() {
             parentName: fieldValue(['parent name', 'guardian name']),
             parentPhone: fieldValue(['parent phone', 'guardian phone']),
           },
-          source: fieldValue(['source']) ?? 'Admin lead capture',
+          source: fieldValue(['source']) ?? 'Other',
           interest: { programName: fieldValue(['course', 'program']) },
           values: operationValues,
           priority: operationValues.priority ?? 'medium',
@@ -3031,8 +3071,8 @@ export default function AdmissionsPage() {
           <section className="campus-admin-pipeline flex-1 overflow-hidden p-5 flex flex-col bg-[var(--crm-panel)]">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h1 className="text-lg font-semibold">Admissions pipeline</h1>
-                <p className="mt-0.5 text-xs text-[var(--crm-muted)]">The first stage movement assigns an Enquiry to you. Moving another owner&apos;s card sends a permission request.</p>
+                <h1 className="text-lg font-semibold">Lead</h1>
+                <p className="mt-0.5 text-xs text-[var(--crm-muted)]">Enquiry is shared. The first stage movement claims the card; later stages show only cards you own.</p>
               </div>
             </div>
             {crmError && <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">{crmError}</div>}
@@ -3047,6 +3087,7 @@ export default function AdmissionsPage() {
                 canUpdateLeads={canUpdateLeads}
                 canMoveLeadStage={canMoveLeadStage}
                 canHoldLeads={canHoldLeads}
+                onCreateLead={canCreateLeads ? openStageLeadCreation : undefined}
                 onShowToast={showToast}
                 onRefresh={() => void refreshCrmBoard()}
               />
@@ -3673,7 +3714,6 @@ export default function AdmissionsPage() {
                         <h3 className="mt-1 text-2xl">Lead operations board</h3>
                       </div>
                       <div className="flex gap-2">
-                        {canImportLeads && <button type="button" onClick={openLeadImport} className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-xs text-[var(--crm-muted)]">Import</button>}
                         {canCreateLeads && <button type="button" onClick={() => openOperation('Create lead', 'Lead Capture', ['Student name', 'Phone', 'WhatsApp', 'Course', 'Source', 'City'], 'Create lead')} className="rounded-xl px-3 py-2 text-xs text-white" style={{ background: brandGradient }}>Create lead</button>}
                       </div>
                     </div>
@@ -4298,6 +4338,16 @@ export default function AdmissionsPage() {
                 <p className="text-xs text-[var(--crm-muted)] font-semibold mt-1">Control account session, forms, access, workflows, and themes from one place.</p>
               </div>
               <div className="flex items-center gap-3">
+                {canImportLeads && (
+                  <button
+                    type="button"
+                    onClick={openLeadImport}
+                    className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-4 py-2.5 text-xs font-extrabold text-[var(--crm-text)] shadow-sm hover:bg-[var(--crm-panel)]"
+                  >
+                    <UploadCloud size={15} />
+                    Import leads
+                  </button>
+                )}
                 {settingsSection === 'forms' && canCreateForms && (
                   <button
                     type="button"
@@ -5063,6 +5113,7 @@ export default function AdmissionsPage() {
                       <p className="text-[10px] font-extrabold uppercase text-[var(--crm-muted)] mb-2">Add user</p>
                       <input value={newUserName} onChange={(event) => setNewUserName(event.target.value)} placeholder="User name" className="w-full mb-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs outline-none" />
                       <input value={newUserEmail} onChange={(event) => setNewUserEmail(event.target.value)} placeholder="Email" className="w-full mb-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs outline-none" />
+                      <input type="password" value={newUserPassword} onChange={(event) => setNewUserPassword(event.target.value)} placeholder="Password (minimum 12 characters)" autoComplete="new-password" minLength={12} maxLength={72} className="w-full mb-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs outline-none" />
                       <button type="button" onClick={addUserUnderRole} disabled={!canCreateUsers} className="w-full rounded-lg border border-[var(--crm-border)] px-3 py-2 text-xs font-extrabold text-[var(--crm-text)] hover:bg-[var(--crm-panel)] disabled:cursor-not-allowed disabled:opacity-40">Add to role</button>
                     </div>
 
@@ -5430,6 +5481,11 @@ export default function AdmissionsPage() {
 
               {crmOperationKind === 'lead' && operationContext !== 'Dashboard' && (
                 <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-5 space-y-4">
+                  {operationValues.launchStage && (
+                    <div className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-4 py-3 text-xs text-[var(--crm-muted)]">
+                      Launched from <span className="font-bold text-[var(--crm-text)]">{COLUMNS.find((column) => column.id === operationValues.launchStage)?.title}</span>. New leads enter Enquiry first so assignment, duplicate checks, and stage history remain intact.
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-bold text-[var(--crm-text)]">
                       {operationTitleLower.includes('open') ? 'Lead Detail' : 'Lead Capture'}
@@ -5502,7 +5558,7 @@ export default function AdmissionsPage() {
                   </div>
                   <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
                     <h4 className="text-sm">Routing Rules</h4>
-                    {['Every new lead appears in Enquiry', 'First stage movement assigns the card owner', 'Other users request owner approval to move', 'Each approval authorizes one movement'].map((rule) => (
+                    {['Every new lead appears in the shared Enquiry queue', 'First stage movement assigns the card owner', 'Later stages are visible only to the current owner', 'Owners can transfer cards to eligible pipeline users'].map((rule) => (
                       <div key={rule} className="mt-2 rounded-xl bg-[var(--crm-card)] p-3 text-xs">{rule}</div>
                     ))}
                   </div>
@@ -6256,6 +6312,7 @@ export default function AdmissionsPage() {
                     <p className="text-[10px] uppercase tracking-widest text-[var(--crm-muted)]">Add user to {selectedAccessRole.name}</p>
                     <input value={newUserName} onChange={(event) => setNewUserName(event.target.value)} placeholder="User name" className="mt-3 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs outline-none" />
                     <input value={newUserEmail} onChange={(event) => setNewUserEmail(event.target.value)} placeholder="Email" className="mt-2 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs outline-none" />
+                    <input type="password" value={newUserPassword} onChange={(event) => setNewUserPassword(event.target.value)} placeholder="Password (minimum 12 characters)" autoComplete="new-password" minLength={12} maxLength={72} className="mt-2 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs outline-none" />
                     <button type="button" onClick={addUserUnderRole} disabled={!canCreateUsers} className="mt-3 w-full rounded-lg px-3 py-2 text-xs text-white disabled:cursor-not-allowed disabled:opacity-40" style={{ background: brandGradient }}>Add user</button>
                   </div>
                   <div className="grid gap-2">

@@ -2,22 +2,26 @@
 
 import React, { useState } from 'react';
 import { ArrowRight, FileText } from 'lucide-react';
+import { pipelineValueLabel } from '@/lib/crm-catalog';
 
 interface MoveLogModalProps {
   leadName: string;
   fromColumn: string;
   toColumn: string;
-  onConfirm: (note: string) => void;
+  substates: string[];
+  defaultSubstate: string;
+  onConfirm: (note: string, substate: string) => void;
   onCancel: () => void;
 }
 
-export default function MoveLogModal({ leadName, fromColumn, toColumn, onConfirm, onCancel }: MoveLogModalProps) {
+export default function MoveLogModal({ leadName, fromColumn, toColumn, substates, defaultSubstate, onConfirm, onCancel }: MoveLogModalProps) {
   const [note, setNote] = useState('');
+  const [substate, setSubstate] = useState(defaultSubstate);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!note.trim()) return;
-    onConfirm(note.trim());
+    onConfirm(note.trim(), substate);
   };
 
   return (
@@ -50,6 +54,12 @@ export default function MoveLogModal({ leadName, fromColumn, toColumn, onConfirm
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <label className="block text-xs font-semibold text-[var(--crm-text)]">
+            Substage
+            <select value={substate} onChange={(event) => setSubstate(event.target.value)} className="mt-1.5 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-sm text-[var(--crm-text)] outline-none focus:ring-2 focus:ring-[var(--crm-soft-blue)]/30">
+              {substates.map((value) => <option key={value} value={value}>{pipelineValueLabel(value)}</option>)}
+            </select>
+          </label>
           {/* Note */}
           <div>
             <label className="block text-xs font-semibold text-[var(--crm-text)] mb-1.5">

@@ -54,6 +54,7 @@ export interface Lead {
   city: string;
   assignedTo: { name: string; avatar?: string };
   status: string;
+  substate?: string;
   globalStatus?: string | null;
   globalStatusData?: Record<string, unknown>;
   offerDecision?: OfferDecision;
@@ -93,7 +94,7 @@ export const COLUMNS: Column[] = [
   { id: 'enquiry', title: 'Enquiry', accent: '#6d5dfc' },
   { id: 'contact-attempted', title: 'Contact Attempted', accent: '#d946ef' },
   { id: 'contacted', title: 'Contacted', accent: '#f59e0b' },
-  { id: 'nurture', title: 'Nurture', accent: '#10b981' },
+  { id: 'nurture', title: 'Nurtured', accent: '#10b981' },
   { id: 'qualified', title: 'Qualified', accent: '#06b6d4' },
   { id: 'application', title: 'Application', accent: '#3b82f6' },
   { id: 'application-status', title: 'Application Status', accent: '#8b5cf6' },

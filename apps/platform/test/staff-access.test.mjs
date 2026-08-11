@@ -14,6 +14,10 @@ const admissionsSource = await readFile(
   new URL('../src/app/(staff)/dashboard/admissions/page.tsx', import.meta.url),
   'utf8',
 );
+const authorizationApiSource = await readFile(
+  new URL('../src/lib/authorization-api.ts', import.meta.url),
+  'utf8',
+);
 const kanbanSource = await readFile(
   new URL('../src/components/kanban/KanbanBoard.tsx', import.meta.url),
   'utf8',
@@ -44,6 +48,17 @@ test('application desk never requests protected cases without an authenticated v
   assert.match(deskSource, /authStatus === 'authenticated' && grantedView/);
 });
 
+test('application desk cannot remain in an infinite loading state', async () => {
+  const [deskSource, apiSource] = await Promise.all([
+    readFile(new URL('../src/components/modules/ApplicationDeskWorkspace.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/api.ts', import.meta.url), 'utf8'),
+  ]);
+  assert.match(apiSource, /REQUEST_TIMEOUT_MS = 12_000/);
+  assert.match(apiSource, /controller\.abort\('request-timeout'\)/);
+  assert.match(deskSource, /Application Desk could not load/);
+  assert.match(deskSource, /onClick=\{refresh\}/);
+});
+
 test('staff page avoids unauthorized configuration requests and actions', () => {
   assert.match(admissionsSource, /canReadPermissionCatalog\s*\?\s*getAuthorizationPermissions\(\)/);
   assert.match(admissionsSource, /canReadRoles\s*\?\s*getAuthorizationRoles\(\)/);
@@ -59,6 +74,17 @@ test('access setup groups admissions modules into one workspace card', () => {
   assert.match(admissionsSource, /admissionsWorkspaceModules\.map/);
   assert.match(admissionsSource, /contained modules/);
   assert.match(admissionsSource, /permissionKeys\.includes\(permission\.key\)/);
+});
+
+test('tenant administrators choose the password when creating a user', () => {
+  assert.match(authorizationApiSource, /password: string/);
+  assert.doesNotMatch(authorizationApiSource, /temporaryPassword/);
+  assert.match(admissionsSource, /const \[newUserPassword, setNewUserPassword\]/);
+  assert.match(admissionsSource, /type="password"/);
+  assert.match(admissionsSource, /autoComplete="new-password"/);
+  assert.match(admissionsSource, /password\.length < 12/);
+  assert.match(admissionsSource, /createTenantUser\(\{[\s\S]*password,[\s\S]*roleIds/);
+  assert.doesNotMatch(admissionsSource, /Temporary password:/);
 });
 
 test('pipeline mutations use dynamic effective permissions', () => {

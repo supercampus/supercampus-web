@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import {
-  Archive, CalendarClock, Check, CheckCircle2, ClipboardCheck, FileText, LoaderCircle,
+  Archive, ArrowRightLeft, CalendarClock, Check, CheckCircle2, ClipboardCheck, FileText, LoaderCircle,
   MessageSquare, PauseCircle, Pencil, Plus, Save, UserRound, X,
 } from 'lucide-react';
 import type { Lead } from '@/lib/kanban/kanban-data';
 import { COLUMNS } from '@/lib/kanban/kanban-data';
 import type { CrmForm, CrmLeadTask, CrmLeadTimeline } from '@/lib/crm-api';
 import { addCrmLeadNote, addCrmLeadTask, getCrmLeadTimeline } from '@/lib/crm-api';
+import { LEAD_SOURCES, pipelineValueLabel } from '@/lib/crm-catalog';
 
 interface LeadDetailSidebarProps {
   lead: Lead;
@@ -20,6 +21,10 @@ interface LeadDetailSidebarProps {
   canUpdateLead: boolean;
   canMoveLeadStage: boolean;
   canHoldLead: boolean;
+  canTransferLead: boolean;
+  onTransferLead: (lead: Lead) => void;
+  stageSubstates: string[];
+  onChangeSubstate: (lead: Lead, substate: string) => Promise<void>;
   leadForm?: CrmForm | null;
 }
 
@@ -94,7 +99,8 @@ function publishedValue(lead: Lead, field: PublishedField) {
 
 export default function LeadDetailSidebar({
   lead, onClose, onApplicationDecision, onUpdate, onShowToast,
-  canUpdateLead, canMoveLeadStage, canHoldLead, leadForm,
+  canUpdateLead, canMoveLeadStage, canHoldLead, canTransferLead, onTransferLead,
+  stageSubstates, onChangeSubstate, leadForm,
 }: LeadDetailSidebarProps) {
   const [visible, setVisible] = useState(false);
   const [tab, setTab] = useState<WorkspaceTab>('activity');
@@ -104,6 +110,7 @@ export default function LeadDetailSidebar({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [decisionBusy, setDecisionBusy] = useState<'accept' | 'deny' | 'hold' | null>(null);
+  const [substateBusy, setSubstateBusy] = useState(false);
   const [note, setNote] = useState('');
   const [taskTitle, setTaskTitle] = useState('');
   const [taskPriority, setTaskPriority] = useState<CrmLeadTask['priority']>('medium');
@@ -198,6 +205,7 @@ export default function LeadDetailSidebar({
     const phone = valueFor(['phone', 'mobile'], ['parent', 'guardian', 'whatsapp']) ?? lead.phone;
     const email = valueFor(['email']) ?? lead.email;
     const course = valueFor(['course', 'program']) ?? lead.course;
+    const source = valueFor(['source']) ?? lead.source;
     const intake = valueFor(['intake']) ?? lead.intake;
     const city = valueFor(['city']) ?? lead.city;
     const parentName = valueFor(['parent name', 'guardian name']) ?? lead.parent.name;
@@ -206,7 +214,7 @@ export default function LeadDetailSidebar({
       ? lead.customFields.values as Record<string, unknown>
       : {};
     onUpdate(lead.id, {
-      name, phone, email, whatsapp, course, intake, city,
+      name, phone, email, whatsapp, course, intake, city, source,
       parent: { ...lead.parent, name: parentName, phone: parentPhone },
       interest: { ...lead.interest, programName: course, intake },
       customFields: { ...lead.customFields, city, values: { ...existingValues, ...editValues } },
@@ -289,6 +297,24 @@ export default function LeadDetailSidebar({
               <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--crm-muted)]">Card owner</p>
               <p className="mt-1.5 flex items-center gap-2 break-all text-xs font-semibold text-[var(--crm-text)]"><UserRound size={14} className="shrink-0" />{lead.assignedTo.name}</p>
             </div>
+
+            <label className="mb-5 block">
+              <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[var(--crm-muted)]">Current substage</span>
+              <select
+                value={lead.substate ?? ''}
+                disabled={!canMoveLeadStage || substateBusy || stageSubstates.length === 0}
+                onChange={async (event) => {
+                  const next = event.target.value;
+                  if (!next || next === lead.substate) return;
+                  setSubstateBusy(true);
+                  try { await onChangeSubstate(lead, next); } finally { setSubstateBusy(false); }
+                }}
+                className={inputClass}
+              >
+                {stageSubstates.map((substate) => <option key={substate} value={substate}>{pipelineValueLabel(substate)}</option>)}
+              </select>
+              {!canMoveLeadStage && <span className="mt-1 block text-[10px] text-[var(--crm-muted)]">Stage-move permission is required.</span>}
+            </label>
 
             {formSections.length ? (
               <div className="space-y-5">
@@ -398,6 +424,7 @@ export default function LeadDetailSidebar({
           {editing ? <button type="button" onClick={saveEdits} className="inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white"><Save size={15} />Save changes</button> : <button type="button" disabled={!canUpdateLead || !formSections.length} onClick={() => { setEditValues(formValues); setEditing(true); }} className="inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"><Pencil size={15} />Edit</button>}
           <button type="button" disabled={!canUpdateLead} onClick={() => { setComposer('note'); setTab('notes'); }} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><MessageSquare size={15} />Add note</button>
           <button type="button" disabled={!canUpdateLead} onClick={() => { setComposer('task'); setTab('tasks'); }} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><Plus size={15} />Add task</button>
+          <button type="button" disabled={!canTransferLead} onClick={() => onTransferLead(lead)} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><ArrowRightLeft size={15} />Transfer card</button>
           <button type="button" onClick={requestClose} className="ml-auto rounded-xl border border-[var(--crm-border)] px-5 py-2.5 text-sm font-semibold hover:bg-[var(--crm-panel)]">Close</button>
         </footer>
       </section>
@@ -420,7 +447,11 @@ function PublishedFieldInput({ field, value, onChange, inputClass }: {
   field: PublishedField; value: string; onChange: (value: string) => void; inputClass: string;
 }) {
   const kind = field.type.toLowerCase();
+  const isSourceField = `${fieldKey(field)} ${field.label}`.toLowerCase().includes('source');
   const label = <span className="mb-1 block text-[11px] font-semibold text-[var(--crm-muted)]">{field.label}{field.required ? ' *' : ''}</span>;
+  if (isSourceField) {
+    return <label>{label}<select required={field.required} value={value} onChange={(event) => onChange(event.target.value)} className={inputClass}><option value="">Select lead source</option>{LEAD_SOURCES.map((source) => <option key={source} value={source}>{source}</option>)}</select></label>;
+  }
   if (kind.includes('checkbox') || kind.includes('consent')) {
     return <label className="flex items-center gap-2 rounded-xl border border-[var(--crm-border)] p-3 text-xs font-semibold text-[var(--crm-text)]"><input type="checkbox" checked={value === 'true'} onChange={(event) => onChange(String(event.target.checked))} />{field.label}</label>;
   }

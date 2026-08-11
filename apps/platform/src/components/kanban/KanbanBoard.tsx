@@ -15,17 +15,17 @@ import {
   type DragStartEvent,
   type DropAnimation,
 } from '@dnd-kit/core';
-import type { Lead } from '@/lib/kanban/kanban-data';
+import type { Column, Lead } from '@/lib/kanban/kanban-data';
 import { COLUMNS, COLUMN_IDS } from '@/lib/kanban/kanban-data';
 import { getColumnTitle } from '@/lib/kanban/kanban-actions';
-import type { CrmForm } from '@/lib/crm-api';
-import { getPublishedCrmLeadCaptureForm, holdCrmLead, moveCrmLead, requestCrmLeadMove, updateCrmLead } from '@/lib/crm-api';
+import type { CrmForm, CrmPipelineTransferCandidate, CrmStageCatalog } from '@/lib/crm-api';
+import { getCrmPipelineTransferCandidates, getCrmStages, getPublishedCrmLeadCaptureForm, holdCrmLead, moveCrmLead, transferCrmLead, updateCrmLead } from '@/lib/crm-api';
 import KanbanColumn from './KanbanColumn';
 import LeadCard from './LeadCard';
 import LeadDetailSidebar from './LeadDetailSidebar';
 import MoveLogModal from './MoveLogModal';
-import MoveRequestsPanel from './MoveRequestsPanel';
-import { X, Filter, Search } from 'lucide-react';
+import { ArrowRightLeft, Filter, LoaderCircle, Search, X } from 'lucide-react';
+import { availableCurrentStageSubstates } from '@/lib/crm-catalog';
 
 interface KanbanBoardProps {
   leads: Lead[];
@@ -35,6 +35,7 @@ interface KanbanBoardProps {
   canUpdateLeads: boolean;
   canMoveLeadStage: boolean;
   canHoldLeads: boolean;
+  onCreateLead?: (column: Column) => void;
   onShowToast: (msg: string) => void;
   onRefresh: () => void;
 }
@@ -47,6 +48,7 @@ export default function KanbanBoard({
   canUpdateLeads,
   canMoveLeadStage,
   canHoldLeads,
+  onCreateLead,
   onShowToast,
   onRefresh,
 }: KanbanBoardProps) {
@@ -54,19 +56,32 @@ export default function KanbanBoard({
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moveLogModal, setMoveLogModal] = useState<{ lead: Lead; from: string; to: string } | null>(null);
+  const [transferLead, setTransferLead] = useState<Lead | null>(null);
+  const [transferCandidates, setTransferCandidates] = useState<CrmPipelineTransferCandidate[]>([]);
+  const [transferUserId, setTransferUserId] = useState('');
+  const [transferReason, setTransferReason] = useState('');
+  const [transferBusy, setTransferBusy] = useState(false);
+  const [transferLoading, setTransferLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSource, setFilterSource] = useState<string | null>(null);
   const [filterCourse, setFilterCourse] = useState<string | null>(null);
   // The lead editor is built from whatever the administrator published, so it is
   // fetched once here and handed to the detail sidebar.
   const [leadForm, setLeadForm] = useState<CrmForm | null>(null);
+  const [stageCatalog, setStageCatalog] = useState<CrmStageCatalog[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await getPublishedCrmLeadCaptureForm();
-        if (!cancelled) setLeadForm(data);
+        const [formResponse, stagesResponse] = await Promise.all([
+          getPublishedCrmLeadCaptureForm().catch(() => null),
+          getCrmStages(),
+        ]);
+        if (!cancelled) {
+          setLeadForm(formResponse?.data ?? null);
+          setStageCatalog(stagesResponse.data);
+        }
       } catch {
         // No published form, or no permission to read it: the sidebar falls back to
         // its built-in field set rather than showing nothing.
@@ -132,23 +147,14 @@ export default function KanbanBoard({
     };
   }, [leads]);
 
-  const persistMove = useCallback(async (lead: Lead, toColumn: string, note?: string) => {
+  const persistMove = useCallback(async (lead: Lead, toColumn: string, note?: string, targetSubstate?: string) => {
     const stageKey = toColumn.replaceAll('-', '_');
-    let targetSubstate: string | undefined;
-    if (stageKey === 'application_status') {
-      targetSubstate = 'awaiting_decision';
-    }
+    targetSubstate ??= stageCatalog.find((stage) => stage.key === stageKey)?.defaultSubstate;
 
     const ownerId = lead.assignedTo.name;
     if (ownerId !== 'Unassigned' && ownerId !== currentUserId) {
-      try {
-        await requestCrmLeadMove(lead.id, stageKey, note, targetSubstate);
-        onShowToast(`Permission requested from ${ownerId} to move ${lead.name}`);
-        return 'requested' as const;
-      } catch (error) {
-        onShowToast(error instanceof Error ? error.message : 'Unable to request owner permission');
-        return 'failed' as const;
-      }
+      onShowToast('This card belongs to another user. Refresh the pipeline.');
+      return 'failed' as const;
     }
 
     // Move the card straight away. The API is a multi-transaction round trip, so
@@ -156,10 +162,10 @@ export default function KanbanBoard({
     const previousStatus = lead.status;
     const optimisticStatus = toColumn;
     setLeads((previous) => previous.map((item) => item.id === lead.id
-      ? { ...item, status: optimisticStatus, lastContact: 'just now' }
+      ? { ...item, status: optimisticStatus, substate: targetSubstate ?? item.substate, lastContact: 'just now' }
       : item));
     setSelectedLead((current) => current?.id === lead.id
-      ? { ...current, status: optimisticStatus, lastContact: 'just now' }
+      ? { ...current, status: optimisticStatus, substate: targetSubstate ?? current.substate, lastContact: 'just now' }
       : current);
 
     try {
@@ -170,10 +176,10 @@ export default function KanbanBoard({
       const nextStatus = response.data.stageKey.replaceAll('_', '-');
       const assignedTo = { name: response.data.assignedTo ?? 'Unassigned' };
       setLeads((previous) => previous.map((item) => item.id === lead.id
-        ? { ...item, status: nextStatus, assignedTo, lastContact: 'just now' }
+        ? { ...item, status: nextStatus, substate: response.data.substateKey, assignedTo, lastContact: 'just now' }
         : item));
       setSelectedLead((current) => current?.id === lead.id
-        ? { ...current, status: nextStatus, assignedTo, lastContact: 'just now' }
+        ? { ...current, status: nextStatus, substate: response.data.substateKey, assignedTo, lastContact: 'just now' }
         : current);
       onShowToast(`Moved ${lead.name} to ${getColumnTitle(nextStatus)}`);
       return 'moved' as const;
@@ -189,7 +195,43 @@ export default function KanbanBoard({
       onShowToast(error instanceof Error ? error.message : 'Unable to move lead');
       return 'failed' as const;
     }
-  }, [currentUserId, onShowToast, setLeads]);
+  }, [currentUserId, onShowToast, setLeads, stageCatalog]);
+
+  const openTransfer = useCallback(async (lead: Lead) => {
+    setTransferLead(lead);
+    setTransferUserId('');
+    setTransferReason('');
+    setTransferCandidates([]);
+    setTransferLoading(true);
+    try {
+      const response = await getCrmPipelineTransferCandidates();
+      setTransferCandidates(response.data);
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : 'Unable to load pipeline users');
+      setTransferLead(null);
+    } finally {
+      setTransferLoading(false);
+    }
+  }, [onShowToast]);
+
+  const confirmTransfer = useCallback(async () => {
+    if (!transferLead || !transferUserId || !transferReason.trim() || transferBusy) return;
+    setTransferBusy(true);
+    try {
+      const candidate = transferCandidates.find((item) => item.userId === transferUserId);
+      await transferCrmLead(transferLead.id, transferUserId, transferReason.trim());
+      setLeads((current) => current.filter((lead) => lead.id !== transferLead.id));
+      setSelectedLead(null);
+      setSidebarOpen(false);
+      setTransferLead(null);
+      onShowToast(`${transferLead.name} transferred to ${candidate?.name ?? 'the selected user'}`);
+      onRefresh();
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : 'Unable to transfer card');
+    } finally {
+      setTransferBusy(false);
+    }
+  }, [onRefresh, onShowToast, setLeads, transferBusy, transferCandidates, transferLead, transferReason, transferUserId]);
 
   const moveLead = useCallback((lead: Lead, toColumn: string) => {
     if (!canMoveLeadStage) {
@@ -259,6 +301,7 @@ export default function KanbanBoard({
         : undefined;
 
       await updateCrmLead(leadId, {
+        source: updates.source,
         fullName: updates.name,
         email: updates.email,
         phone: updates.phone,
@@ -317,14 +360,13 @@ export default function KanbanBoard({
     setSidebarOpen(true);
   }
 
-  async function handleMoveConfirm(note: string) {
+  async function handleMoveConfirm(note: string, substate: string) {
     if (!moveLogModal) return;
     const { lead, from, to } = moveLogModal;
     // Dismiss on intent, not after the network round trip. persistMove updates the
     // card optimistically and rolls it back with a toast if the server refuses it.
     setMoveLogModal(null);
-    const outcome = await persistMove(lead, to, note);
-    if (outcome === 'requested') return;
+    const outcome = await persistMove(lead, to, note, substate);
     if (outcome !== 'moved') return;
     setLeads((prev) =>
       prev.map((l) =>
@@ -339,6 +381,11 @@ export default function KanbanBoard({
         : current
     );
   }
+
+  const changeSubstate = useCallback(async (lead: Lead, substate: string) => {
+    const outcome = await persistMove(lead, lead.status, `Substage changed to ${substate.replaceAll('_', ' ')}`, substate);
+    if (outcome === 'moved') onShowToast(`${lead.name} updated`);
+  }, [onShowToast, persistMove]);
 
   return (
     <DndContext
@@ -362,7 +409,6 @@ export default function KanbanBoard({
         </div>
 
         <div className="campus-kanban-filters flex items-center gap-2">
-          <MoveRequestsPanel currentUserId={currentUserId} onChanged={onRefresh} onShowToast={onShowToast} />
           <Filter size={14} className="text-[var(--crm-muted)]" />
           <select
             value={filterSource ?? ''}
@@ -404,6 +450,7 @@ export default function KanbanBoard({
               column={column}
               leads={leadsByColumn[column.id] ?? []}
               onLeadClick={handleLeadClick}
+              onCreateLead={column.id === 'enquiry' ? onCreateLead : undefined}
               canDrag={canMoveLeadStage}
             />
           ))}
@@ -423,6 +470,14 @@ export default function KanbanBoard({
           canUpdateLead={canUpdateLeads}
           canMoveLeadStage={canMoveLeadStage}
           canHoldLead={canHoldLeads}
+          canTransferLead={selectedLead.assignedTo.name === currentUserId && selectedLead.status !== 'enquiry'}
+          onTransferLead={(lead) => void openTransfer(lead)}
+          stageSubstates={availableCurrentStageSubstates(
+            selectedLead.status,
+            selectedLead.substate,
+            stageCatalog.find((stage) => stage.key === selectedLead.status.replaceAll('-', '_'))?.substates ?? [],
+          )}
+          onChangeSubstate={changeSubstate}
         />
       )}
 
@@ -432,9 +487,38 @@ export default function KanbanBoard({
           leadName={moveLogModal.lead.name}
           fromColumn={getColumnTitle(moveLogModal.from)}
           toColumn={getColumnTitle(moveLogModal.to)}
+          substates={stageCatalog.find((stage) => stage.key === moveLogModal.to.replaceAll('-', '_'))?.substates ?? ['closed']}
+          defaultSubstate={stageCatalog.find((stage) => stage.key === moveLogModal.to.replaceAll('-', '_'))?.defaultSubstate ?? 'closed'}
           onConfirm={handleMoveConfirm}
           onCancel={() => setMoveLogModal(null)}
         />
+      )}
+
+      {transferLead && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[1px]">
+          <section role="dialog" aria-modal="true" aria-label="Transfer card" className="w-full max-w-lg overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] shadow-2xl">
+            <header className="flex items-start justify-between gap-4 border-b border-[var(--crm-border)] px-5 py-4">
+              <div className="flex gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--tenant-surface)] text-[var(--tenant-primary)]"><ArrowRightLeft size={18} /></span><div><h3 className="font-bold">Transfer {transferLead.name}</h3><p className="mt-1 text-xs text-[var(--crm-muted)]">Ownership changes immediately; the pipeline stage and history stay unchanged.</p></div></div>
+              <button type="button" disabled={transferBusy} onClick={() => setTransferLead(null)} className="rounded-lg p-1.5 text-[var(--crm-muted)] hover:bg-[var(--crm-panel)]"><X size={18} /></button>
+            </header>
+            <div className="space-y-4 p-5">
+              <label className="block text-xs font-semibold text-[var(--crm-muted)]">Transfer to
+                <select value={transferUserId} onChange={(event) => setTransferUserId(event.target.value)} disabled={transferLoading || transferBusy} className="mt-2 h-11 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 text-sm text-[var(--crm-text)] outline-none">
+                  <option value="">{transferLoading ? 'Loading eligible users…' : 'Select a pipeline user'}</option>
+                  {transferCandidates.map((candidate) => <option key={candidate.userId} value={candidate.userId}>{candidate.name} · {candidate.email}</option>)}
+                </select>
+              </label>
+              {!transferLoading && transferCandidates.length === 0 && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-700">No other active tenant user currently has pipeline access.</p>}
+              <label className="block text-xs font-semibold text-[var(--crm-muted)]">Transfer reason
+                <textarea value={transferReason} onChange={(event) => setTransferReason(event.target.value)} disabled={transferBusy} rows={4} maxLength={500} placeholder="Explain why this card is being transferred" className="mt-2 w-full resize-y rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-3 text-sm text-[var(--crm-text)] outline-none" />
+              </label>
+            </div>
+            <footer className="flex justify-end gap-2 border-t border-[var(--crm-border)] bg-[var(--crm-panel)] px-5 py-4">
+              <button type="button" disabled={transferBusy} onClick={() => setTransferLead(null)} className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-4 py-2.5 text-sm font-semibold">Cancel</button>
+              <button type="button" disabled={transferBusy || transferLoading || !transferUserId || !transferReason.trim()} onClick={() => void confirmTransfer()} className="inline-flex min-w-32 items-center justify-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-45">{transferBusy && <LoaderCircle size={15} className="animate-spin" />}{transferBusy ? 'Transferring…' : 'Transfer card'}</button>
+            </footer>
+          </section>
+        </div>
       )}
 
       <DragOverlay dropAnimation={dropAnimation}>

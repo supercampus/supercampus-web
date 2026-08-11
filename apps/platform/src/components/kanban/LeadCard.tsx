@@ -5,6 +5,7 @@ import { defaultAnimateLayoutChanges, useSortable, type AnimateLayoutChanges } f
 import { CSS } from '@dnd-kit/utilities';
 import type { Lead } from '@/lib/kanban/kanban-data';
 import { Phone, Mail, MapPin, Paperclip, MessageSquare, Clock } from 'lucide-react';
+import { pipelineValueLabel } from '@/lib/crm-catalog';
 
 interface LeadCardProps {
   lead: Lead;
@@ -34,6 +35,12 @@ function LeadCardContent({ lead, columnAccent, onClick, canDrag, isOverdue, clas
       <p className="text-xs text-[var(--crm-on-surface-variant)] mb-2.5">
         {lead.course} | {lead.intake}
       </p>
+
+      {lead.substate && (
+        <span className="mb-2.5 inline-flex max-w-full rounded-full bg-[var(--tenant-surface)] px-2 py-1 text-[10px] font-semibold text-[var(--tenant-primary)]">
+          <span className="truncate">{pipelineValueLabel(lead.substate)}</span>
+        </span>
+      )}
 
       <div className="flex flex-col gap-1 mb-2.5">
         <div className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">

@@ -1,6 +1,7 @@
 import type { AppState, AuthStudent, LoginCredentials, PersistedAppState } from './types';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? '/api').replace(/\/$/, '');
+const REQUEST_TIMEOUT_MS = 12_000;
 let refreshPromise: Promise<void> | null = null;
 
 export class ApiRequestError extends Error {
@@ -25,10 +26,22 @@ function canRefresh(path: string) {
 async function send(path: string, init?: RequestInit) {
   const headers = new Headers(init?.headers);
   if (init?.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort(init?.signal?.reason);
+  if (init?.signal?.aborted) abortFromCaller();
+  else init?.signal?.addEventListener('abort', abortFromCaller, { once: true });
+  const timeout = setTimeout(() => controller.abort('request-timeout'), REQUEST_TIMEOUT_MS);
   try {
-    return await fetch(`${API_URL}${path}`, { ...init, headers, credentials: 'include' });
-  } catch {
+    return await fetch(`${API_URL}${path}`, { ...init, headers, credentials: 'include', signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted && !init?.signal?.aborted) {
+      throw new ApiRequestError('The request took too long. Check the API connection and try again.', 408);
+    }
+    if (error instanceof ApiRequestError) throw error;
     throw new ApiRequestError('The SuperCampus API is unavailable. Please try again later.', 503);
+  } finally {
+    clearTimeout(timeout);
+    init?.signal?.removeEventListener('abort', abortFromCaller);
   }
 }
 

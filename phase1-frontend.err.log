@@ -1,0 +1,20 @@
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:421:11)
+    at spawn (node:child_process:796:9)
+    at fork (node:child_process:174:10)
+    at E:\supercampus_main\supercampus-web\node_modules\next\dist\cli\next-dev.js:253:45
+    at new Promise (<anonymous>)
+    at startServer (E:\supercampus_main\supercampus-web\node_modules\next\dist\cli\next-dev.js:221:16)
+    at runDevServer (E:\supercampus_main\supercampus-web\node_modules\next\dist\cli\next-dev.js:355:23)
+    at Module.nextDev (E:\supercampus_main\supercampus-web\node_modules\next\dist\cli\next-dev.js:363:11) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+npm error Lifecycle script `dev` failed with error:
+npm error code 1
+npm error path E:\supercampus_main\supercampus-web\apps\platform
+npm error workspace @supercampus/platform@0.1.0
+npm error location E:\supercampus_main\supercampus-web\apps\platform
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c next dev

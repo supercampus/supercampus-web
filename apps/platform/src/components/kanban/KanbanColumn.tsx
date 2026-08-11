@@ -5,12 +5,13 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { Lead, Column } from '@/lib/kanban/kanban-data';
 import LeadCard from './LeadCard';
-import { MoreHorizontal } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface KanbanColumnProps {
   column: Column;
   leads: Lead[];
   onLeadClick: (lead: Lead) => void;
+  onCreateLead?: (column: Column) => void;
   canDrag: boolean;
 }
 
@@ -18,6 +19,7 @@ export default function KanbanColumn({
   column,
   leads,
   onLeadClick,
+  onCreateLead,
   canDrag,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id, disabled: !canDrag });
@@ -52,9 +54,17 @@ export default function KanbanColumn({
             {leads.length}
           </span>
         </div>
-        <button className="p-1 rounded-md hover:bg-[var(--crm-panel)] text-[var(--crm-muted)] transition-colors">
-          <MoreHorizontal size={15} />
-        </button>
+        {onCreateLead && (
+          <button
+            type="button"
+            onClick={() => onCreateLead(column)}
+            className="p-1 rounded-md hover:bg-[var(--crm-panel)] text-[var(--crm-muted)] transition-colors"
+            aria-label={`Create lead from ${column.title}`}
+            title={`Create lead from ${column.title}`}
+          >
+            <Plus size={17} />
+          </button>
+        )}
       </div>
 
       {/* Cards Area */}

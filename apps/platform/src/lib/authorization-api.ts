@@ -89,6 +89,7 @@ export function getTenantUsers() {
 export function createTenantUser(input: {
   name: string;
   email: string;
+  password: string;
   roleIds: string[];
 }) {
   return apiRequest<{
@@ -97,7 +98,7 @@ export function createTenantUser(input: {
       email: string;
       name: string;
       roleIds: string[];
-      temporaryPassword: string | null;
+      created: boolean;
     };
   }>(`${AUTHORIZATION_ROOT}/users`, {
     method: 'POST',

@@ -112,10 +112,13 @@ export interface CreateCampaignInput {
 export interface CrmBoardStage {
   key: string;
   order: number;
+  defaultSubstate?: string;
   substates: string[];
   count: number;
   leads: CrmLead[];
 }
+
+export type CrmStageCatalog = Pick<CrmBoardStage, 'key' | 'order' | 'substates'> & { defaultSubstate: string };
 
 export interface CrmBoard {
   pipeline: { key: string; name: string };
@@ -192,6 +195,12 @@ export interface CrmLeadMoveRequest {
   expiresAt: string;
   createdAt: string;
   decidedAt: string | null;
+}
+
+export interface CrmPipelineTransferCandidate {
+  userId: string;
+  name: string;
+  email: string;
 }
 
 export interface CrmActivity {
@@ -453,6 +462,19 @@ export function assignCrmLead(id: string, userId: string, reason?: string) {
   });
 }
 
+export function getCrmPipelineTransferCandidates() {
+  return apiRequest<{ data: CrmPipelineTransferCandidate[] }>(
+    `${CRM_ROOT}/pipeline/transfer-candidates`,
+  );
+}
+
+export function transferCrmLead(id: string, userId: string, reason: string) {
+  return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}/transfer`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, reason }),
+  });
+}
+
 export function requestCrmLeadMove(id: string, toStage: string, reason?: string, toSubstate?: string) {
   return apiRequest<{ data: CrmLeadMoveRequest }>(`${CRM_ROOT}/leads/${id}/stage/request`, {
     method: 'POST',
@@ -477,9 +499,30 @@ export function getCrmLeadApplication(id: string) {
     caseId: string;
     applicationId: string;
     admissionId: string;
+    applicationStage: string;
     applicationStatus: string;
     createdAt: string;
     updatedAt: string;
+    applications: Array<{
+      caseId: string;
+      applicationId: string;
+      admissionId: string;
+      applicationStage: string;
+      applicationStatus: string;
+      relationshipCreatedAt: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    applicationHistory: Array<{
+      action: string;
+      fromStage: string;
+      toStage: string;
+      fromStatus: string;
+      toStatus: string;
+      reason?: string | null;
+      actor: string;
+      createdAt: string;
+    }>;
   } }>(`${CRM_ROOT}/leads/${id}/application`);
 }
 
@@ -602,7 +645,7 @@ export function getCrmMyBoard(search?: string) {
 
 /** Static stage and substate catalog. */
 export function getCrmStages() {
-  return apiRequest<{ data: Record<string, unknown> }>(`${CRM_ROOT}/kanban/stages`);
+  return apiRequest<{ data: CrmStageCatalog[] }>(`${CRM_ROOT}/kanban/stages`);
 }
 
 export function getCrmStageLeads(stage: string, search?: string) {
