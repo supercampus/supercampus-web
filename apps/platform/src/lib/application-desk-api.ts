@@ -23,6 +23,7 @@ import {
   type OnboardingCase,
   type OnboardingEvent,
   type OnboardingServices,
+  type StageInput,
   type WorkflowDefinition,
 } from '@supercampus/application-desk';
 import { ApiRequestError, apiRequest } from './api';
@@ -205,6 +206,8 @@ export interface ActOnCaseInput {
   action: ActionKind;
   actor: string;
   reason?: string;
+  /** Payload for casework actions — the identity result, document decision, … */
+  input?: StageInput;
 }
 
 export interface ActOnCaseResult {
@@ -221,7 +224,10 @@ export async function actOnCase(input: ActOnCaseInput, source: DeskSource): Prom
   if (source === 'api') {
     const response = await apiRequest<{ data: Omit<DeskSnapshot, 'source' | 'queues'>; ok: boolean; error?: string }>(
       `${DESK_ROOT}/cases/${encodeURIComponent(input.caseId)}/actions`,
-      { method: 'POST', body: JSON.stringify({ action: input.action, reason: input.reason }) },
+      {
+        method: 'POST',
+        body: JSON.stringify({ action: input.action, reason: input.reason, input: input.input }),
+      },
     );
     return { ok: response.ok, error: response.error, snapshot: snapshotOf('api', response.data) };
   }
@@ -234,6 +240,7 @@ export async function actOnCase(input: ActOnCaseInput, source: DeskSource): Prom
     actor: input.actor,
     now: new Date().toISOString(),
     reason: input.reason,
+    input: input.input,
     services: demoServices(),
   });
 

@@ -3,7 +3,14 @@ import test from "node:test";
 
 import { applyAction, type OnboardingServices } from "../engine/engine.ts";
 import { defaultWorkflow } from "../engine/default-workflow.ts";
-import { createCase, evaluateIntake, queueOf, summariseQueues, type AdmissionTrigger } from "../engine/intake.ts";
+import {
+  createCase,
+  evaluateIntake,
+  isExpired,
+  queueOf,
+  summariseQueues,
+  type AdmissionTrigger,
+} from "../engine/intake.ts";
 import {
   DEFAULT_NUMBER_FORMAT,
   formatStudentNumber,
@@ -338,6 +345,261 @@ test("every transition produces an audit entry with both endpoints", async () =>
   assert.equal(entry.toStage, "IDENTITY_VERIFICATION");
   assert.equal(entry.reason, "reviewed");
   assert.equal(entry.timestamp, NOW);
+});
+
+// -- casework ---------------------------------------------------------------
+//
+// Every test above starts from `readyCase`, which hand-satisfies every guard.
+// That hid the real gap: nothing in the system could *satisfy* a guard. These
+// tests start from a genuine intake case and do the work.
+
+/** A freshly created case: nothing verified, nothing mapped, nothing signed. */
+function freshCase(): OnboardingCase {
+  const definition = defaultWorkflow(TENANT);
+  return createCase({ ...TRIGGER, feePaid: true }, definition, { id: "ONB-2026-000145", now: NOW });
+}
+
+test("a case created from an admission can be walked to COMPLETED by an operator", async () => {
+  const definition = defaultWorkflow(TENANT);
+  const { impl, calls } = services();
+  const base = { actor: "officer-1", now: NOW, services: impl };
+  let onboarding = freshCase();
+
+  const run = async (action: Parameters<typeof applyAction>[2], input?: unknown) => {
+    const result = await applyAction(definition, onboarding, action, {
+      ...base,
+      input: input as never,
+    });
+    assert.equal(result.ok, true, `${action} at ${onboarding.stage} failed: ${result.error}`);
+    onboarding = result.case;
+    return result;
+  };
+
+  // Data review needs no casework.
+  await run("advance");
+  assert.equal(onboarding.stage, "IDENTITY_VERIFICATION");
+
+  // Identity: the duplicate search comes back clean.
+  await run("record_identity", { identityMatch: "NO_MATCH" });
+  await run("advance");
+  assert.equal(onboarding.stage, "DOCUMENT_VERIFICATION");
+
+  // Documents: verify each mandatory item, waive one that does not apply.
+  for (const requirement of definition.documentChecklist.filter((entry) => entry.required)) {
+    await run("review_document", {
+      document: {
+        type: requirement.type,
+        state: requirement.type === "transfer-certificate" ? "WAIVED" : "VERIFIED",
+      },
+    });
+  }
+  await run("advance");
+  assert.equal(onboarding.stage, "ACADEMIC_MAPPING");
+
+  // Academic mapping arrived with the admission, so this stage is already clear.
+  await run("advance");
+  assert.equal(onboarding.stage, "SECTION_ALLOCATION");
+
+  await run("allocate_section", { sectionId: "sec-a" });
+  await run("advance");
+  assert.equal(onboarding.stage, "FINANCE_VERIFICATION");
+
+  // The fee was paid at intake, so finance is already CLEARED.
+  await run("advance");
+  assert.equal(onboarding.stage, "APPROVAL");
+
+  // Approval chain: officer, then registrar.
+  await run("approve", { approval: { comment: "checked" } });
+  await run("approve");
+  assert.deepEqual(
+    onboarding.approvals.map((entry) => entry.state),
+    ["APPROVED", "APPROVED"],
+  );
+  await run("advance");
+  assert.equal(onboarding.stage, "STUDENT_CREATION");
+
+  await run("advance");
+  await run("advance");
+  await run("advance");
+  await run("advance");
+
+  assert.equal(onboarding.stage, "COMPLETED");
+  assert.equal(onboarding.status, "COMPLETED");
+  assert.ok(onboarding.studentNumber, "a student number must be assigned");
+  assert.ok(onboarding.studentId, "a Student Master must exist");
+  assert.ok(onboarding.userAccountId, "a user account must exist");
+  assert.equal(onboarding.accessProvisioned, true);
+  assert.equal(calls.number, 1);
+  assert.equal(calls.student, 1);
+});
+
+test("recording identity unblocks the stage that was refusing to advance", async () => {
+  const definition = defaultWorkflow(TENANT);
+  const onboarding = { ...freshCase(), stage: "IDENTITY_VERIFICATION" as const };
+
+  const blocked = await applyAction(definition, onboarding, "advance", context());
+  assert.equal(blocked.ok, false);
+  assert.match(blocked.error ?? "", /has not been run/);
+
+  const recorded = await applyAction(definition, onboarding, "record_identity", {
+    ...context(),
+    input: { identityMatch: "NO_MATCH" },
+  });
+  assert.equal(recorded.ok, true);
+  assert.equal(recorded.case.identityMatch, "NO_MATCH");
+  assert.equal(recorded.case.stage, "IDENTITY_VERIFICATION", "casework must not move the case");
+
+  const cleared = await applyAction(definition, recorded.case, "advance", context());
+  assert.equal(cleared.ok, true);
+  assert.equal(cleared.case.stage, "DOCUMENT_VERIFICATION");
+});
+
+test("casework refuses when its payload is missing or off-checklist", async () => {
+  const definition = defaultWorkflow(TENANT);
+  const onboarding = freshCase();
+
+  const noPayload = await applyAction(definition, onboarding, "record_identity", context());
+  assert.equal(noPayload.ok, false);
+  assert.match(noPayload.error ?? "", /No identity match/);
+
+  const unknownDocument = await applyAction(definition, onboarding, "review_document", {
+    ...context(),
+    input: { document: { type: "birth-certificate", state: "VERIFIED" } },
+  });
+  assert.equal(unknownDocument.ok, false);
+  assert.match(unknownDocument.error ?? "", /not on the document checklist/);
+
+  const noSection = await applyAction(definition, onboarding, "allocate_section", context());
+  assert.equal(noSection.ok, false);
+});
+
+test("a verified document records who verified it and when", async () => {
+  const definition = defaultWorkflow(TENANT);
+  const result = await applyAction(definition, freshCase(), "review_document", {
+    ...context(),
+    input: { document: { type: "photo", state: "VERIFIED" } },
+  });
+  const record = result.case.documents.find((entry) => entry.type === "photo");
+  assert.equal(record?.state, "VERIFIED");
+  assert.equal(record?.verifiedBy, "officer-1");
+  assert.equal(record?.verifiedAt, NOW);
+});
+
+test("a rejected document keeps its reason and stops satisfying the checklist", async () => {
+  const definition = defaultWorkflow(TENANT);
+  const verified = await applyAction(definition, readyCase("DOCUMENT_VERIFICATION"), "review_document", {
+    ...context(),
+    input: { document: { type: "photo", state: "REJECTED", reason: "Unreadable scan" } },
+  });
+  const record = verified.case.documents.find((entry) => entry.type === "photo");
+  assert.equal(record?.rejectionReason, "Unreadable scan");
+  assert.equal(record?.verifiedBy, undefined, "a rejection must not be recorded as a verification");
+
+  const blocked = await applyAction(definition, verified.case, "advance", context());
+  assert.equal(blocked.ok, false);
+  assert.match(blocked.error ?? "", /Passport Photo/);
+});
+
+test("the approval chain must be signed in order", async () => {
+  const definition = defaultWorkflow(TENANT);
+  const onboarding = { ...freshCase(), stage: "APPROVAL" as const };
+
+  const outOfOrder = await applyAction(definition, onboarding, "approve", {
+    ...context(),
+    input: { approval: { step: 2 } },
+  });
+  assert.equal(outOfOrder.ok, false);
+  assert.match(outOfOrder.error ?? "", /step 1 \(application-desk-officer\) must be signed first/);
+
+  const first = await applyAction(definition, onboarding, "approve", { ...context(), input: {} });
+  assert.equal(first.ok, true);
+  assert.equal(first.case.approvals[0]?.state, "APPROVED");
+  assert.equal(first.case.approvals[0]?.actedBy, "officer-1");
+  assert.equal(first.case.approvals[1]?.state, "PENDING");
+
+  const again = await applyAction(definition, first.case, "approve", {
+    ...context(),
+    input: { approval: { step: 1 } },
+  });
+  assert.equal(again.ok, false);
+  assert.match(again.error ?? "", /already approved/);
+
+  const second = await applyAction(definition, first.case, "approve", context());
+  assert.equal(second.ok, true);
+  const exhausted = await applyAction(definition, second.case, "approve", context());
+  assert.equal(exhausted.ok, false);
+  assert.match(exhausted.error ?? "", /already signed/);
+});
+
+test("casework is allowed while a case is on hold, which is how holds get cleared", async () => {
+  const definition = defaultWorkflow(TENANT);
+  const held = await applyAction(definition, { ...freshCase(), stage: "DOCUMENT_VERIFICATION" }, "hold", {
+    ...context(),
+    reason: "Transfer Certificate outstanding",
+  });
+  assert.equal(held.case.status, "ON_HOLD");
+
+  const verified = await applyAction(definition, held.case, "review_document", {
+    ...context(),
+    input: { document: { type: "transfer-certificate", state: "VERIFIED" } },
+  });
+  assert.equal(verified.ok, true, "the document that caused the hold must be recordable");
+  assert.equal(verified.case.status, "ON_HOLD", "recording must not silently resume the case");
+
+  const resumed = await applyAction(definition, verified.case, "resume", context());
+  assert.equal(resumed.case.status, "ACTIVE");
+  assert.equal(resumed.case.stage, "DOCUMENT_VERIFICATION");
+});
+
+// -- routing and lifecycle --------------------------------------------------
+
+test("a return routes through the transition table instead of parking in place", async () => {
+  const definition = defaultWorkflow(TENANT);
+  const returned = await applyAction(definition, readyCase("DOCUMENT_VERIFICATION"), "return", {
+    ...context(),
+    reason: "Date of birth does not match the certificate",
+  });
+
+  assert.equal(returned.case.status, "RETURNED");
+  assert.equal(returned.case.stage, "DATA_REVIEW", "the configured return target must be honoured");
+  assert.equal(returned.case.resumeStage, "DATA_REVIEW");
+
+  const resumed = await applyAction(definition, returned.case, "resume", context());
+  assert.equal(resumed.case.status, "ACTIVE");
+  assert.equal(resumed.case.stage, "DATA_REVIEW", "correction restarts at the stage it was sent to");
+});
+
+test("a hold leaves the stage alone and cannot be applied twice", async () => {
+  const definition = defaultWorkflow(TENANT);
+  const held = await applyAction(definition, readyCase("APPROVAL"), "hold", context());
+  assert.equal(held.case.stage, "APPROVAL");
+
+  const again = await applyAction(definition, held.case, "hold", context());
+  assert.equal(again.ok, false);
+  assert.match(again.error ?? "", /already ON_HOLD/);
+});
+
+test("an expiry is reported as an expiry, not as a failure", async () => {
+  const definition = defaultWorkflow(TENANT);
+  const result = await applyAction(definition, readyCase("DATA_REVIEW"), "expire", context());
+  assert.equal(result.case.status, "EXPIRED");
+  assert.ok(
+    result.events.some((entry) => entry.name === "OnboardingExpired"),
+    "EXPIRED and FAILED are deliberately distinct states",
+  );
+});
+
+test("expiry is measured against the workflow's configured window", () => {
+  const definition = defaultWorkflow(TENANT);
+  const onboarding = freshCase();
+  assert.equal(isExpired(onboarding, definition, "2026-09-01T10:00:00.000Z"), false);
+  assert.equal(isExpired(onboarding, definition, "2026-10-01T10:00:00.000Z"), true);
+  assert.equal(
+    isExpired({ ...onboarding, status: "ON_HOLD" }, definition, "2026-10-01T10:00:00.000Z"),
+    false,
+    "a deliberate hold is not an accidental lapse",
+  );
+  assert.equal(isExpired(onboarding, { ...definition, expiryDays: undefined }, "2030-01-01T00:00:00.000Z"), false);
 });
 
 // -- projections and numbering ---------------------------------------------

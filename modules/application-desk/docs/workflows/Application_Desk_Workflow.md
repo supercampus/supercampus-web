@@ -70,6 +70,27 @@ Status: ACTIVE | ON_HOLD | RETURNED | REJECTED | CANCELLED
 `REJECTED`, `CANCELLED`, `WITHDRAWN` and `EXPIRED` are deliberately distinct —
 they are not interchangeable.
 
+## Actions
+
+Actions fall into three families, and the split is load-bearing. Guards can only
+ever *refuse*; something has to be able to satisfy them. That is casework.
+
+| Family | Actions | Effect on the case |
+|---|---|---|
+| Movement | `advance` | Validates the current stage, runs its effects, hands off to the next enabled stage |
+| Casework | `record_identity`, `review_document`, `map_academics`, `allocate_section`, `record_finance`, `approve` | Records the facts a guard is waiting for. Never changes stage or status |
+| Lifecycle | `hold`, `resume`, `return`, `reject`, `cancel`, `withdraw`, `expire` | Parks or closes the case |
+
+Casework carries a `StageInput` payload and refuses when it is missing, so a
+malformed request cannot appear to succeed while changing nothing. It is
+permitted while a case is `ON_HOLD` or `RETURNED` — a hold usually exists
+*because* a document is outstanding, so the document has to be recordable before
+the case can resume.
+
+`approve` signs one step of the approval chain, in order: step 2 is refused
+until step 1 is `APPROVED`, so the registrar cannot sign ahead of the officer.
+Rejecting an approval is not a step state — it is `reject` on the case.
+
 ## Transition model
 
 ```text
@@ -104,10 +125,24 @@ the original student number, student id and account id rather than minting new
 ones. This matters most for student creation, account creation and number
 generation.
 
-## Hold and resume
+## Hold, return and resume
 
 A hold records reason, owner and resume condition, and stores the stage to
-return to. Resuming continues from that stage — never from the beginning.
+return to. Resuming continues from that stage — never from the beginning. A hold
+leaves the stage untouched, and a case cannot be held twice.
+
+A **return** is different: it is the one side action that means "go back to stage
+X", so it is routed through the transition table. `DOCUMENT_VERIFICATION +
+return → DATA_REVIEW` sends the case back for correction and resumes there.
+Closures leave the stage alone — a rejected case is rejected where it stood.
+
+## Expiry
+
+`expiryDays` on the workflow defines how long an open case may sit. `isExpired`
+is the predicate a scheduled sweep uses to pick cases for the `expire` action;
+a held case is deliberately parked, so it never lapses. An expiry emits
+`OnboardingExpired`, not `OnboardingFailed` — a missed deadline is not a system
+breakage.
 
 ## Ownership of data
 
@@ -129,7 +164,11 @@ The desk orchestrates these areas; it does not become their permanent owner.
 `AcademicMappingCompleted`, `SectionAllocated`, `FinanceVerified`,
 `StudentNumberGenerated`, `StudentCreated`, `UserCreated`, `AccessProvisioned`,
 `StudentActivated`, `OnboardingCompleted`, `OnboardingHeld`,
-`OnboardingReturned`, `OnboardingRejected`, `OnboardingFailed`.
+`OnboardingReturned`, `OnboardingRejected`, `OnboardingExpired`,
+`OnboardingFailed`.
+
+Casework emits no domain event: recording a document is data capture, while
+`DocumentsVerified` means the *stage* completed, which only `advance` does.
 
 Downstream modules subscribe rather than being called directly, which keeps the
 desk from absorbing every downstream business process.
@@ -141,6 +180,13 @@ application-desk.view      .create   .edit     .verify   .assign
 application-desk.approve   .reject   .hold     .resume   .activate
 application-desk.manage_settings     .reports.read
 ```
+
+These are not interchangeable, so the permission follows the work rather than
+the action name. Advancing out of `APPROVAL` requires `.approve`; advancing out
+of the provisioning stages requires `.activate`; everything else requires
+`.verify`. Section allocation requires `.assign` and academic mapping `.edit`.
+If a single grant authorised every forward move, splitting verification,
+approval and activation between teams would be decorative.
 
 ## Completion definition
 

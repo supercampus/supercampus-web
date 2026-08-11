@@ -75,6 +75,27 @@
     margin: 0;
     padding: 0;
     overflow-x: hidden;
+    /* Match the productive desktop density used at 90% browser zoom. */
+    zoom: 0.9;
+  }
+
+  @media (max-width: 767px) {
+    body { zoom: 1; }
+  }
+
+  /* A 100vh child becomes 90vh after the desktop density scale. Keep the
+     application shell flush with the viewport instead of exposing the body
+     background at the bottom. */
+  .campus-admin-shell {
+    min-height: 111.111vh;
+    height: 111.111vh;
+  }
+
+  @media (max-width: 767px) {
+    .campus-admin-shell {
+      min-height: 100vh;
+      height: 100vh;
+    }
   }
 
   button,
@@ -968,99 +989,193 @@
   gap: 20px;
 }
 
-.profile-horiz-card {
+/* Identity hero — the tenant gradient carries the brand, so the card is built
+   from --primary-grad rather than a fixed accent. */
+.profile-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 24px;
-  background: #ffffff;
-  border-radius: 16px;
-  border: 1px solid var(--card-border);
-}
-
-.profile-horiz-card__avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 22px;
   background: var(--primary-grad);
   color: #ffffff;
-  font-weight: 800;
-  font-size: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+}
+
+/* Soft bloom, so a flat two-stop gradient still reads as lit. */
+.profile-hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -120px;
+  right: -60px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+.profile-hero__avatar {
   flex: none;
-}
-
-.profile-horiz-card__info {
-  flex: 1;
-}
-
-.profile-horiz-card__name {
-  font-weight: 800;
-  font-size: 20px;
-  letter-spacing: -0.02em;
-  color: #141527;
-  margin: 0 0 4px 0;
-}
-
-.profile-horiz-card__details {
-  font-size: 13px;
-  color: #6c7280;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.profile-horiz-card__full-college {
-  font-size: 12px;
-  color: #9096a4;
-  margin-top: 4px;
-}
-
-.profile-summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-top: 12px;
-}
-
-@media (max-width: 600px) {
-  .profile-summary-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.profile-summary-card {
-  background: #f9fafe;
-  border-radius: 12px;
-  padding: 14px;
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.profile-summary-card:hover {
-  transform: translateY(-2px);
-  background: #f0f3fd;
-}
-
-.profile-summary-card__label {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #6c7280;
-}
-
-.profile-summary-card__value {
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 20px;
   font-weight: 800;
-  font-size: 22px;
-  font-family: var(--font-mono);
-  margin: 4px 0;
+  letter-spacing: 0.02em;
 }
 
-.profile-summary-card__sub {
+.profile-hero__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-hero__name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.profile-hero__meta {
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.profile-hero__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.profile-hero__tag {
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
   font-size: 11px;
-  color: #9096a4;
+  font-weight: 600;
+}
+
+.profile-hero__action {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+
+.profile-hero__action:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* Menu list — one tappable row per destination. */
+.profile-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.profile-menu__group {
+  margin: 6px 0 2px 4px;
+  color: var(--text-sub);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.profile-menu__row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  background: var(--card-bg);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.profile-menu__row:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--tenant-primary) 32%, transparent);
+  box-shadow: 0 6px 18px rgba(20, 21, 39, 0.06);
+}
+
+.profile-menu__row:focus-visible {
+  outline: 2px solid var(--tenant-primary);
+  outline-offset: 2px;
+}
+
+.profile-menu__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--tenant-surface);
+  color: var(--tenant-primary);
+}
+
+.profile-menu__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-menu__title {
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.profile-menu__sub {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-sub);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The live figure the row is about — the reason to tap it. */
+.profile-menu__value {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.profile-menu__chev {
+  flex: none;
+  color: #c3c7d4;
+  transition: transform 0.16s ease, color 0.16s ease;
+}
+
+.profile-menu__row:hover .profile-menu__chev {
+  transform: translateX(2px);
+  color: var(--tenant-primary);
 }
 
 /* Student ID 3D Card */
@@ -1270,7 +1385,7 @@ button:focus-visible, input:focus-visible {
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 .sc-card:hover { border-color: rgba(119, 108, 245, 0.2); box-shadow: 0 14px 42px rgba(38, 26, 91, 0.09); }
-.sc-stat-card, .sc-qa-btn, .sc-module-item, .profile-summary-card { border-radius: 14px; }
+.sc-stat-card, .sc-qa-btn, .sc-module-item { border-radius: 14px; }
 .sc-stat-card:hover, .sc-qa-btn:hover, .sc-module-item:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(38, 26, 91, .08); }
 .sc-btn--primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(119, 108, 245, .34); }
 .sc-notif-panel { border-radius: 18px; box-shadow: var(--shadow-float); }
@@ -1309,7 +1424,7 @@ button:focus-visible, input:focus-visible {
   .sc-topbar__profile { display: none; }
   .sc-home__hero { align-items: flex-start; flex-direction: column; }
   .sc-home__heading { font-size: 21px; }
-  .sc-home__stats, .sc-home__bottom, .profile-summary-grid { grid-template-columns: 1fr; }
+  .sc-home__stats, .sc-home__bottom { grid-template-columns: 1fr; }
   .sc-card { padding: 16px; border-radius: 16px; }
   .sc-stepper-h { overflow-x: auto; padding-bottom: 8px; }
   .sc-toast { left: 16px; right: 16px; bottom: 80px; text-align: center; }

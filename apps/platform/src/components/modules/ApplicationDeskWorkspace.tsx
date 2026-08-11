@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -13,18 +13,29 @@ import {
   PauseCircle,
   PlayCircle,
   RefreshCw,
+  Search,
   ShieldCheck,
+  Undo2,
   Wallet,
+  X,
   XCircle,
 } from 'lucide-react';
 import {
+  TERMINAL_STATUSES,
   runGuards,
   stageById,
   type ActionKind,
+  type IdentityMatchKind,
   type OnboardingCase,
+  type StageInput,
 } from '@supercampus/application-desk';
 import { useApp } from '@/lib/context';
-import { applicationDeskCapabilities, hasPermission } from '@/lib/staff-access';
+import {
+  applicationDeskCapabilities,
+  hasPermission,
+  permissionForAdvance,
+  permissionForCasework,
+} from '@/lib/staff-access';
 import {
   DEMO_APPLICANT_NAMES,
   actOnCase,
@@ -35,19 +46,43 @@ import {
 
 type QueueKey = keyof DeskSnapshot['queues'];
 
-const QUEUES: Array<{ key: QueueKey; label: string }> = [
-  { key: 'new', label: 'New' },
+/**
+ * The queue filters are two tiers, not one flat row of eleven chips.
+ *
+ * An officer's first question is "what is live on my desk", not "how many cases
+ * are in ACCESS_PROVISIONING" — and a flat row answers the second question
+ * eleven times, mostly with zero. So: lifecycle views first, and the stage
+ * narrowing only appears inside the live view, where it is the follow-up
+ * question that actually gets asked.
+ */
+const VIEWS = [
+  { key: 'live', label: 'Needs action' },
+  { key: 'onHold', label: 'On hold' },
+  { key: 'activated', label: 'Activated' },
+  { key: 'closed', label: 'Closed' },
+  { key: 'all', label: 'All' },
+] as const;
+
+type ViewKey = (typeof VIEWS)[number]['key'];
+
+const STAGE_FILTERS: Array<{ key: QueueKey; label: string }> = [
+  { key: 'new', label: 'Review' },
   { key: 'pendingVerification', label: 'Identity' },
   { key: 'documentsPending', label: 'Documents' },
   { key: 'academicPending', label: 'Academic' },
   { key: 'financePending', label: 'Finance' },
   { key: 'approvalPending', label: 'Approval' },
-  { key: 'readyForActivation', label: 'Ready' },
-  { key: 'activated', label: 'Activated' },
-  { key: 'onHold', label: 'On hold' },
-  { key: 'rejected', label: 'Closed' },
-  { key: 'failed', label: 'Failed' },
+  { key: 'readyForActivation', label: 'Provisioning' },
 ];
+
+const SORTS = [
+  { key: 'oldest', label: 'Oldest first' },
+  { key: 'newest', label: 'Recently updated' },
+  { key: 'stage', label: 'Furthest along' },
+  { key: 'name', label: 'Name A–Z' },
+] as const;
+
+type SortKey = (typeof SORTS)[number]['key'];
 
 const STAGE_RAIL: Array<{ id: OnboardingCase['stage']; short: string }> = [
   { id: 'DATA_REVIEW', short: 'Review' },
@@ -64,28 +99,171 @@ const STAGE_RAIL: Array<{ id: OnboardingCase['stage']; short: string }> = [
   { id: 'COMPLETED', short: 'Done' },
 ];
 
-const STATUS_TONE: Record<string, string> = {
-  ACTIVE: 'bg-[var(--tenant-primary)]/12 text-[var(--tenant-primary)]',
-  ON_HOLD: 'bg-amber-500/15 text-amber-600',
-  RETURNED: 'bg-amber-500/15 text-amber-600',
-  COMPLETED: 'bg-emerald-500/15 text-emerald-600',
-  FAILED: 'bg-rose-500/15 text-rose-600',
-  REJECTED: 'bg-rose-500/15 text-rose-600',
-  CANCELLED: 'bg-rose-500/15 text-rose-600',
-  WITHDRAWN: 'bg-rose-500/15 text-rose-600',
-  EXPIRED: 'bg-rose-500/15 text-rose-600',
+const TABS = ['overview', 'documents', 'academic', 'approvals', 'activity'] as const;
+type Tab = (typeof TABS)[number];
+
+// -- value presentation -----------------------------------------------------
+
+type Tone = 'neutral' | 'brand' | 'positive' | 'warning' | 'danger';
+
+const TONE_TEXT: Record<Tone, string> = {
+  neutral: 'text-[var(--crm-muted)]',
+  brand: 'text-[var(--tenant-primary)]',
+  positive: 'text-emerald-700',
+  warning: 'text-amber-700',
+  danger: 'text-rose-700',
 };
+
+const TONE_PILL: Record<Tone, string> = {
+  neutral: 'bg-[var(--crm-surface)] text-[var(--crm-muted)] ring-[var(--crm-border)]',
+  brand: 'bg-[var(--tenant-primary)]/10 text-[var(--tenant-primary)] ring-[var(--tenant-primary)]/25',
+  positive: 'bg-emerald-500/10 text-emerald-700 ring-emerald-500/25',
+  warning: 'bg-amber-500/10 text-amber-700 ring-amber-500/30',
+  danger: 'bg-rose-500/10 text-rose-700 ring-rose-500/25',
+};
+
+function statusTone(status: OnboardingCase['status']): Tone {
+  switch (status) {
+    case 'ACTIVE':
+      return 'brand';
+    case 'COMPLETED':
+      return 'positive';
+    case 'ON_HOLD':
+    case 'RETURNED':
+      return 'warning';
+    default:
+      return 'danger';
+  }
+}
+
+/** `identityMatch` reports duplicate detection, so "no match" is the good outcome. */
+function identityTone(match: NonNullable<OnboardingCase['identityMatch']>): Tone {
+  if (match === 'NO_MATCH') return 'positive';
+  if (match === 'DUPLICATE') return 'danger';
+  return 'warning';
+}
+
+function financeTone(finance: OnboardingCase['finance']): Tone {
+  if (finance === 'CLEARED') return 'positive';
+  if (finance === 'HOLD') return 'danger';
+  if (finance === 'PENDING') return 'warning';
+  return 'neutral';
+}
+
+function documentTone(state: string | undefined): Tone {
+  if (state === 'VERIFIED' || state === 'WAIVED') return 'positive';
+  if (state === 'REJECTED' || state === 'EXPIRED') return 'danger';
+  if (!state || state === 'NOT_SUBMITTED') return 'neutral';
+  return 'warning';
+}
+
+function approvalTone(state: string): Tone {
+  if (state === 'APPROVED') return 'positive';
+  if (state === 'REJECTED') return 'danger';
+  return 'warning';
+}
+
+/**
+ * `NO_MATCH` → `No match`, `application-desk-officer` → `Application desk officer`.
+ * Enum codes and role slugs are for the API, not for the operator.
+ */
+function humanize(value: string) {
+  const words = value.replace(/[_-]/g, ' ').toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+/**
+ * What this case is actually waiting on, in the words the operator needs.
+ *
+ * The workflow engine already knows — `runGuards` returns the exact reason a
+ * stage refuses to advance ("Missing documents: Transfer certificate"). Putting
+ * that on the row means the queue tells you what to do next instead of making
+ * you open four cases to find the one you can clear.
+ */
+function nextAction(
+  onboarding: OnboardingCase,
+  definition: DeskSnapshot['definition'],
+): { text: string; tone: Tone } {
+  switch (onboarding.status) {
+    case 'ON_HOLD':
+      return { text: onboarding.holdReason ?? 'On hold', tone: 'warning' };
+    case 'RETURNED':
+      return { text: 'Returned for correction', tone: 'warning' };
+    case 'FAILED':
+      return { text: 'Provisioning failed — retry needed', tone: 'danger' };
+    case 'COMPLETED':
+      return { text: 'Onboarding complete', tone: 'positive' };
+    case 'ACTIVE':
+      break;
+    default:
+      return { text: `Closed · ${humanize(onboarding.status)}`, tone: 'neutral' };
+  }
+
+  const stage = stageById(definition, onboarding.stage);
+  if (!stage) return { text: 'Awaiting review', tone: 'neutral' };
+  const guard = runGuards(onboarding, definition, stage.guards);
+  return guard.ok
+    ? { text: 'Ready to advance', tone: 'positive' }
+    : { text: guard.reason ?? 'Stage checks not met', tone: 'warning' };
+}
+
+/**
+ * Age of the case, and how loudly to say it. A queue without an ageing signal
+ * lets the quiet cases rot at the bottom, so anything past three days starts
+ * colouring itself.
+ */
+function ageOf(iso: string): { label: string; className: string; title: string } {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return { label: '—', className: 'text-[var(--crm-muted)]', title: '' };
+  const hours = (Date.now() - then) / 3600000;
+  const days = Math.floor(hours / 24);
+  const label = hours < 1 ? 'new' : hours < 24 ? `${Math.floor(hours)}h` : `${days}d`;
+  const className =
+    days >= 7 ? 'text-rose-600' : days >= 3 ? 'text-amber-600' : 'text-[var(--crm-muted)]';
+  return { label, className, title: `Last updated ${new Date(then).toLocaleString()}` };
+}
+
+function relativeTime(iso: string) {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return '';
+  const minutes = Math.round((Date.now() - then) / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  return days < 30 ? `${days}d ago` : new Date(then).toLocaleDateString();
+}
 
 function applicantName(onboarding: OnboardingCase) {
   return DEMO_APPLICANT_NAMES[onboarding.applicantId] ?? onboarding.applicantId;
 }
 
+/** Rail position of a case. `NEW` sits before the first rail entry. */
+function stageIndex(stage: OnboardingCase['stage']) {
+  const index = STAGE_RAIL.findIndex((entry) => entry.id === stage);
+  return index < 0 ? 0 : index;
+}
+
 function Metric({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Clock }) {
   return (
-    <div className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4">
-      <Icon size={16} className="text-[var(--tenant-primary)]" />
-      <p className="mt-3 text-2xl text-[var(--crm-text)]">{value}</p>
-      <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[var(--crm-muted)]">{label}</p>
+    <div className="flex items-center gap-3 rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--tenant-primary)]/10 text-[var(--tenant-primary)]">
+        <Icon size={17} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-2xl leading-none text-[var(--crm-text)]">{value}</span>
+        <span className="mt-1.5 block truncate text-[11px] text-[var(--crm-muted)]">{label}</span>
+      </span>
     </div>
   );
 }
@@ -137,9 +315,13 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [queue, setQueue] = useState<QueueKey | 'all'>('all');
+  const [view, setView] = useState<ViewKey>('live');
+  const [stageFilter, setStageFilter] = useState<QueueKey | 'all'>('all');
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<SortKey>('oldest');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [tab, setTab] = useState<'overview' | 'documents' | 'academic' | 'approvals' | 'activity'>('overview');
+  const [tab, setTab] = useState<Tab>('overview');
+  const listRef = useRef<HTMLDivElement>(null);
 
   const [reloadToken, setReloadToken] = useState(0);
   const refresh = useCallback(() => {
@@ -182,9 +364,49 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   const cases = useMemo(() => snapshot?.cases ?? [], [snapshot]);
   const selected = cases.find((entry) => entry.id === selectedId) ?? null;
 
-  const visible = useMemo(
-    () => (queue === 'all' ? cases : cases.filter((entry) => queueMatches(entry, queue))),
-    [cases, queue],
+  const inView = useMemo(() => cases.filter((entry) => viewMatches(entry, view)), [cases, view]);
+
+  const visible = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    const rows = inView.filter((entry) => {
+      if (view === 'live' && stageFilter !== 'all' && !queueMatches(entry, stageFilter)) return false;
+      if (!term) return true;
+      return (
+        applicantName(entry).toLowerCase().includes(term) ||
+        entry.id.toLowerCase().includes(term) ||
+        entry.admissionId.toLowerCase().includes(term)
+      );
+    });
+    return sortCases(rows, sort);
+  }, [inView, query, sort, stageFilter, view]);
+
+  /** Per-row "what is this waiting on" — the engine's own guard reasons. */
+  const pending = useMemo(() => {
+    if (!snapshot) return new Map<string, ReturnType<typeof nextAction>>();
+    return new Map(visible.map((entry) => [entry.id, nextAction(entry, snapshot.definition)]));
+  }, [snapshot, visible]);
+
+  /** Arrow keys walk the queue — a desk is worked with hands on the keyboard. */
+  const moveSelection = useCallback(
+    (delta: number) => {
+      if (visible.length === 0) return;
+      const current = visible.findIndex((entry) => entry.id === selectedId);
+      const nextIndex =
+        current < 0
+          ? delta > 0
+            ? 0
+            : visible.length - 1
+          : Math.min(visible.length - 1, Math.max(0, current + delta));
+      const target = visible[nextIndex];
+      if (!target) return;
+      setSelectedId(target.id);
+      requestAnimationFrame(() => {
+        const node = listRef.current?.querySelector<HTMLButtonElement>(`[data-case="${target.id}"]`);
+        node?.focus();
+        node?.scrollIntoView({ block: 'nearest' });
+      });
+    },
+    [selectedId, visible],
   );
 
   /** Why `advance` is currently refused — shown before the operator clicks. */
@@ -201,12 +423,15 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   const selectedCaseId = selected?.id;
 
   const act = useCallback(
-    async (action: ActionKind, reason?: string) => {
+    async (action: ActionKind, reason?: string, input?: StageInput) => {
       if (!source || !selectedCaseId) return;
       setBusy(true);
       setActionError(null);
       try {
-        const result = await actOnCase({ caseId: selectedCaseId, action, actor: actorName, reason }, source);
+        const result = await actOnCase(
+          { caseId: selectedCaseId, action, actor: actorName, reason, input },
+          source,
+        );
         setSnapshot(result.snapshot);
         if (!result.ok) setActionError(result.error ?? 'Action refused');
       } catch (error) {
@@ -217,6 +442,25 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
     },
     [actorName, selectedCaseId, source],
   );
+
+  /** Effective permission set — demo mode stands in for a session in dev only. */
+  const effective = useMemo(
+    () => (demoAccess ? DEMO_PERMISSIONS : permissions),
+    [demoAccess, permissions],
+  );
+  const mayRun = useCallback(
+    (action: ActionKind, stage?: OnboardingCase['stage']) =>
+      hasPermission(
+        effective,
+        action === 'advance' ? permissionForAdvance(stage ?? '') : permissionForCasework(action),
+      ),
+    [effective],
+  );
+
+  /** A closed case is a record, not a workbench — casework controls hide. */
+  const open = !!selected && !TERMINAL_STATUSES.includes(selected.status);
+  const mayAdvance = !!selected && mayRun('advance', selected.stage);
+  const nextRailStage = selected ? STAGE_RAIL[stageIndex(selected.stage) + 1] : undefined;
 
   if (authStatus === 'checking' || (mayLoad && !snapshot && !loadError)) {
     return (
@@ -256,16 +500,16 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
     );
   }
 
-  const completedToday = cases.filter((entry) => entry.status === 'COMPLETED').length;
+  const activated = cases.filter((entry) => entry.status === 'COMPLETED').length;
 
   return (
     <DeskShell embedded={embedded}>
-      <div className="mx-auto max-w-[1500px] space-y-5">
-        <header className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.45em] text-[var(--crm-muted)]">Admissions</p>
-            <h1 className="mt-2 text-2xl text-[var(--crm-text)]">Application Desk</h1>
-            <p className="mt-1 text-xs text-[var(--crm-muted)]">
+      <div className="mx-auto max-w-[1500px] space-y-6">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.32em] text-[var(--crm-muted)]">Admissions</p>
+            <h1 className="mt-2 text-2xl leading-tight text-[var(--crm-text)]">Application Desk</h1>
+            <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-[var(--crm-muted)]">
               Confirmed admissions become SuperCampus students here — identity, documents, mapping, approval, then
               provisioning.
             </p>
@@ -273,7 +517,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
           <div className="flex items-center gap-2">
             {/* When the banner is up it already says this; badge is for a signed-in user. */}
             {snapshot?.source === 'demo' && !demoAccess && (
-              <span className="rounded-full bg-amber-500/15 px-3 py-1.5 text-[11px] text-amber-600">
+              <span className="rounded-full bg-amber-500/10 px-3 py-1.5 text-[11px] text-amber-700 ring-1 ring-amber-500/30">
                 Demo data — onboarding API not connected
               </span>
             )}
@@ -283,7 +527,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                 if (snapshot?.source === 'demo') resetDemoDesk();
                 refresh();
               }}
-              className="flex items-center gap-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs text-[var(--crm-text)]"
+              className="flex items-center gap-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs text-[var(--crm-text)] transition hover:bg-[var(--crm-surface)]"
             >
               <RefreshCw size={14} /> Refresh
             </button>
@@ -309,122 +553,294 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
           <Metric label="Awaiting onboarding" value={cases.filter((c) => c.status === 'ACTIVE').length} icon={Clock} />
           <Metric label="Documents pending" value={snapshot?.queues.documentsPending ?? 0} icon={FileText} />
           <Metric label="Approvals pending" value={snapshot?.queues.approvalPending ?? 0} icon={ShieldCheck} />
-          <Metric label="Students activated" value={completedToday} icon={GraduationCap} />
+          <Metric label="Students activated" value={activated} icon={GraduationCap} />
         </section>
 
-        <div className="flex flex-wrap gap-2">
-          <QueueChip label="All" count={cases.length} active={queue === 'all'} onClick={() => setQueue('all')} />
-          {QUEUES.map((entry) => (
-            <QueueChip
-              key={entry.key}
-              label={entry.label}
-              count={snapshot?.queues[entry.key] ?? 0}
-              active={queue === entry.key}
-              onClick={() => setQueue(entry.key)}
-            />
-          ))}
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
           <section className="overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)]">
-            <div className="grid grid-cols-[1.3fr_1fr_1fr_auto] bg-[var(--crm-surface)] px-4 py-3 text-[10px] uppercase tracking-wider text-[var(--crm-muted)]">
-              <span>Applicant</span>
-              <span>Stage</span>
-              <span>Status</span>
-              <span />
-            </div>
-            <div className="max-h-[560px] overflow-y-auto">
-              {visible.length === 0 && (
-                <p className="px-4 py-10 text-center text-sm text-[var(--crm-muted)]">No cases in this queue.</p>
-              )}
-              {visible.map((entry) => (
-                <button
-                  key={entry.id}
-                  type="button"
-                  onClick={() => setSelectedId(entry.id)}
-                  className={`grid w-full grid-cols-[1.3fr_1fr_1fr_auto] items-center border-t border-[var(--crm-border)] px-4 py-3 text-left text-xs transition hover:bg-[var(--crm-surface)] ${
-                    entry.id === selectedId ? 'bg-[var(--crm-surface)]' : ''
-                  }`}
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm text-[var(--crm-text)]">{applicantName(entry)}</span>
-                    <span className="block truncate text-[10px] text-[var(--crm-muted)]">{entry.id}</span>
-                  </span>
-                  <span className="text-[var(--crm-muted)]">
-                    {(snapshot && stageById(snapshot.definition, entry.stage)?.label) ?? entry.stage}
-                  </span>
-                  <span>
-                    <span className={`rounded-full px-2 py-1 text-[10px] ${STATUS_TONE[entry.status] ?? ''}`}>
-                      {entry.status}
-                    </span>
-                  </span>
-                  <ChevronRight size={14} className="text-[var(--crm-muted)]" />
-                </button>
+            {/* Lifecycle views — what is on the desk right now. */}
+            <div className="flex items-end gap-1 overflow-x-auto border-b border-[var(--crm-border)] px-3">
+              {VIEWS.map((entry) => (
+                <ViewTab
+                  key={entry.key}
+                  label={entry.label}
+                  count={cases.filter((item) => viewMatches(item, entry.key)).length}
+                  active={view === entry.key}
+                  onClick={() => {
+                    setView(entry.key);
+                    setStageFilter('all');
+                  }}
+                />
               ))}
             </div>
+
+            {/* Search and order — the two things you reach for on a real queue. */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2.5">
+              <div className="relative min-w-[180px] flex-1">
+                <Search
+                  size={13}
+                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--crm-muted)]"
+                />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search name, case or admission id"
+                  className="w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] py-1.5 pl-7 pr-7 text-xs text-[var(--crm-text)] outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)]"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--crm-muted)] hover:text-[var(--crm-text)]"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+              <label className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">
+                Sort
+                <select
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as SortKey)}
+                  className="rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-2 py-1.5 text-[11px] text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)]"
+                >
+                  {SORTS.map((entry) => (
+                    <option key={entry.key} value={entry.key}>
+                      {entry.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {/* Stage narrowing, only where it is the question being asked. */}
+            {view === 'live' && (
+              <div className="flex flex-wrap items-center gap-x-1 gap-y-1 border-b border-[var(--crm-border)] px-3 py-2">
+                <StageFilter
+                  label="Every stage"
+                  count={inView.length}
+                  active={stageFilter === 'all'}
+                  onClick={() => setStageFilter('all')}
+                />
+                {STAGE_FILTERS.map((entry) => {
+                  const count = inView.filter((item) => queueMatches(item, entry.key)).length;
+                  return (
+                    <StageFilter
+                      key={entry.key}
+                      label={entry.label}
+                      count={count}
+                      active={stageFilter === entry.key}
+                      onClick={() => setStageFilter(count === 0 ? 'all' : entry.key)}
+                      empty={count === 0}
+                    />
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)_44px] items-center gap-3 border-b border-[var(--crm-border)] px-4 py-2 text-[10px] uppercase tracking-[0.12em] text-[var(--crm-muted)]">
+              <span>Applicant</span>
+              <span>Stage</span>
+              <span>Waiting on</span>
+              <span className="text-right">Age</span>
+            </div>
+
+            <div
+              ref={listRef}
+              role="listbox"
+              aria-label="Onboarding cases"
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowDown' || event.key === 'j') {
+                  event.preventDefault();
+                  moveSelection(1);
+                } else if (event.key === 'ArrowUp' || event.key === 'k') {
+                  event.preventDefault();
+                  moveSelection(-1);
+                }
+              }}
+              className="max-h-[520px] divide-y divide-[var(--crm-border)] overflow-y-auto"
+            >
+              {visible.length === 0 && (
+                <div className="px-4 py-14 text-center">
+                  <p className="text-sm text-[var(--crm-text)]">
+                    {query ? `Nothing matches “${query.trim()}”` : 'This view is clear'}
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--crm-muted)]">
+                    {query ? 'Try a name, case id or admission id.' : 'No cases are sitting here right now.'}
+                  </p>
+                  {(query || stageFilter !== 'all' || view !== 'live') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery('');
+                        setStageFilter('all');
+                        setView('live');
+                      }}
+                      className="mt-3 text-xs text-[var(--tenant-primary)] underline-offset-2 hover:underline"
+                    >
+                      Reset filters
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {visible.map((entry) => {
+                const stageLabel =
+                  (snapshot && stageById(snapshot.definition, entry.stage)?.label) ?? humanize(entry.stage);
+                const progress = ((stageIndex(entry.stage) + 1) / STAGE_RAIL.length) * 100;
+                const waiting = pending.get(entry.id);
+                const age = ageOf(entry.updatedAt);
+                const isSelected = entry.id === selectedId;
+                return (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    data-case={entry.id}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => setSelectedId(entry.id)}
+                    className={`group grid w-full grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)_44px] items-center gap-3 px-4 py-2.5 text-left outline-none transition ${
+                      isSelected
+                        ? 'bg-[var(--tenant-primary)]/[0.06] shadow-[inset_2px_0_0_var(--tenant-primary)]'
+                        : 'hover:bg-[var(--crm-surface)] focus-visible:bg-[var(--crm-surface)]'
+                    }`}
+                  >
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <span
+                        className={`grid size-7 shrink-0 place-items-center rounded-full text-[10px] font-medium ${
+                          isSelected
+                            ? 'bg-[var(--tenant-primary)] text-white'
+                            : 'bg-[var(--crm-surface)] text-[var(--crm-muted)] group-hover:bg-[var(--crm-card)]'
+                        }`}
+                      >
+                        {initials(applicantName(entry))}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-[13px] leading-tight text-[var(--crm-text)]">
+                          {applicantName(entry)}
+                        </span>
+                        <span className="block truncate font-mono text-[10px] leading-tight text-[var(--crm-muted)]">
+                          {entry.id}
+                        </span>
+                      </span>
+                    </span>
+
+                    <span className="min-w-0">
+                      <span className="block truncate text-[11px] leading-tight text-[var(--crm-text)]">
+                        {stageLabel}
+                      </span>
+                      <span className="mt-1.5 block h-[3px] w-14 overflow-hidden rounded-full bg-[var(--crm-border)]">
+                        <span
+                          className="block h-full rounded-full bg-[var(--tenant-primary)]"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </span>
+                    </span>
+
+                    <span className="flex min-w-0 items-center gap-1.5" title={waiting?.text}>
+                      {entry.status !== 'ACTIVE' && (
+                        <Pill tone={statusTone(entry.status)}>{humanize(entry.status)}</Pill>
+                      )}
+                      <span className={`min-w-0 truncate text-[11px] ${TONE_TEXT[waiting?.tone ?? 'neutral']}`}>
+                        {waiting?.text}
+                      </span>
+                    </span>
+
+                    <span className={`text-right text-[11px] tabular-nums ${age.className}`} title={age.title}>
+                      {age.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {visible.length > 0 && (
+              <div className="flex items-center justify-between gap-3 border-t border-[var(--crm-border)] bg-[var(--crm-surface)] px-4 py-2 text-[10px] text-[var(--crm-muted)]">
+                <span>
+                  {visible.length} of {cases.length} cases
+                </span>
+                <span className="hidden items-center gap-1 sm:flex">
+                  <Key>↑</Key>
+                  <Key>↓</Key>
+                  to move through the queue
+                </span>
+              </div>
+            )}
           </section>
 
-          <aside className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5">
+          <aside className="overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] xl:sticky xl:top-6">
             {!selected && (
-              <p className="py-16 text-center text-sm text-[var(--crm-muted)]">
-                Select a case to review its onboarding record.
-              </p>
+              <div className="px-6 py-20 text-center">
+                <IdCard size={22} className="mx-auto text-[var(--crm-muted)]" />
+                <p className="mt-3 text-sm text-[var(--crm-text)]">No case selected</p>
+                <p className="mt-1 text-xs text-[var(--crm-muted)]">
+                  Pick an applicant from the queue to review their onboarding record.
+                </p>
+              </div>
             )}
 
             {selected && snapshot && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg text-[var(--crm-text)]">{applicantName(selected)}</h2>
-                  <p className="text-[11px] text-[var(--crm-muted)]">
-                    {selected.id} · admission {selected.admissionId}
-                  </p>
+              <div className="flex flex-col">
+                {/* Identity ------------------------------------------------ */}
+                <div className="flex items-start gap-3 border-b border-[var(--crm-border)] p-5">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--tenant-primary)]/10 text-sm font-medium text-[var(--tenant-primary)]">
+                    {initials(applicantName(selected))}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="truncate text-base leading-snug text-[var(--crm-text)]">
+                        {applicantName(selected)}
+                      </h2>
+                      <Pill tone={statusTone(selected.status)}>{humanize(selected.status)}</Pill>
+                    </div>
+                    <dl className="mt-1.5 space-y-0.5 text-[11px] text-[var(--crm-muted)]">
+                      <div className="flex gap-1.5">
+                        <dt className="shrink-0">Case</dt>
+                        <dd className="truncate font-mono text-[var(--crm-text)]">{selected.id}</dd>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <dt className="shrink-0">Admission</dt>
+                        <dd className="truncate font-mono text-[var(--crm-text)]">{selected.admissionId}</dd>
+                      </div>
+                    </dl>
+                  </div>
                 </div>
 
-                <ol className="flex flex-wrap gap-1">
-                  {STAGE_RAIL.map((stage) => {
-                    const currentIndex = STAGE_RAIL.findIndex((s) => s.id === selected.stage);
-                    const index = STAGE_RAIL.findIndex((s) => s.id === stage.id);
-                    const done = index < currentIndex;
-                    const active = index === currentIndex;
-                    return (
-                      <li
-                        key={stage.id}
-                        className={`rounded-md px-2 py-1 text-[9px] uppercase tracking-wide ${
-                          active
-                            ? 'bg-[var(--tenant-primary)] text-white'
-                            : done
-                              ? 'bg-emerald-500/15 text-emerald-600'
-                              : 'bg-[var(--crm-surface)] text-[var(--crm-muted)]'
-                        }`}
-                      >
-                        {stage.short}
-                      </li>
-                    );
-                  })}
-                </ol>
+                {/* Progress ------------------------------------------------ */}
+                <div className="border-b border-[var(--crm-border)] px-5 py-4">
+                  <StageProgress stage={selected.stage} />
+                </div>
 
-                {blockedReason && (
-                  <p className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700">
-                    <AlertTriangle size={14} className="mt-px shrink-0" />
-                    <span>{blockedReason}</span>
-                  </p>
-                )}
-                {actionError && (
-                  <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-[11px] text-rose-600">
-                    {actionError}
-                  </p>
+                {/* Notices ------------------------------------------------- */}
+                {(blockedReason || actionError) && (
+                  <div className="space-y-2 border-b border-[var(--crm-border)] px-5 py-4">
+                    {blockedReason && (
+                      <p className="flex items-start gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-700 ring-1 ring-amber-500/25">
+                        <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+                        <span>{blockedReason}</span>
+                      </p>
+                    )}
+                    {actionError && (
+                      <p className="flex items-start gap-2 rounded-lg bg-rose-500/10 px-3 py-2 text-[11px] leading-relaxed text-rose-700 ring-1 ring-rose-500/25">
+                        <XCircle size={13} className="mt-0.5 shrink-0" />
+                        <span>{actionError}</span>
+                      </p>
+                    )}
+                  </div>
                 )}
 
-                <nav className="flex gap-1 border-b border-[var(--crm-border)] text-[11px]">
-                  {(['overview', 'documents', 'academic', 'approvals', 'activity'] as const).map((entry) => (
+                {/* Detail tabs --------------------------------------------- */}
+                <nav className="flex gap-4 border-b border-[var(--crm-border)] px-5">
+                  {TABS.map((entry) => (
                     <button
                       key={entry}
                       type="button"
                       onClick={() => setTab(entry)}
-                      className={`px-2 py-2 capitalize ${
+                      className={`-mb-px border-b-2 py-3 text-[11px] capitalize transition ${
                         tab === entry
-                          ? 'border-b-2 border-[var(--tenant-primary)] text-[var(--crm-text)]'
-                          : 'text-[var(--crm-muted)]'
+                          ? 'border-[var(--tenant-primary)] text-[var(--crm-text)]'
+                          : 'border-transparent text-[var(--crm-muted)] hover:text-[var(--crm-text)]'
                       }`}
                     >
                       {entry}
@@ -432,36 +848,194 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                   ))}
                 </nav>
 
-                <div className="max-h-[280px] overflow-y-auto text-xs text-[var(--crm-muted)]">
+                <div className="min-h-[240px] max-h-[320px] overflow-y-auto px-5 py-4 text-xs">
                   {tab === 'overview' && (
-                    <dl className="space-y-2">
-                      <Row label="Status" value={selected.status} />
-                      <Row label="Identity" value={selected.identityMatch ?? 'Not run'} />
-                      <Row label="Finance" value={selected.finance} />
-                      <Row label="Student number" value={selected.studentNumber ?? '—'} />
-                      <Row label="Student record" value={selected.studentId ?? '—'} />
-                      <Row label="User account" value={selected.userAccountId ?? '—'} />
-                      {selected.holdReason && <Row label="Hold reason" value={selected.holdReason} />}
-                    </dl>
+                    <div className="space-y-5">
+                      <Group title="Verification">
+                        <Row label="Identity check">
+                          {selected.identityMatch ? (
+                            <Pill tone={identityTone(selected.identityMatch)}>{humanize(selected.identityMatch)}</Pill>
+                          ) : (
+                            <Muted>Not run</Muted>
+                          )}
+                        </Row>
+                        <Row label="Finance">
+                          <Pill tone={financeTone(selected.finance)}>{humanize(selected.finance)}</Pill>
+                        </Row>
+                        <Row label="Documents">
+                          <Value>
+                            {selected.documents.filter((doc) => doc.state === 'VERIFIED' || doc.state === 'WAIVED')
+                              .length}{' '}
+                            of {snapshot.definition.documentChecklist.length} cleared
+                          </Value>
+                        </Row>
+                      </Group>
+
+                      {/* Casework: recording the duplicate-search outcome is what
+                          releases the identity gate. Without it the case cannot
+                          leave IDENTITY_VERIFICATION at all. */}
+                      {open && mayRun('record_identity') && (
+                        <Casework
+                          title="Record identity result"
+                          hint="Outcome of the duplicate search against existing people."
+                        >
+                          {(['NO_MATCH', 'POSSIBLE_MATCH', 'CONFIRMED_MATCH', 'DUPLICATE'] as IdentityMatchKind[]).map(
+                            (match) => (
+                              <Chip
+                                key={match}
+                                label={humanize(match)}
+                                active={selected.identityMatch === match}
+                                disabled={busy}
+                                onClick={() =>
+                                  void act('record_identity', `Identity recorded as ${match}`, {
+                                    identityMatch: match,
+                                  })
+                                }
+                              />
+                            ),
+                          )}
+                        </Casework>
+                      )}
+
+                      {open && mayRun('record_finance') && (
+                        <Casework
+                          title="Record finance state"
+                          hint="What Fees & Finance reported — the desk records it, finance owns it."
+                        >
+                          {(['CLEARED', 'PENDING', 'HOLD', 'NOT_REQUIRED'] as const).map((state) => (
+                            <Chip
+                              key={state}
+                              label={humanize(state)}
+                              active={selected.finance === state}
+                              disabled={busy}
+                              onClick={() =>
+                                void act('record_finance', `Finance recorded as ${state}`, { finance: state })
+                              }
+                            />
+                          ))}
+                        </Casework>
+                      )}
+
+                      <Group title="Provisioning">
+                        <Row label="Student number">
+                          {selected.studentNumber ? <Mono>{selected.studentNumber}</Mono> : <Muted>Not issued</Muted>}
+                        </Row>
+                        <Row label="Student record">
+                          {selected.studentId ? <Mono>{selected.studentId}</Mono> : <Muted>Not created</Muted>}
+                        </Row>
+                        <Row label="User account">
+                          {selected.userAccountId ? (
+                            <Mono>{selected.userAccountId}</Mono>
+                          ) : (
+                            <Muted>Not created</Muted>
+                          )}
+                        </Row>
+                        <Row label="Access">
+                          {selected.accessProvisioned ? (
+                            <Pill tone="positive">Provisioned</Pill>
+                          ) : (
+                            <Muted>Pending</Muted>
+                          )}
+                        </Row>
+                      </Group>
+
+                      {(selected.holdReason || selected.rejectionReason) && (
+                        <Group title="Notes">
+                          {selected.holdReason && (
+                            <Row label="Hold reason" stacked>
+                              <Value>{selected.holdReason}</Value>
+                            </Row>
+                          )}
+                          {selected.rejectionReason && (
+                            <Row label="Rejection reason" stacked>
+                              <Value>{selected.rejectionReason}</Value>
+                            </Row>
+                          )}
+                        </Group>
+                      )}
+
+                      <p className="text-[10px] text-[var(--crm-muted)]">
+                        Last updated {relativeTime(selected.updatedAt)}
+                      </p>
+                    </div>
                   )}
 
                   {tab === 'documents' && (
-                    <ul className="space-y-1">
+                    <ul className="divide-y divide-[var(--crm-border)]">
                       {snapshot.definition.documentChecklist.map((requirement) => {
                         const record = selected.documents.find((doc) => doc.type === requirement.type);
                         const satisfied = record?.state === 'VERIFIED' || record?.state === 'WAIVED';
+                        const reviewable = open && mayRun('review_document');
                         return (
-                          <li key={requirement.type} className="flex items-center justify-between gap-2 py-1">
-                            <span className="flex items-center gap-2">
-                              {satisfied ? (
-                                <CheckCircle2 size={13} className="text-emerald-600" />
-                              ) : (
-                                <XCircle size={13} className="text-[var(--crm-muted)]" />
-                              )}
-                              {requirement.label}
-                              {requirement.required && <span className="text-rose-500">*</span>}
-                            </span>
-                            <span className="text-[10px]">{record?.state ?? 'NOT_SUBMITTED'}</span>
+                          <li key={requirement.type} className="py-2.5">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="flex min-w-0 items-center gap-2">
+                                {satisfied ? (
+                                  <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                                ) : (
+                                  <XCircle size={14} className="shrink-0 text-[var(--crm-muted)]" />
+                                )}
+                                <span className="truncate text-[var(--crm-text)]">
+                                  {requirement.label}
+                                  {requirement.required && <span className="ml-0.5 text-rose-500">*</span>}
+                                </span>
+                              </span>
+                              <Pill tone={documentTone(record?.state)}>
+                                {humanize(record?.state ?? 'NOT_SUBMITTED')}
+                              </Pill>
+                            </div>
+
+                            {record?.verifiedBy && (
+                              <p className="mt-1 pl-6 text-[10px] text-[var(--crm-muted)]">
+                                {humanize(record.state)} by {record.verifiedBy}
+                                {record.verifiedAt ? ` · ${relativeTime(record.verifiedAt)}` : ''}
+                              </p>
+                            )}
+                            {record?.rejectionReason && (
+                              <p className="mt-1 pl-6 text-[10px] text-rose-600">{record.rejectionReason}</p>
+                            )}
+
+                            {/* One decision per checklist item — this is the work
+                                the document stage is actually waiting for. */}
+                            {reviewable && (
+                              <div className="mt-1.5 flex flex-wrap gap-1 pl-6">
+                                <Chip
+                                  label="Verify"
+                                  active={record?.state === 'VERIFIED'}
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void act('review_document', `${requirement.label} verified`, {
+                                      document: { type: requirement.type, state: 'VERIFIED' },
+                                    })
+                                  }
+                                />
+                                <Chip
+                                  label="Waive"
+                                  active={record?.state === 'WAIVED'}
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void act('review_document', `${requirement.label} waived`, {
+                                      document: { type: requirement.type, state: 'WAIVED' },
+                                    })
+                                  }
+                                />
+                                <Chip
+                                  label="Reject"
+                                  tone="danger"
+                                  active={record?.state === 'REJECTED'}
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void act('review_document', `${requirement.label} rejected`, {
+                                      document: {
+                                        type: requirement.type,
+                                        state: 'REJECTED',
+                                        reason: 'Rejected at Application Desk',
+                                      },
+                                    })
+                                  }
+                                />
+                              </div>
+                            )}
                           </li>
                         );
                       })}
@@ -469,94 +1043,192 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                   )}
 
                   {tab === 'academic' && (
-                    <dl className="space-y-2">
-                      <Row label="Campus" value={selected.academic.campusId ?? '—'} />
-                      <Row label="Department" value={selected.academic.departmentId ?? '—'} />
-                      <Row label="Program" value={selected.academic.programId ?? '—'} />
-                      <Row label="Academic year" value={selected.academic.academicYear ?? '—'} />
-                      <Row label="Batch" value={selected.academic.batchId ?? '—'} />
-                      <Row label="Section" value={selected.academic.sectionId ?? 'Not allocated'} />
-                    </dl>
+                    <div className="space-y-5">
+                      <Group title="Mapping">
+                        <Row label="Campus">{fallback(selected.academic.campusId)}</Row>
+                        <Row label="Department">{fallback(selected.academic.departmentId)}</Row>
+                        <Row label="Program">{fallback(selected.academic.programId)}</Row>
+                        <Row label="Academic year">{fallback(selected.academic.academicYear)}</Row>
+                        <Row label="Batch">{fallback(selected.academic.batchId)}</Row>
+                        <Row label="Section">
+                          {selected.academic.sectionId ? (
+                            <Value>{selected.academic.sectionId}</Value>
+                          ) : (
+                            <Muted>Not allocated</Muted>
+                          )}
+                        </Row>
+                      </Group>
+
+                      {open && mayRun('allocate_section') && (
+                        <Casework
+                          title="Allocate section"
+                          hint="Capacity and allocation rules stay with Academic Management; the desk records the result."
+                        >
+                          <SectionAllocator
+                            current={selected.academic.sectionId}
+                            disabled={busy}
+                            onAllocate={(sectionId) =>
+                              void act('allocate_section', `Section ${sectionId} allocated`, { sectionId })
+                            }
+                          />
+                        </Casework>
+                      )}
+                    </div>
                   )}
 
                   {tab === 'approvals' && (
-                    <ul className="space-y-1">
-                      {selected.approvals.map((entry) => (
-                        <li key={entry.step} className="flex items-center justify-between py-1">
-                          <span>
-                            {entry.step}. {entry.role}
-                          </span>
-                          <span className="text-[10px]">{entry.state}</span>
-                        </li>
-                      ))}
-                      {selected.approvals.length === 0 && <li>No approval required.</li>}
+                    <ul className="divide-y divide-[var(--crm-border)]">
+                      {[...selected.approvals]
+                        .sort((a, b) => a.step - b.step)
+                        .map((entry, index, chain) => {
+                          // Chains are ordered: a step opens only once every
+                          // earlier step is signed.
+                          const blockedBy = chain
+                            .slice(0, index)
+                            .find((earlier) => earlier.state !== 'APPROVED');
+                          const signable =
+                            open && entry.state !== 'APPROVED' && !blockedBy && mayRun('approve');
+                          return (
+                            <li key={entry.step} className="flex items-center justify-between gap-3 py-2.5">
+                              <span className="flex min-w-0 items-center gap-2">
+                                <span
+                                  className={`grid size-5 shrink-0 place-items-center rounded-full text-[10px] ${
+                                    entry.state === 'APPROVED'
+                                      ? 'bg-emerald-500/15 text-emerald-700'
+                                      : 'bg-[var(--crm-surface)] text-[var(--crm-muted)]'
+                                  }`}
+                                >
+                                  {entry.state === 'APPROVED' ? <CheckCircle2 size={11} /> : entry.step}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block truncate text-[var(--crm-text)]">
+                                    {humanize(entry.role)}
+                                  </span>
+                                  <span className="block truncate text-[10px] text-[var(--crm-muted)]">
+                                    {entry.actedBy
+                                      ? `${entry.actedBy}${entry.actedAt ? ` · ${relativeTime(entry.actedAt)}` : ''}`
+                                      : blockedBy
+                                        ? `Waiting for step ${blockedBy.step}`
+                                        : 'Awaiting signature'}
+                                  </span>
+                                </span>
+                              </span>
+                              {signable ? (
+                                <Chip
+                                  label="Approve"
+                                  tone="primary"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void act('approve', `Approved by ${actorName}`, {
+                                      approval: { step: entry.step },
+                                    })
+                                  }
+                                />
+                              ) : (
+                                <Pill tone={approvalTone(entry.state)}>{humanize(entry.state)}</Pill>
+                              )}
+                            </li>
+                          );
+                        })}
+                      {selected.approvals.length === 0 && (
+                        <li className="py-2.5 text-[var(--crm-muted)]">No approval required.</li>
+                      )}
                     </ul>
                   )}
 
                   {tab === 'activity' && (
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {snapshot.audit
                         .filter((entry) => entry.caseId === selected.id)
                         .map((entry, index) => (
-                          <li key={`${entry.timestamp}-${index}`} className="border-l-2 border-[var(--crm-border)] pl-3">
-                            <p className="text-[var(--crm-text)]">{entry.action}</p>
-                            <p className="text-[10px]">
-                              {entry.fromStage} → {entry.toStage} · {entry.actor}
+                          <li
+                            key={`${entry.timestamp}-${index}`}
+                            className="border-l-2 border-[var(--crm-border)] pl-3"
+                          >
+                            <p className="text-[var(--crm-text)]">{humanize(entry.action)}</p>
+                            <p className="mt-0.5 text-[10px] text-[var(--crm-muted)]">
+                              {humanize(entry.fromStage)} → {humanize(entry.toStage)}
+                            </p>
+                            <p className="text-[10px] text-[var(--crm-muted)]">
+                              {entry.actor} · {relativeTime(entry.timestamp)}
                             </p>
                           </li>
                         ))}
                       {snapshot.audit.filter((entry) => entry.caseId === selected.id).length === 0 && (
-                        <li>No activity recorded yet.</li>
+                        <li className="text-[var(--crm-muted)]">No activity recorded yet.</li>
                       )}
                     </ul>
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-2 border-t border-[var(--crm-border)] pt-4">
+                {/* Actions ------------------------------------------------- */}
+                <div className="space-y-2 border-t border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
                   <Action
-                    label="Advance"
+                    label={
+                      blockedReason
+                        ? 'Advance — blocked'
+                        : nextRailStage
+                          ? `Advance to ${nextRailStage.short}`
+                          : 'Complete onboarding'
+                    }
                     icon={busy ? Loader2 : ChevronRight}
                     tone="primary"
-                    disabled={busy || selected.status !== 'ACTIVE' || !desk.verify}
+                    spin={busy}
+                    disabled={busy || selected.status !== 'ACTIVE' || !mayAdvance}
                     onClick={() => void act('advance')}
                   />
-                  <Action
-                    label="Hold"
-                    icon={PauseCircle}
-                    disabled={busy || selected.status !== 'ACTIVE' || !desk.hold}
-                    onClick={() => void act('hold', 'Held from Application Desk')}
-                  />
-                  <Action
-                    label="Resume"
-                    icon={PlayCircle}
-                    disabled={busy || !(selected.status === 'ON_HOLD' || selected.status === 'RETURNED') || !desk.resume}
-                    onClick={() => void act('resume')}
-                  />
-                  <Action
-                    label="Reject"
-                    icon={XCircle}
-                    tone="danger"
-                    disabled={busy || selected.status !== 'ACTIVE' || !desk.reject}
-                    onClick={() => void act('reject', 'Rejected at Application Desk')}
-                  />
+                  <div className="grid grid-cols-3 gap-2">
+                    <Action
+                      label="Hold"
+                      icon={PauseCircle}
+                      disabled={busy || selected.status !== 'ACTIVE' || !desk.hold}
+                      onClick={() => void act('hold', 'Held from Application Desk')}
+                    />
+                    <Action
+                      label="Return"
+                      icon={Undo2}
+                      disabled={busy || selected.status !== 'ACTIVE' || !desk.edit}
+                      onClick={() => void act('return', 'Returned for correction')}
+                    />
+                    <Action
+                      label="Reject"
+                      icon={XCircle}
+                      tone="danger"
+                      disabled={busy || selected.status !== 'ACTIVE' || !desk.reject}
+                      onClick={() => void act('reject', 'Rejected at Application Desk')}
+                    />
+                  </div>
+                  {(selected.status === 'ON_HOLD' || selected.status === 'RETURNED') && (
+                    <Action
+                      label={`Resume at ${STAGE_RAIL.find((s) => s.id === (selected.resumeStage ?? selected.stage))?.short ?? 'last stage'}`}
+                      icon={PlayCircle}
+                      disabled={busy || !desk.resume}
+                      onClick={() => void act('resume')}
+                    />
+                  )}
+                  {!mayAdvance && selected.status === 'ACTIVE' && (
+                    <p className="pt-1 text-center text-[10px] text-[var(--crm-muted)]">
+                      Advancing this stage needs{' '}
+                      <code className="text-[var(--crm-text)]">{permissionForAdvance(selected.stage)}</code>.
+                    </p>
+                  )}
                 </div>
-                {!desk.verify && (
-                  <p className="text-[10px] text-[var(--crm-muted)]">
-                    Actions are limited by your Application Desk permissions.
-                  </p>
-                )}
               </div>
             )}
           </aside>
         </div>
 
-        <p className="flex items-center gap-2 text-[10px] text-[var(--crm-muted)]">
-          <IdCard size={12} />
-          Student numbers, Student Master records and user accounts are created only at their workflow stages, and each
-          effect is idempotent — retrying never produces a second student.
-          <Wallet size={12} className="ml-2" />
-          Fee structures stay owned by Fees &amp; Finance.
-        </p>
+        <footer className="flex flex-col gap-2 border-t border-[var(--crm-border)] pt-4 text-[10px] leading-relaxed text-[var(--crm-muted)] sm:flex-row sm:gap-6">
+          <p className="flex items-start gap-1.5">
+            <IdCard size={12} className="mt-0.5 shrink-0" />
+            Student numbers, Student Master records and user accounts are created only at their workflow stages, and
+            each effect is idempotent — retrying never produces a second student.
+          </p>
+          <p className="flex items-start gap-1.5 sm:shrink-0">
+            <Wallet size={12} className="mt-0.5 shrink-0" />
+            Fee structures stay owned by Fees &amp; Finance.
+          </p>
+        </footer>
       </div>
     </DeskShell>
   );
@@ -597,7 +1269,78 @@ function queueMatches(onboarding: OnboardingCase, queue: QueueKey): boolean {
   }
 }
 
-function QueueChip({
+/**
+ * Twelve stages will not fit as readable chips in a 400px panel — the old chip
+ * wall was the main source of visual noise. A segmented bar carries the same
+ * information (how far along, what is next) in two lines.
+ */
+function StageProgress({ stage }: { stage: OnboardingCase['stage'] }) {
+  const current = stageIndex(stage);
+  const next = STAGE_RAIL[current + 1];
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="truncate text-xs text-[var(--crm-text)]">{STAGE_RAIL[current]?.short ?? humanize(stage)}</p>
+        <p className="shrink-0 text-[10px] text-[var(--crm-muted)]">
+          Step {current + 1} of {STAGE_RAIL.length}
+        </p>
+      </div>
+      <div className="mt-2 flex gap-[3px]" role="presentation">
+        {STAGE_RAIL.map((entry, index) => (
+          <span
+            key={entry.id}
+            title={entry.short}
+            className={`h-1.5 flex-1 rounded-full ${
+              index < current
+                ? 'bg-emerald-500/60'
+                : index === current
+                  ? 'bg-[var(--tenant-primary)]'
+                  : 'bg-[var(--crm-border)]'
+            }`}
+          />
+        ))}
+      </div>
+      <p className="mt-2 text-[10px] text-[var(--crm-muted)]">
+        {next ? `Next · ${next.short}` : 'Final stage'}
+      </p>
+    </div>
+  );
+}
+
+/** Lifecycle buckets. `closed` folds rejections and failures together. */
+function viewMatches(onboarding: OnboardingCase, view: ViewKey): boolean {
+  switch (view) {
+    case 'all':
+      return true;
+    case 'live':
+      return onboarding.status === 'ACTIVE';
+    case 'onHold':
+      return onboarding.status === 'ON_HOLD' || onboarding.status === 'RETURNED';
+    case 'activated':
+      return onboarding.status === 'COMPLETED';
+    case 'closed':
+      return ['REJECTED', 'CANCELLED', 'WITHDRAWN', 'EXPIRED', 'FAILED'].includes(onboarding.status);
+  }
+}
+
+/** Oldest-first by default: a work queue that reorders itself starves cases. */
+function sortCases(rows: OnboardingCase[], sort: SortKey): OnboardingCase[] {
+  const ordered = [...rows];
+  switch (sort) {
+    case 'oldest':
+      return ordered.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+    case 'newest':
+      return ordered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    case 'stage':
+      return ordered.sort(
+        (a, b) => stageIndex(b.stage) - stageIndex(a.stage) || a.updatedAt.localeCompare(b.updatedAt),
+      );
+    case 'name':
+      return ordered.sort((a, b) => applicantName(a).localeCompare(applicantName(b)));
+  }
+}
+
+function ViewTab({
   label,
   count,
   active,
@@ -612,23 +1355,207 @@ function QueueChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-3 py-1.5 text-[11px] transition ${
+      aria-current={active}
+      className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-2.5 py-2.5 text-xs transition ${
         active
-          ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)] text-white'
-          : 'border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-muted)]'
+          ? 'border-[var(--tenant-primary)] text-[var(--crm-text)]'
+          : 'border-transparent text-[var(--crm-muted)] hover:text-[var(--crm-text)]'
       }`}
     >
-      {label} <span className="opacity-70">{count}</span>
+      {label}
+      <span
+        className={`rounded px-1 text-[10px] tabular-nums ${
+          active
+            ? 'bg-[var(--tenant-primary)]/12 text-[var(--tenant-primary)]'
+            : 'bg-[var(--crm-surface)] text-[var(--crm-muted)]'
+        }`}
+      >
+        {count}
+      </span>
     </button>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+/**
+ * Stage narrowing. Empty stages stay visible but recede — knowing Finance is
+ * clear is useful, and hiding them would make the row jump around as work moves.
+ */
+function StageFilter({
+  label,
+  count,
+  active,
+  onClick,
+  empty,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+  empty?: boolean;
+}) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <dt>{label}</dt>
-      <dd className="truncate text-[var(--crm-text)]">{value}</dd>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      disabled={empty}
+      className={`rounded-md px-2 py-1 text-[11px] transition ${
+        active
+          ? 'bg-[var(--tenant-primary)]/10 text-[var(--tenant-primary)]'
+          : empty
+            ? 'text-[var(--crm-muted)]/45'
+            : 'text-[var(--crm-muted)] hover:bg-[var(--crm-surface)] hover:text-[var(--crm-text)]'
+      }`}
+    >
+      {label} <span className="tabular-nums opacity-70">{count}</span>
+    </button>
+  );
+}
+
+function Key({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded border border-[var(--crm-border)] bg-[var(--crm-card)] px-1 font-sans text-[10px] text-[var(--crm-muted)]">
+      {children}
+    </kbd>
+  );
+}
+
+// -- detail primitives ------------------------------------------------------
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h3 className="text-[10px] uppercase tracking-[0.14em] text-[var(--crm-muted)]">{title}</h3>
+      <dl className="mt-2 divide-y divide-[var(--crm-border)]">{children}</dl>
+    </section>
+  );
+}
+
+function Row({ label, children, stacked }: { label: string; children: React.ReactNode; stacked?: boolean }) {
+  return stacked ? (
+    <div className="py-2">
+      <dt className="text-[var(--crm-muted)]">{label}</dt>
+      <dd className="mt-1 leading-relaxed">{children}</dd>
     </div>
+  ) : (
+    <div className="flex items-center justify-between gap-3 py-2">
+      <dt className="shrink-0 text-[var(--crm-muted)]">{label}</dt>
+      <dd className="min-w-0 truncate text-right">{children}</dd>
+    </div>
+  );
+}
+
+function Pill({ tone, children }: { tone: Tone; children: React.ReactNode }) {
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] ring-1 ring-inset ${TONE_PILL[tone]}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Value({ children }: { children: React.ReactNode }) {
+  return <span className="text-[var(--crm-text)]">{children}</span>;
+}
+
+function Mono({ children }: { children: React.ReactNode }) {
+  return <span className="font-mono text-[11px] text-[var(--crm-text)]">{children}</span>;
+}
+
+function Muted({ children }: { children: React.ReactNode }) {
+  return <span className="text-[var(--crm-muted)]">{children}</span>;
+}
+
+/** Optional mapping ids read better as a stated absence than as an em dash. */
+function fallback(value: string | undefined) {
+  return value ? <Value>{value}</Value> : <Muted>Not set</Muted>;
+}
+
+/**
+ * A casework block: the controls that record what a stage is waiting for. Set
+ * apart from the read-only rows above it so it reads as "do something here"
+ * rather than as more data.
+ */
+function Casework({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-surface)] p-3">
+      <h3 className="text-[10px] uppercase tracking-[0.14em] text-[var(--crm-muted)]">{title}</h3>
+      <p className="mt-1 text-[10px] leading-relaxed text-[var(--crm-muted)]">{hint}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-1">{children}</div>
+    </section>
+  );
+}
+
+function Chip({
+  label,
+  onClick,
+  active,
+  disabled,
+  tone,
+}: {
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  tone?: 'primary' | 'danger';
+}) {
+  const palette = active
+    ? tone === 'danger'
+      ? 'border-rose-500/40 bg-rose-500/10 text-rose-700'
+      : 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/10 text-[var(--tenant-primary)]'
+    : tone === 'primary'
+      ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)] text-white'
+      : tone === 'danger'
+        ? 'border-[var(--crm-border)] bg-[var(--crm-card)] text-rose-600 hover:border-rose-500/40'
+        : 'border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-text)] hover:border-[var(--tenant-primary)]/40';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`rounded-lg border px-2 py-1 text-[10px] transition disabled:cursor-not-allowed disabled:opacity-40 ${palette}`}
+    >
+      {label}
+    </button>
+  );
+}
+
+/** Sections are owned by Academic Management; the desk records the allocation. */
+function SectionAllocator({
+  current,
+  disabled,
+  onAllocate,
+}: {
+  current?: string;
+  disabled?: boolean;
+  onAllocate: (sectionId: string) => void;
+}) {
+  const [value, setValue] = useState(current ?? '');
+  const trimmed = value.trim();
+  return (
+    <form
+      className="flex w-full items-center gap-1.5"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (trimmed) onAllocate(trimmed);
+      }}
+    >
+      <input
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        placeholder="Section id"
+        className="min-w-0 flex-1 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-2 py-1 text-[11px] text-[var(--crm-text)] outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)]"
+      />
+      <button
+        type="submit"
+        disabled={disabled || !trimmed || trimmed === current}
+        className="shrink-0 rounded-lg border border-[var(--tenant-primary)] bg-[var(--tenant-primary)] px-2 py-1 text-[10px] text-white transition disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {current ? 'Reallocate' : 'Allocate'}
+      </button>
+    </form>
   );
 }
 
@@ -638,27 +1565,29 @@ function Action({
   onClick,
   disabled,
   tone,
+  spin,
 }: {
   label: string;
   icon: typeof Clock;
   onClick: () => void;
   disabled?: boolean;
   tone?: 'primary' | 'danger';
+  spin?: boolean;
 }) {
   const palette =
     tone === 'primary'
       ? 'bg-[var(--tenant-primary)] text-white'
       : tone === 'danger'
-        ? 'border border-rose-500/40 text-rose-600'
-        : 'border border-[var(--crm-border)] text-[var(--crm-text)]';
+        ? 'border border-rose-500/40 bg-[var(--crm-card)] text-rose-600'
+        : 'border border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-text)]';
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs transition disabled:cursor-not-allowed disabled:opacity-40 ${palette}`}
+      className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs transition disabled:cursor-not-allowed disabled:opacity-40 ${palette}`}
     >
-      <Icon size={14} /> {label}
+      <Icon size={14} className={spin ? 'animate-spin' : undefined} /> {label}
     </button>
   );
 }

@@ -69,6 +69,8 @@ interface AdmissionsSidebarProps {
    */
   sections?: Array<{ key: string; label: string; icon: string | null }> | null;
   brandGradient: string;
+  collegeName?: string;
+  suiteName?: string;
   logoDataUrl?: string | null;
   user?: {
     name?: string;
@@ -86,6 +88,8 @@ export function AdmissionsSidebar({
   permissions,
   sections,
   brandGradient,
+  collegeName = 'SuperCampus',
+  suiteName = 'Admin Suite',
   logoDataUrl,
   user,
 }: AdmissionsSidebarProps) {
@@ -140,7 +144,7 @@ export function AdmissionsSidebar({
 
   return (
     <aside className={`campus-admin-sidebar ${collapsed ? 'w-[76px]' : 'w-[232px]'} shrink-0 bg-[var(--crm-surface)] border-r border-[var(--crm-border)] flex flex-col transition-[width] duration-200`}>
-      <div className={`${collapsed ? 'px-3 justify-center' : 'px-5'} h-16 flex items-center justify-between border-b border-[var(--crm-border)]`}>
+      <div className={`${collapsed ? 'px-3 justify-center' : 'px-5'} relative min-h-16 py-3 flex items-center border-b border-[var(--crm-border)]`}>
         <div className="flex items-center gap-3 min-w-0">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden text-xs font-bold text-white shrink-0 shadow-xs"
@@ -151,22 +155,12 @@ export function AdmissionsSidebar({
               : 'SC'}
           </div>
           {!collapsed && (
-            <div className="campus-admin-sidebar-copy min-w-0">
-              <p className="text-sm font-extrabold leading-none text-[var(--crm-text)]">SuperCampus</p>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-[var(--crm-muted)]">Admin Suite</p>
+            <div className="campus-admin-sidebar-copy min-w-0 max-w-[150px] pr-5">
+              <p className="break-words text-sm font-extrabold leading-tight text-[var(--crm-text)]">{collegeName}</p>
+              <p className="mt-1 break-words text-[10px] font-bold uppercase tracking-widest leading-tight text-[var(--crm-muted)]">{suiteName}</p>
             </div>
           )}
         </div>
-        {!collapsed && (
-          <button
-            type="button"
-            onClick={onToggle}
-            className="p-1.5 rounded-lg text-[var(--crm-muted)] hover:bg-[var(--crm-panel)] hover:text-[var(--crm-text)] transition-colors"
-            title="Collapse sidebar"
-          >
-            <PanelLeftClose size={16} />
-          </button>
-        )}
       </div>
 
       <nav className="kanban-scroll-hidden flex-1 space-y-1 overflow-y-auto p-3" aria-label="Admissions navigation">
@@ -266,6 +260,17 @@ export function AdmissionsSidebar({
           );
         })}
       </nav>
+
+      {!collapsed && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="mx-3 mb-2 flex items-center justify-center gap-2 rounded-xl py-2 text-[10px] font-bold text-[var(--crm-muted)] hover:bg-[var(--crm-panel)] hover:text-[var(--crm-text)]"
+          title="Collapse sidebar"
+        >
+          <PanelLeftClose size={14} /> Collapse sidebar
+        </button>
+      )}
 
       <div className={`${collapsed ? 'p-3' : 'p-4'} border-t border-[var(--crm-border)] bg-[var(--crm-surface)]`}>
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>

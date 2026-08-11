@@ -2,9 +2,56 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/lib/context';
-import { STUDENT, CGPA, attPct, duesTotal, fmtDues } from '@/lib/data';
-import { Card, SectionTitle } from '@/components/ui/primitives';
+import { ICONS, STUDENT, CGPA, attPct, duesTotal, fmtDues } from '@/lib/data';
+import { Card, Icon } from '@/components/ui/primitives';
 import type { NavId } from '@/lib/types';
+
+/**
+ * One tappable destination. `value` is the live figure the row is about — the
+ * reason to open it — and `tone` colours it when it needs attention. A row with
+ * a static subtitle would only restate its own title.
+ */
+interface MenuRow {
+  id: string;
+  icon: string;
+  title: string;
+  sub: string;
+  value?: string;
+  tone?: string;
+  onOpen: () => void;
+}
+
+const CHEVRON = 'M9 6l6 6-6 6';
+const CARD_ICON = 'M2 7h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zM2 11h20';
+const HELP_ICON = 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM9.5 9a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1 1-1.1 1.8M12 17h.01';
+const SETTINGS_ICON = 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.4-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z';
+
+function MenuList({ label, rows }: { label: string; rows: MenuRow[] }) {
+  return (
+    <>
+      <div className="profile-menu__group">{label}</div>
+      <div className="profile-menu">
+        {rows.map((row) => (
+          <button key={row.id} type="button" className="profile-menu__row" onClick={row.onOpen}>
+            <span className="profile-menu__icon">
+              <Icon path={row.icon} size={18} />
+            </span>
+            <span className="profile-menu__text">
+              <span className="profile-menu__title">{row.title}</span>
+              <span className="profile-menu__sub">{row.sub}</span>
+            </span>
+            {row.value && (
+              <span className="profile-menu__value" style={row.tone ? { color: row.tone } : undefined}>
+                {row.value}
+              </span>
+            )}
+            <Icon path={CHEVRON} size={16} className="profile-menu__chev" />
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
 
 function rgbToHex(r: number, g: number, b: number) {
   return `#${[r, g, b].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
@@ -79,15 +126,130 @@ export default function ProfilePage() {
   const { state, nav, student, tenantBrand, setTenantBrand, toast } = useApp();
   const currentStudent = student ?? STUDENT;
   const [flipped, setFlipped] = useState(false);
+  const [showBranding, setShowBranding] = useState(false);
   const hosteller = state.persona === 'hosteller';
   const dues = duesTotal(state.paid);
-  const summaryCards = [
-    { label: 'Academic', big: CGPA.toFixed(2), sub: 'CGPA · VII Sem', color: '#776cf5', mod: 'exams' as NavId },
-    { label: 'Attendance', big: `${attPct()}%`, sub: 'Below 75% minimum', color: '#ef4444', mod: 'attendance' as NavId },
-    { label: 'Fees', big: fmtDues(state.paid), sub: dues > 0 ? 'Outstanding' : 'All cleared', color: dues > 0 ? '#ef4444' : '#10b981', mod: 'fees' as NavId },
-    { label: hosteller ? 'Hostel' : 'Transport', big: hosteller ? 'B-214' : '12A', sub: hosteller ? 'Block B · Bed 2' : 'Tambaram stop', color: '#3b82f6', mod: hosteller ? 'hostel' as NavId : 'transport' as NavId },
-    { label: 'Placement', big: state.placeApp > 0 ? '1' : '0', sub: 'Active applications', color: '#10b981', mod: 'placement' as NavId },
-    { label: 'Documents', big: String(state.docReq.length), sub: 'Requests', color: '#d97706', mod: 'documents' as NavId },
+  const attendance = attPct();
+  const go = (module: NavId) => () => nav(module);
+
+  /** Everything the student came here to reach, with its current state on it. */
+  const academicRows: MenuRow[] = [
+    {
+      id: 'attendance',
+      icon: ICONS.attendance,
+      title: 'Attendance',
+      sub: attendance >= 75 ? 'Meeting the 75% requirement' : 'Below the 75% exam requirement',
+      value: `${attendance}%`,
+      tone: attendance >= 75 ? 'var(--success)' : 'var(--danger)',
+      onOpen: go('attendance'),
+    },
+    {
+      id: 'exams',
+      icon: ICONS.exams,
+      title: 'Exam results',
+      sub: 'Marks, CGPA and semester history',
+      value: CGPA.toFixed(2),
+      onOpen: go('exams'),
+    },
+    {
+      id: 'timetable',
+      icon: ICONS.timetable,
+      title: 'Timetable',
+      sub: 'Your weekly class schedule',
+      onOpen: go('timetable'),
+    },
+    {
+      id: 'library',
+      icon: ICONS.library,
+      title: 'Library',
+      sub: 'Borrowed books and due dates',
+      onOpen: go('library'),
+    },
+  ];
+
+  const campusRows: MenuRow[] = [
+    {
+      id: 'fees',
+      icon: ICONS.fees,
+      title: 'Fees & payments',
+      sub: dues > 0 ? 'Outstanding balance — pay your bill' : 'All dues cleared',
+      value: fmtDues(state.paid),
+      tone: dues > 0 ? 'var(--danger)' : 'var(--success)',
+      onOpen: go('fees'),
+    },
+    hosteller
+      ? {
+          id: 'hostel',
+          icon: ICONS.hostel,
+          title: 'Hostel',
+          sub: 'Block B · Bed 2 · mess and room details',
+          value: 'B-214',
+          onOpen: go('hostel'),
+        }
+      : {
+          id: 'transport',
+          icon: ICONS.transport,
+          title: 'Transport',
+          sub: 'Tambaram stop · route and timings',
+          value: '12A',
+          onOpen: go('transport'),
+        },
+    {
+      id: 'documents',
+      icon: ICONS.documents,
+      title: 'Documents',
+      sub: state.docReq.length > 0 ? 'Requests in progress' : 'Request certificates and transcripts',
+      value: state.docReq.length > 0 ? String(state.docReq.length) : undefined,
+      tone: 'var(--warning)',
+      onOpen: go('documents'),
+    },
+    {
+      id: 'placement',
+      icon: ICONS.placement,
+      title: 'Placement',
+      sub: state.placeApp > 0 ? 'Active applications' : 'Browse eligible drives',
+      value: state.placeApp > 0 ? String(state.placeApp) : undefined,
+      tone: 'var(--success)',
+      onOpen: go('placement'),
+    },
+    {
+      id: 'gatepass',
+      icon: ICONS.gatepass,
+      title: 'Gate pass',
+      sub: 'Request and track campus exits',
+      onOpen: go('gatepass'),
+    },
+    {
+      id: 'qr',
+      icon: ICONS.qr,
+      title: 'QR history',
+      sub: 'Where your campus code has been scanned',
+      onOpen: go('qr'),
+    },
+  ];
+
+  const accountRows: MenuRow[] = [
+    {
+      id: 'id-card',
+      icon: CARD_ICON,
+      title: 'Digital ID card',
+      sub: flipped ? 'Showing the back — tap to flip' : 'Your campus identity, tap to flip',
+      onOpen: () => setFlipped((current) => !current),
+    },
+    {
+      id: 'branding',
+      icon: SETTINGS_ICON,
+      title: 'Tenant appearance',
+      sub: showBranding ? 'Hide logo and colour settings' : 'College logo and dashboard colours',
+      onOpen: () => setShowBranding((current) => !current),
+    },
+    {
+      id: 'support',
+      icon: HELP_ICON,
+      title: 'Help & support',
+      sub: 'Reach campus administration',
+      onOpen: () => toast('Contact your campus administration office for support'),
+    },
   ];
 
   async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -117,47 +279,62 @@ export default function ProfilePage() {
   return (
     <div className="sc-page"><div className="profile-layout">
       <div className="profile-layout__left">
-        <Card className="tenant-brand-card">
-          <div>
-            <div className="tenant-brand-card__eyebrow">Tenant settings</div>
-            <h2 className="tenant-brand-card__title">College logo colors sync the dashboard</h2>
-            <p className="tenant-brand-card__copy">Upload the tenant college logo. The dashboard samples the logo and applies those colors to navigation, cards, charts, and highlights.</p>
-          </div>
-          <div className="tenant-brand-card__body">
-            <div className="tenant-brand-card__preview">
-              {tenantBrand.logoDataUrl ? <img src={tenantBrand.logoDataUrl} alt={`${currentStudent.college} logo preview`} /> : <span>{currentStudent.college.slice(0, 1)}</span>}
+        {/* Identity first: who you are, then everywhere you can go. */}
+        <div className="profile-hero">
+          <div className="profile-hero__avatar">{currentStudent.initials}</div>
+          <div className="profile-hero__info">
+            <h2 className="profile-hero__name">{currentStudent.name}</h2>
+            {/* The demo student carries no email, so fall back to the roll. */}
+            <div className="profile-hero__meta">{student?.email ?? currentStudent.roll}</div>
+            <div className="profile-hero__tags">
+              <span className="profile-hero__tag">{currentStudent.roll}</span>
+              <span className="profile-hero__tag">{currentStudent.year}</span>
+              <span className="profile-hero__tag">{hosteller ? 'Hosteller' : 'Day Scholar'}</span>
             </div>
-            <div className="tenant-brand-card__controls">
-              <label className="tenant-brand-card__upload">
-                Upload logo
-                <input type="file" accept="image/*" onChange={handleLogoUpload} />
-              </label>
-              <button type="button" className="tenant-brand-card__reset" onClick={resetBrand}>Reset</button>
-              <div className="tenant-brand-card__swatches">
-                <span style={{ background: tenantBrand.primary }} />
-                <span style={{ background: tenantBrand.secondary }} />
-                <span style={{ background: tenantBrand.surface }} />
+          </div>
+          <button
+            type="button"
+            className="profile-hero__action"
+            onClick={() => nav('qr')}
+            aria-label="Open your campus QR code"
+            title="Campus QR code"
+          >
+            <Icon path={ICONS.qr} size={17} />
+          </button>
+        </div>
+
+        <MenuList label="Academics" rows={academicRows} />
+        <MenuList label="Campus life" rows={campusRows} />
+        <MenuList label="Account" rows={accountRows} />
+
+        {/* Kept, but demoted behind its own row — it is a settings task, not
+            something a student reads on the way past. */}
+        {showBranding && (
+          <Card className="tenant-brand-card">
+            <div>
+              <div className="tenant-brand-card__eyebrow">Tenant settings</div>
+              <h2 className="tenant-brand-card__title">College logo colors sync the dashboard</h2>
+              <p className="tenant-brand-card__copy">Upload the tenant college logo. The dashboard samples the logo and applies those colors to navigation, cards, charts, and highlights.</p>
+            </div>
+            <div className="tenant-brand-card__body">
+              <div className="tenant-brand-card__preview">
+                {tenantBrand.logoDataUrl ? <img src={tenantBrand.logoDataUrl} alt={`${currentStudent.college} logo preview`} /> : <span>{currentStudent.college.slice(0, 1)}</span>}
+              </div>
+              <div className="tenant-brand-card__controls">
+                <label className="tenant-brand-card__upload">
+                  Upload logo
+                  <input type="file" accept="image/*" onChange={handleLogoUpload} />
+                </label>
+                <button type="button" className="tenant-brand-card__reset" onClick={resetBrand}>Reset</button>
+                <div className="tenant-brand-card__swatches">
+                  <span style={{ background: tenantBrand.primary }} />
+                  <span style={{ background: tenantBrand.secondary }} />
+                  <span style={{ background: tenantBrand.surface }} />
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
-        <Card className="profile-horiz-card">
-          <div className="profile-horiz-card__avatar">{currentStudent.initials}</div>
-          <div className="profile-horiz-card__info">
-            <h2 className="profile-horiz-card__name">{currentStudent.name}</h2>
-            <div className="profile-horiz-card__details"><span>{currentStudent.roll}</span> • <span>{currentStudent.dept}</span> • <span>{currentStudent.college}</span> • <span>{currentStudent.year}</span></div>
-            <div className="profile-horiz-card__full-college">{currentStudent.fullCollege}</div>
-          </div>
-          <span className={`sc-badge ${hosteller ? 'sc-badge--purple' : 'sc-badge--blue'}`}>{hosteller ? 'Hosteller' : 'Day Scholar'}</span>
-        </Card>
-        <Card style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <SectionTitle>360° Student Summary</SectionTitle>
-          <div className="profile-summary-grid">{summaryCards.map((card) => (
-            <button key={card.label} className="profile-summary-card" onClick={() => nav(card.mod)} style={{ borderLeft: `4px solid ${card.color}`, borderTop: 0, borderRight: 0, borderBottom: 0, textAlign: 'left' }}>
-              <div className="profile-summary-card__label">{card.label}</div><div className="profile-summary-card__value" style={{ color: card.color }}>{card.big}</div><div className="profile-summary-card__sub">{card.sub}</div>
-            </button>
-          ))}</div>
-        </Card>
+          </Card>
+        )}
       </div>
 
       <div className="profile-layout__right"><Card className="student-id-card-wrapper">

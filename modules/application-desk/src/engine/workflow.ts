@@ -40,10 +40,26 @@ export type GuardKey =
   | "financeSettled"
   | "approvalsComplete";
 
+/**
+ * What an operator can do to a case.
+ *
+ * Three families, and the distinction matters: `advance` *moves* a case,
+ * casework *records the facts a guard is waiting for*, and the lifecycle
+ * actions park or close it. Without the casework family the guards can only
+ * ever refuse — nothing would be able to satisfy them, and a case created at
+ * DATA_REVIEW could never reach COMPLETED.
+ */
 export type ActionKind =
+  /** Forward movement: validate the current stage, run its effects, hand off. */
   | "advance"
-  | "verify"
+  // -- casework: supply what a stage's guard is blocking on -------------------
+  | "record_identity"
+  | "review_document"
+  | "map_academics"
+  | "allocate_section"
+  | "record_finance"
   | "approve"
+  // -- lifecycle -------------------------------------------------------------
   | "reject"
   | "return"
   | "hold"
@@ -51,6 +67,20 @@ export type ActionKind =
   | "cancel"
   | "withdraw"
   | "expire";
+
+/** Casework actions record data; they never move the case between stages. */
+export const CASEWORK_ACTIONS = [
+  "record_identity",
+  "review_document",
+  "map_academics",
+  "allocate_section",
+  "record_finance",
+  "approve",
+] as const satisfies readonly ActionKind[];
+
+export function isCaseworkAction(action: ActionKind): boolean {
+  return (CASEWORK_ACTIONS as readonly string[]).includes(action);
+}
 
 export type EffectKind =
   | "generate_number"

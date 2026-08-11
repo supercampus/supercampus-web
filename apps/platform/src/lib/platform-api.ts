@@ -47,6 +47,23 @@ export interface BootstrapDocument {
   roles: string[];
   permissions: string[];
   permissionScopes: Record<string, string>;
+  workflows: Array<{
+    tenantId: string;
+    module: string;
+    feature: string;
+    version: number;
+    initialState: string;
+    terminalStates: string[];
+    states: Array<{ id: string; label: string; status: string }>;
+    transitions: Array<{
+      from: string;
+      to: string;
+      action: string;
+      requiredPermission: string;
+      requiredRole?: string | null;
+      label: string;
+    }>;
+  }>;
   services: ServiceDescriptor[];
   modules: ModuleDescriptor[];
   navigation: Array<{ id: string; label: string; route: string; requiredPermission: string }>;

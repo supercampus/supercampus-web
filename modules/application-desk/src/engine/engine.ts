@@ -17,8 +17,13 @@
 
 import { runGuards } from "./guards.ts";
 import {
+  SATISFIED_DOCUMENT_STATES,
   TERMINAL_STATUSES,
+  type AcademicMapping,
   type AuditEntry,
+  type DocumentState,
+  type FinanceState,
+  type IdentityMatchKind,
   type OnboardingCase,
   type OnboardingEvent,
   type OnboardingEventName,
@@ -28,6 +33,7 @@ import {
 } from "./types.ts";
 import {
   evaluateConditions,
+  isCaseworkAction,
   nextStage,
   stageById,
   type ActionKind,
@@ -47,11 +53,33 @@ export interface OnboardingServices {
   notify(onboarding: OnboardingCase, template: string): Promise<void>;
 }
 
+/**
+ * The payload a casework action carries. Each action reads exactly one field
+ * and refuses if it is missing, so a malformed request cannot quietly succeed
+ * while changing nothing.
+ */
+export interface StageInput {
+  /** `record_identity` — the outcome of the duplicate search. */
+  identityMatch?: IdentityMatchKind;
+  /** `review_document` — one checklist item's verification outcome. */
+  document?: { type: string; state: DocumentState; fileId?: string; reason?: string; expiresAt?: string };
+  /** `map_academics` — the academic fields resolved by Academic Management. */
+  academic?: Partial<AcademicMapping>;
+  /** `allocate_section` — the section Academic Management assigned. */
+  sectionId?: string;
+  /** `record_finance` — the state Fees & Finance reported. */
+  finance?: FinanceState;
+  /** `approve` — which chain step is being signed, and any comment. */
+  approval?: { step?: number; comment?: string };
+}
+
 export interface EngineContext {
   actor: string;
   /** ISO timestamp injected by the caller — the engine stays clock-free. */
   now: string;
   reason?: string;
+  /** Payload for casework actions; ignored by `advance` and the lifecycle. */
+  input?: StageInput;
   services: OnboardingServices;
 }
 
@@ -195,17 +223,36 @@ async function runEffects(
   return { case: draft, events };
 }
 
-/** Move a case to a side status without losing where it must resume (§25). */
+/**
+ * Move a case to a side status without losing where it must resume (§25).
+ *
+ * A `return` is the one side action that means "go back to stage X", so it is
+ * routed through the transition table — `DOCUMENT_VERIFICATION + return ->
+ * DATA_REVIEW` sends the case back for correction and resumes there. Holds and
+ * closures leave the stage alone: a rejected case is rejected *where it was*.
+ */
 function sideTransition(
+  definition: WorkflowDefinition,
   onboarding: OnboardingCase,
+  action: ActionKind,
   status: OnboardingStatus,
   eventName: OnboardingEventName,
   context: EngineContext,
 ): TransitionResult {
+  const routed =
+    action === "return"
+      ? definition.transitions.find(
+          (transition) => transition.from === onboarding.stage && transition.action === "return",
+        )?.to
+      : undefined;
+  const stage = routed ?? onboarding.stage;
+
   const after: OnboardingCase = {
     ...onboarding,
+    stage,
     status,
-    resumeStage: onboarding.resumeStage ?? onboarding.stage,
+    // A routed return resumes where it was sent, not where it was caught.
+    resumeStage: routed ?? onboarding.resumeStage ?? onboarding.stage,
     holdReason: status === "ON_HOLD" ? context.reason : onboarding.holdReason,
     rejectionReason:
       status === "REJECTED" || status === "CANCELLED" ? context.reason : onboarding.rejectionReason,
@@ -217,6 +264,152 @@ function sideTransition(
     events: [event(after, eventName, context.now, { reason: context.reason })],
     audit: [audit(onboarding, after, status, context)],
   };
+}
+
+/** Record casework without moving the case, and audit who recorded it. */
+function recorded(
+  onboarding: OnboardingCase,
+  patch: Partial<OnboardingCase>,
+  action: ActionKind,
+  context: EngineContext,
+): TransitionResult {
+  const after: OnboardingCase = { ...onboarding, ...patch, updatedAt: context.now };
+  return { ok: true, case: after, events: [], audit: [audit(onboarding, after, action, context)] };
+}
+
+/**
+ * Casework: record the facts the guards are waiting for.
+ *
+ * These are deliberately allowed while a case is ON_HOLD or RETURNED — a hold
+ * usually exists *because* a document is outstanding, so the document has to be
+ * recordable before the case can be resumed. Terminal cases are already refused
+ * by the caller. No domain event fires here: the stage-completion events
+ * (`IdentityVerified`, `DocumentsVerified`, …) belong to `advance`, which is
+ * what actually completes a stage.
+ */
+function applyCasework(
+  definition: WorkflowDefinition,
+  onboarding: OnboardingCase,
+  action: ActionKind,
+  context: EngineContext,
+): TransitionResult {
+  const input = context.input ?? {};
+
+  switch (action) {
+    case "record_identity": {
+      if (!input.identityMatch) return refuse(onboarding, "No identity match result supplied");
+      return recorded(onboarding, { identityMatch: input.identityMatch }, action, context);
+    }
+
+    case "review_document": {
+      const decision = input.document;
+      if (!decision) return refuse(onboarding, "No document decision supplied");
+      const requirement = definition.documentChecklist.find((entry) => entry.type === decision.type);
+      if (!requirement) {
+        return refuse(onboarding, `${decision.type} is not on the document checklist`);
+      }
+      const settled = SATISFIED_DOCUMENT_STATES.includes(decision.state);
+      const documents = onboarding.documents.some((entry) => entry.type === decision.type)
+        ? onboarding.documents.map((entry) =>
+            entry.type === decision.type
+              ? {
+                  ...entry,
+                  state: decision.state,
+                  fileId: decision.fileId ?? entry.fileId,
+                  verifiedBy: settled ? context.actor : undefined,
+                  verifiedAt: settled ? context.now : undefined,
+                  rejectionReason: decision.state === "REJECTED" ? decision.reason : undefined,
+                  expiresAt: decision.expiresAt ?? entry.expiresAt,
+                }
+              : entry,
+          )
+        : // A checklist item added after the case was created has no record yet.
+          [
+            ...onboarding.documents,
+            {
+              type: decision.type,
+              state: decision.state,
+              fileId: decision.fileId,
+              verifiedBy: settled ? context.actor : undefined,
+              verifiedAt: settled ? context.now : undefined,
+              rejectionReason: decision.state === "REJECTED" ? decision.reason : undefined,
+              expiresAt: decision.expiresAt,
+            },
+          ];
+      return recorded(onboarding, { documents }, action, context);
+    }
+
+    case "map_academics": {
+      const mapping = input.academic;
+      if (!mapping || Object.keys(mapping).length === 0) {
+        return refuse(onboarding, "No academic mapping supplied");
+      }
+      return recorded(onboarding, { academic: { ...onboarding.academic, ...mapping } }, action, context);
+    }
+
+    case "allocate_section": {
+      if (!input.sectionId) return refuse(onboarding, "No section supplied");
+      return recorded(
+        onboarding,
+        { academic: { ...onboarding.academic, sectionId: input.sectionId } },
+        action,
+        context,
+      );
+    }
+
+    case "record_finance": {
+      if (!input.finance) return refuse(onboarding, "No finance state supplied");
+      return recorded(onboarding, { finance: input.finance }, action, context);
+    }
+
+    case "approve": {
+      if (definition.approvalChain.length === 0) {
+        return refuse(onboarding, "This workflow has no approval chain");
+      }
+      const ordered = [...onboarding.approvals].sort((a, b) => a.step - b.step);
+      const requested = input.approval?.step;
+      const target =
+        requested === undefined
+          ? ordered.find((entry) => entry.state === "PENDING" || entry.state === "RETURNED")
+          : ordered.find((entry) => entry.step === requested);
+
+      if (!target) {
+        return refuse(
+          onboarding,
+          requested === undefined
+            ? "Every approval step is already signed"
+            : `Approval step ${requested} is not part of this case`,
+        );
+      }
+      if (target.state === "APPROVED") {
+        return refuse(onboarding, `Approval step ${target.step} is already approved`);
+      }
+      // Chains are ordered: the registrar does not sign before the officer.
+      const earlier = ordered.find((entry) => entry.step < target.step && entry.state !== "APPROVED");
+      if (earlier) {
+        return refuse(
+          onboarding,
+          `Approval step ${earlier.step} (${earlier.role}) must be signed first`,
+        );
+      }
+
+      const approvals = onboarding.approvals.map((entry) =>
+        entry.step === target.step
+          ? {
+              ...entry,
+              state: "APPROVED" as const,
+              actedBy: context.actor,
+              actedAt: context.now,
+              comment: input.approval?.comment ?? context.reason,
+            }
+          : entry,
+      );
+      return recorded(onboarding, { approvals }, action, context);
+    }
+
+    default:
+      return refuse(onboarding, `${action} is not a casework action`);
+  }
 }
 
 /**
@@ -236,19 +429,25 @@ export async function applyAction(
     return refuse(onboarding, `Case is ${onboarding.status} and can no longer transition`);
   }
 
+  if (isCaseworkAction(action)) return applyCasework(definition, onboarding, action, context);
+
   switch (action) {
     case "hold":
-      return sideTransition(onboarding, "ON_HOLD", "OnboardingHeld", context);
+      if (onboarding.status === "ON_HOLD" || onboarding.status === "RETURNED") {
+        return refuse(onboarding, `Case is already ${onboarding.status}`);
+      }
+      return sideTransition(definition, onboarding, action, "ON_HOLD", "OnboardingHeld", context);
     case "return":
-      return sideTransition(onboarding, "RETURNED", "OnboardingReturned", context);
+      return sideTransition(definition, onboarding, action, "RETURNED", "OnboardingReturned", context);
     case "reject":
-      return sideTransition(onboarding, "REJECTED", "OnboardingRejected", context);
+      return sideTransition(definition, onboarding, action, "REJECTED", "OnboardingRejected", context);
     case "cancel":
-      return sideTransition(onboarding, "CANCELLED", "OnboardingRejected", context);
+      return sideTransition(definition, onboarding, action, "CANCELLED", "OnboardingRejected", context);
     case "withdraw":
-      return sideTransition(onboarding, "WITHDRAWN", "OnboardingRejected", context);
+      return sideTransition(definition, onboarding, action, "WITHDRAWN", "OnboardingRejected", context);
     case "expire":
-      return sideTransition(onboarding, "EXPIRED", "OnboardingFailed", context);
+      // An expiry is a missed deadline, not a system failure — distinct event (§26).
+      return sideTransition(definition, onboarding, action, "EXPIRED", "OnboardingExpired", context);
     case "resume": {
       if (onboarding.status !== "ON_HOLD" && onboarding.status !== "RETURNED") {
         return refuse(onboarding, "Only held or returned cases can be resumed");

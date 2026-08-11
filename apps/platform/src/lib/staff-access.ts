@@ -124,6 +124,42 @@ export function applicationDeskCapabilities(permissions: readonly string[]) {
   };
 }
 
+/**
+ * Which permission advancing *out of* a given stage requires.
+ *
+ * `.verify` used to authorise every forward move, so anyone who could verify a
+ * document could also sign off the approval stage and activate the student —
+ * which defeats the point of having `.approve` and `.activate` at all. The
+ * permission follows the work the stage represents.
+ */
+export function permissionForAdvance(stage: string): string {
+  switch (stage) {
+    case 'APPROVAL':
+      return 'application-desk.approve';
+    case 'STUDENT_CREATION':
+    case 'ACCOUNT_PROVISIONING':
+    case 'ACCESS_PROVISIONING':
+    case 'ACTIVATION':
+      return 'application-desk.activate';
+    default:
+      return 'application-desk.verify';
+  }
+}
+
+/** Casework actions are gated by the kind of record they touch. */
+export function permissionForCasework(action: string): string {
+  switch (action) {
+    case 'approve':
+      return 'application-desk.approve';
+    case 'allocate_section':
+      return 'application-desk.assign';
+    case 'map_academics':
+      return 'application-desk.edit';
+    default:
+      return 'application-desk.verify';
+  }
+}
+
 export function dashboardCapabilities(permissions: readonly string[]) {
   return {
     read: hasPermission(permissions, 'crm.dashboard.read'),

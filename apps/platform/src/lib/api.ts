@@ -109,6 +109,20 @@ export function saveAppState(state: PersistedAppState, action?: string) {
   return apiRequest('/state', { method: 'PUT', body: JSON.stringify({ state, action }) });
 }
 
+export function getTenantBranding() {
+  return apiRequest<{ data: { value: Record<string, unknown> } }>(
+    `/v1/configuration/tenant-branding?_sync=${Date.now()}`,
+    { headers: { 'Cache-Control': 'no-cache, no-store', Pragma: 'no-cache' } },
+  );
+}
+
+export function saveTenantBranding(value: Record<string, unknown>) {
+  return apiRequest<{ data: { value: Record<string, unknown> } }>(
+    '/v1/configuration/tenant-branding',
+    { method: 'PUT', body: JSON.stringify({ value }) },
+  );
+}
+
 export function toPersistedState(state: AppState): PersistedAppState {
   return {
     persona: state.persona,

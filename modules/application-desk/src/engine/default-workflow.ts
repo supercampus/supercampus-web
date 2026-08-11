@@ -131,8 +131,10 @@ export function defaultWorkflow(tenantId: string): WorkflowDefinition {
     name: "Standard Admission Onboarding",
     stages: STAGES,
     // Sequence order covers the happy path; only exceptions need declaring.
+    // `reject` needs no entry — it closes the case where it stands rather than
+    // routing anywhere, so the old `APPROVAL -> APPROVAL` row said nothing.
     transitions: [
-      { from: "APPROVAL", action: "reject", to: "APPROVAL" },
+      // Bad imported data surfaces at document check; send it back for correction.
       { from: "DOCUMENT_VERIFICATION", action: "return", to: "DATA_REVIEW" },
     ],
     documentChecklist: DEFAULT_DOCUMENT_CHECKLIST,

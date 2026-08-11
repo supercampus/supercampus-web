@@ -26,6 +26,7 @@ import {
 import { useCrmEvents, type CrmEvent } from '@/lib/crm-events';
 import { LEAD_SOURCES } from '@/lib/crm-catalog';
 import { useApp } from '@/lib/context';
+import { getTenantBranding, saveTenantBranding as saveTenantBrandingConfiguration } from '@/lib/api';
 import {
   bulkImportCrmLeads,
   createCrmForm,
@@ -49,15 +50,18 @@ import {
   createTenantUser,
   getAuthorizationPermissions,
   getAuthorizationRoles,
+  getTenantUserAccess,
   getTenantUsers,
   setAuthorizationRolePermissions,
+  setTenantUserAccess,
+  type AuthorizationGrant,
   type AuthorizationPermission,
   type AuthorizationRole,
   type PermissionScope,
   type TenantUser,
 } from '@/lib/authorization-api';
 import type { LucideIcon } from 'lucide-react';
-import { ArrowUpRight, BarChart3, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Clock, Database, FileText, Grip, GripVertical, Info, LayoutDashboard, Layers, ListChecks, LogOut, Mail, MapPin, Monitor, Moon, MoreHorizontal, Pencil, PhoneCall, PlusCircle, RefreshCw, Save, Search, ShieldCheck, SlidersHorizontal, Smartphone, Sun, Target, TrendingUp, Trash2, UploadCloud, User, UserCog, Users, X } from 'lucide-react';
+import { ArrowUpRight, BarChart3, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Clock, Database, FileText, Grip, GripVertical, Info, LayoutDashboard, Layers, ListChecks, LogOut, Mail, MapPin, Monitor, MoreHorizontal, Pencil, PhoneCall, PlusCircle, Save, Search, ShieldCheck, SlidersHorizontal, Smartphone, Sun, Target, TrendingUp, Trash2, UploadCloud, User, UserCog, Users, X } from 'lucide-react';
 
 type NavSection = StaffNavigationId;
 type ThemeId = 'classic' | 'ocean' | 'emerald' | 'midnight';
@@ -70,9 +74,17 @@ type OperationModule = {
   features: string[];
   permissionKeys?: string[];
   permissionCells?: Record<string, Partial<Record<CrudAction, string[]>>>;
+  actionCells?: Record<string, Record<string, string[]>>;
 };
 type StaffUser = { id: string; name: string; email: string; initials: string; role: string; roleId: string; roleIds: string[]; team: string; access: string[] };
-type TenantBrand = { logoDataUrl: string | null; primary: string; secondary: string; surface: string };
+type TenantBrand = {
+  collegeName: string;
+  suiteName: string;
+  logoDataUrl: string | null;
+  primary: string;
+  secondary: string;
+  surface: string;
+};
 type FormBuilder = { id: string; name: string; module: string; formType: string; fields: number; status: string; owner: string; usage: string };
 type FormField = {
   key?: string;
@@ -105,6 +117,9 @@ type AccessModal = 'role' | 'module' | 'crud' | 'users' | null;
 type OperationModal = { title: string; context: string; fields: string[]; confirmLabel?: string } | null;
 type RequirementGroup = { title: string; description: string; items: string[] };
 type RequirementPage = { eyebrow: string; title: string; description: string; stats: string[]; groups: RequirementGroup[] };
+type MobilePortalAction = 'create' | 'read' | 'update' | 'delete' | 'approve' | 'publish';
+type MobilePortalFeature = { id: string; label: string; actions: MobilePortalAction[] };
+type MobilePortalModule = { id: string; name: string; features: MobilePortalFeature[] };
 
 const FORM_MODULE_TYPES: Record<string, Array<{ value: string; label: string }>> = {
   CRM: [
@@ -507,7 +522,14 @@ function toKanbanLead(lead: CrmLead): Lead {
 const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'custom-item';
 const initialsFromName = (value: string) => value.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'U';
 const countSchemaFields = (schema: FormSchemaSection[]) => schema.reduce((total, section) => total + section.fields.length, 0);
-const DEFAULT_TENANT_BRAND: TenantBrand = { logoDataUrl: null, primary: '#0b3d2e', secondary: '#b9f43b', surface: '#eef7e8' };
+const DEFAULT_TENANT_BRAND: TenantBrand = {
+  collegeName: 'SuperCampus',
+  suiteName: 'Admin Suite',
+  logoDataUrl: null,
+  primary: '#0b3d2e',
+  secondary: '#b9f43b',
+  surface: '#eef7e8',
+};
 
 const brandGradient = 'linear-gradient(135deg, var(--tenant-primary), var(--tenant-secondary))';
 
@@ -1146,6 +1168,105 @@ const CRUD_ACTIONS = [
   { id: 'delete', label: 'D' },
 ] as const;
 type CrudAction = (typeof CRUD_ACTIONS)[number]['id'];
+const MOBILE_PORTAL_MODULES: MobilePortalModule[] = [
+  {
+    id: 'examination',
+    name: 'Examination System',
+    features: [
+      { id: 'dashboard', label: 'Dashboard', actions: ['read'] },
+      { id: 'config', label: 'Configuration', actions: ['create', 'read', 'update'] },
+      { id: 'scheduling', label: 'Scheduling', actions: ['create', 'read', 'update', 'publish'] },
+      { id: 'eligibility', label: 'Eligibility', actions: ['read', 'approve'] },
+      { id: 'conduct', label: 'Conduct & Incident', actions: ['create', 'read', 'update'] },
+      { id: 'marks', label: 'Marks Entry', actions: ['create', 'read', 'update'] },
+      { id: 'moderation', label: 'Moderation', actions: ['read', 'approve', 'update'] },
+      { id: 'grades', label: 'Grades & GPA', actions: ['read', 'approve'] },
+      { id: 'degree_audit', label: 'Degree Audit', actions: ['read', 'approve'] },
+      { id: 'publishing', label: 'Result Publishing', actions: ['read', 'approve', 'publish'] },
+      { id: 'revaluation', label: 'Revaluation', actions: ['create', 'read', 'update'] },
+      { id: 'transcript', label: 'Transcripts', actions: ['read', 'create'] },
+      { id: 'ai_insights', label: 'AI Exam Insights', actions: ['read'] },
+      { id: 'reports', label: 'Reports & Analytics', actions: ['read'] },
+    ],
+  },
+  {
+    id: 'timetable',
+    name: 'Timetable Management',
+    features: [
+      { id: 'schedule', label: 'Schedule', actions: ['create', 'read', 'update', 'delete'] },
+      { id: 'config', label: 'Configuration', actions: ['create', 'read', 'update'] },
+      { id: 'substitution', label: 'Substitutions', actions: ['create', 'read', 'approve'] },
+      { id: 'publication', label: 'Publishing', actions: ['read', 'approve', 'publish'] },
+    ],
+  },
+  {
+    id: 'attendance',
+    name: 'Attendance',
+    features: [
+      { id: 'roster', label: 'Roster', actions: ['read', 'update'] },
+      { id: 'swipe', label: 'Swipe log', actions: ['create', 'read'] },
+      { id: 'leave', label: 'Leave', actions: ['create', 'read', 'approve'] },
+    ],
+  },
+  {
+    id: 'canteen',
+    name: 'Canteen',
+    features: [
+      { id: 'menu', label: 'Menu', actions: ['read', 'update'] },
+      { id: 'order', label: 'Orders', actions: ['create', 'read', 'update'] },
+      { id: 'wallet', label: 'Wallet', actions: ['read', 'update'] },
+    ],
+  },
+  {
+    id: 'gatepass',
+    name: 'Gatepass',
+    features: [
+      { id: 'outpass', label: 'Outpass', actions: ['create', 'read', 'update', 'approve'] },
+      { id: 'visitor', label: 'Visitors', actions: ['create', 'read'] },
+      { id: 'access', label: 'Gate access', actions: ['read', 'update'] },
+    ],
+  },
+  {
+    id: 'library',
+    name: 'Library',
+    features: [
+      { id: 'visit_pass', label: 'Visit pass booking', actions: ['create', 'read'] },
+      { id: 'qr_pass', label: 'Library QR pass', actions: ['read'] },
+      { id: 'visit_history', label: 'Visit history', actions: ['read'] },
+      { id: 'occupancy', label: 'Occupancy and capacity', actions: ['read'] },
+    ],
+  },
+  {
+    id: 'vendor_management',
+    name: 'Vendor Management',
+    features: [
+      { id: 'vendors', label: 'Vendor directory', actions: ['create', 'read', 'update'] },
+      { id: 'contracts', label: 'Contracts and AMCs', actions: ['create', 'read', 'update'] },
+      { id: 'purchase_orders', label: 'Purchase orders', actions: ['create', 'read', 'approve'] },
+      { id: 'payments', label: 'Payments and history', actions: ['create', 'read', 'approve'] },
+      { id: 'work_orders', label: 'Work orders', actions: ['create', 'read', 'update'] },
+    ],
+  },
+  {
+    id: 'tuition_fee',
+    name: 'Tuition Fee',
+    features: [
+      { id: 'invoice', label: 'Invoices', actions: ['read', 'create'] },
+      { id: 'payment', label: 'Payments', actions: ['create', 'read'] },
+    ],
+  },
+  {
+    id: 'academics',
+    name: 'Academics',
+    features: [
+      { id: 'attendance', label: 'Attendance', actions: ['read'] },
+      { id: 'marks', label: 'Marks', actions: ['read'] },
+      { id: 'analysis', label: 'Analysis', actions: ['read'] },
+      { id: 'programme', label: 'Programmes', actions: ['create', 'read', 'update'] },
+      { id: 'subject', label: 'Subjects', actions: ['create', 'read', 'update'] },
+    ],
+  },
+];
 const permissionKeysFor = (module: OperationModule, feature: string, action: CrudAction) => (
   module.permissionCells?.[feature]?.[action] ?? []
 );
@@ -1176,8 +1297,60 @@ const permissionLabel = (key: string) => key
     : `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
   .join(' ');
 
-function buildOperationModules(permissions: AuthorizationPermission[]): OperationModule[] {
+const crudActionForAccessAction = (action: string): CrudAction | null => {
+  if (action === 'approve' || action === 'publish' || action === 'verify' || action === 'reject') return 'update';
+  if (action === 'create' || action === 'read' || action === 'update' || action === 'delete') return action;
+  return null;
+};
+
+const addPermissionCell = (
+  module: OperationModule,
+  feature: string,
+  action: string,
+  permissionKey: string,
+) => {
+  module.permissionKeys ??= [];
+  if (!module.permissionKeys.includes(permissionKey)) module.permissionKeys.push(permissionKey);
+  module.actionCells ??= {};
+  module.actionCells[feature] ??= {};
+  module.actionCells[feature][action] ??= [];
+  if (!module.actionCells[feature][action].includes(permissionKey)) {
+    module.actionCells[feature][action].push(permissionKey);
+  }
+  const crudAction = crudActionForAccessAction(action);
+  if (!crudAction) return;
+  module.permissionCells ??= {};
+  module.permissionCells[feature] ??= {};
+  const keys = module.permissionCells[feature][crudAction] ?? [];
+  if (!keys.includes(permissionKey)) keys.push(permissionKey);
+  module.permissionCells[feature][crudAction] = keys;
+};
+
+const buildMobilePortalOperationModules = () => {
   const modules = new Map<string, OperationModule>();
+  MOBILE_PORTAL_MODULES.forEach((mobileModule) => {
+    const module: OperationModule = {
+      id: mobileModule.id,
+      name: mobileModule.name,
+      features: mobileModule.features.map((feature) => feature.label),
+      permissionKeys: [],
+      permissionCells: {},
+      actionCells: {},
+    };
+    modules.set(module.id, module);
+  });
+  return modules;
+};
+
+const mobilePortalFeatureLabel = (moduleKey: string, featureKey: string) => (
+  MOBILE_PORTAL_MODULES
+    .find((module) => module.id === moduleKey)
+    ?.features.find((feature) => feature.id === featureKey)
+    ?.label
+);
+
+function buildOperationModules(permissions: AuthorizationPermission[]): OperationModule[] {
+  const modules = buildMobilePortalOperationModules();
   permissions.filter((permission) => permission.active && permission.key !== '*').forEach((permission) => {
     const current = modules.get(permission.moduleKey) ?? {
       id: permission.moduleKey,
@@ -1185,18 +1358,16 @@ function buildOperationModules(permissions: AuthorizationPermission[]): Operatio
       features: [],
       permissionKeys: [],
       permissionCells: {},
+      actionCells: {},
     };
-    const feature = permissionLabel(permission.featureKey);
+    const feature = mobilePortalFeatureLabel(permission.moduleKey, permission.featureKey)
+      ?? permissionLabel(permission.featureKey);
     if (!current.features.includes(feature)) current.features.push(feature);
     current.permissionKeys ??= [];
     if (!current.permissionKeys.includes(permission.key)) current.permissionKeys.push(permission.key);
     current.permissionCells ??= {};
     current.permissionCells[feature] ??= {};
-    permission.crudActions.forEach((action) => {
-      const keys = current.permissionCells?.[feature]?.[action] ?? [];
-      if (!keys.includes(permission.key)) keys.push(permission.key);
-      current.permissionCells![feature][action] = keys;
-    });
+    addPermissionCell(current, feature, permission.action, permission.key);
     modules.set(permission.moduleKey, current);
   });
   return Array.from(modules.values());
@@ -1415,7 +1586,11 @@ export default function AdmissionsPage() {
   const [selectedAccessModuleId, setSelectedAccessModuleId] = useState('');
   const [roleSearch, setRoleSearch] = useState('');
   const [roleAccess, setRoleAccess] = useState<Record<string, string[]>>({});
+  const roleAccessRef = useRef<Record<string, string[]>>({});
+  const rolePermissionQueues = useRef<Record<string, Promise<void>>>({});
   const [roleScopes, setRoleScopes] = useState<Record<string, Record<string, PermissionScope>>>({});
+  const [userDeniedAccess, setUserDeniedAccess] = useState<Record<string, string[]>>({});
+  const [expandedUserAccessId, setExpandedUserAccessId] = useState('');
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleTeam, setNewRoleTeam] = useState('');
   const [newUserName, setNewUserName] = useState('');
@@ -1469,9 +1644,11 @@ export default function AdmissionsPage() {
   const userAccess = useMemo(
     () => Object.fromEntries(visibleStaffUsers.map((user) => {
       const rolePermissions = Array.from(new Set(user.roleIds.flatMap((roleId) => roleAccess[roleId] ?? [])));
-      return [user.id, user.access.length ? user.access : rolePermissions];
+      const denied = new Set(userDeniedAccess[user.id] ?? []);
+      const effective = (user.access.length ? user.access : rolePermissions).filter((key) => !denied.has(key));
+      return [user.id, effective];
     })),
-    [roleAccess, visibleStaffUsers],
+    [roleAccess, userDeniedAccess, visibleStaffUsers],
   );
   const customModuleCounter = useRef(1);
   useEffect(() => {
@@ -1500,10 +1677,6 @@ export default function AdmissionsPage() {
     const root = document.documentElement;
     Object.entries(THEMES[nextTheme]).forEach(([key, value]) => root.style.setProperty(key, value));
   }, []);
-
-  const toggleDarkTheme = useCallback(() => {
-    applyTheme(theme === 'midnight' ? 'classic' : 'midnight');
-  }, [applyTheme, theme]);
 
   const showToast = useCallback((msg: string, durationMs = 3000) => {
     setToast(msg);
@@ -1633,14 +1806,27 @@ export default function AdmissionsPage() {
         moduleIds: Array.from(new Set(role.permissions.map((grant) => permissionModule.get(grant.key)).filter((value): value is string => Boolean(value)))),
       }));
       setCollegeRoles(roles);
-      setRoleAccess(Object.fromEntries(rolesResponse.data.map((role) => [
+      const nextRoleAccess = Object.fromEntries(rolesResponse.data.map((role) => [
         role.id,
         role.permissions.map((grant) => grant.key),
-      ])));
+      ]));
+      roleAccessRef.current = nextRoleAccess;
+      setRoleAccess(nextRoleAccess);
       setRoleScopes(Object.fromEntries(rolesResponse.data.map((role) => [
         role.id,
         Object.fromEntries(role.permissions.map((grant) => [grant.key, grant.scope])),
       ])));
+      const userAccessResponses = canReadUsers
+        ? await Promise.all(usersResponse.data.map((user) =>
+            getTenantUserAccess(user.id, 'app').catch(() => null)))
+        : [];
+      setUserDeniedAccess(Object.fromEntries(usersResponse.data.map((user, index) => {
+        const access = userAccessResponses[index];
+        const denied = access?.data.grants
+          .filter((grant) => grant.mode === 'deny')
+          .map((grant) => grant.key) ?? [];
+        return [user.id, denied];
+      })));
       setOperationModules(modules);
       setSelectedAccessRoleId((current) => roles.some((role) => role.id === current) ? current : roles[0]?.id ?? '');
       setSelectedAccessModuleId((current) => modules.some((module) => module.id === current) ? current : modules[0]?.id ?? '');
@@ -1679,12 +1865,33 @@ export default function AdmissionsPage() {
     return () => window.cancelAnimationFrame(frame);
   }, [authStatus, refreshCrmBoard, refreshTenantConfiguration]);
 
-  const saveTenantBrand = useCallback((brand: TenantBrand) => {
-    setTenantBrand(brand);
-    applyTenantBrand(brand);
-    try { window.localStorage.setItem('supercampus:tenant-brand', JSON.stringify(brand)); } catch {}
-    showToast('Tenant dashboard colors synced from logo');
-  }, [showToast]);
+  const saveTenantBrand = useCallback(async (brand: TenantBrand) => {
+    const previousBrand = tenantBrand;
+    try {
+      const response = await saveTenantBrandingConfiguration({ ...brand });
+      const persistedBrand = { ...DEFAULT_TENANT_BRAND, ...response.data.value } as TenantBrand;
+      setTenantBrand(persistedBrand);
+      applyTenantBrand(persistedBrand);
+      try { window.localStorage.setItem('supercampus:tenant-brand', JSON.stringify(persistedBrand)); } catch {}
+      showToast('College branding saved for this tenant');
+    } catch (error) {
+      setTenantBrand(previousBrand);
+      applyTenantBrand(previousBrand);
+      showToast(error instanceof Error ? error.message : 'Unable to save college branding');
+    }
+  }, [showToast, tenantBrand]);
+
+  useEffect(() => {
+    if (authStatus !== 'authenticated') return;
+    void getTenantBranding()
+      .then(({ data }) => {
+        const brand = { ...DEFAULT_TENANT_BRAND, ...data.value } as TenantBrand;
+        setTenantBrand(brand);
+        applyTenantBrand(brand);
+        try { window.localStorage.setItem('supercampus:tenant-brand', JSON.stringify(brand)); } catch {}
+      })
+      .catch(() => undefined);
+  }, [authStatus]);
 
   const handleTenantLogoUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1700,11 +1907,11 @@ export default function AdmissionsPage() {
       reader.readAsDataURL(file);
     });
     const palette = await extractLogoPalette(logoDataUrl);
-    saveTenantBrand({ logoDataUrl, ...palette });
-  }, [saveTenantBrand, showToast]);
+    await saveTenantBrand({ ...tenantBrand, logoDataUrl, ...palette });
+  }, [saveTenantBrand, showToast, tenantBrand]);
 
   const resetTenantBrand = useCallback(() => {
-    saveTenantBrand(DEFAULT_TENANT_BRAND);
+    void saveTenantBrand(DEFAULT_TENANT_BRAND);
   }, [saveTenantBrand]);
 
   const updateSelectedFormSchema = useCallback((updater: (schema: FormSchemaSection[]) => FormSchemaSection[], targetId?: string) => {
@@ -2061,12 +2268,28 @@ export default function AdmissionsPage() {
     if (!canUpdateRoles) {
       throw new Error('You do not have permission to update roles');
     }
-    await setAuthorizationRolePermissions(roleId, keys.map((key) => ({
-      key,
-      scope: roleScopes[roleId]?.[key] ?? 'all',
-      constraints: {},
-    })));
+    const previousSave = rolePermissionQueues.current[roleId] ?? Promise.resolve();
+    const save = previousSave.catch(() => undefined).then(async () => {
+      await setAuthorizationRolePermissions(roleId, keys.map((key) => ({
+        key,
+        scope: roleScopes[roleId]?.[key] ?? 'all',
+        constraints: {},
+      })));
+    });
+    rolePermissionQueues.current[roleId] = save;
+    try {
+      await save;
+    } finally {
+      if (rolePermissionQueues.current[roleId] === save) {
+        delete rolePermissionQueues.current[roleId];
+      }
+    }
   }, [canUpdateRoles, roleScopes]);
+
+  const commitRoleAccess = useCallback((roleId: string, keys: string[]) => {
+    roleAccessRef.current = { ...roleAccessRef.current, [roleId]: keys };
+    setRoleAccess((previous) => ({ ...previous, [roleId]: keys }));
+  }, []);
 
   const toggleRolePermissions = async (roleId: string, permissionKeys: string[]) => {
     if (!permissionKeys.length) return;
@@ -2074,17 +2297,17 @@ export default function AdmissionsPage() {
       showToast('The tenant admin recovery role is protected');
       return;
     }
-    const current = roleAccess[roleId] ?? [];
+    const current = roleAccessRef.current[roleId] ?? roleAccess[roleId] ?? [];
     const allEnabled = permissionKeys.every((permissionKey) => current.includes(permissionKey));
     const next = allEnabled
       ? current.filter((item) => !permissionKeys.includes(item))
       : Array.from(new Set([...current, ...permissionKeys]));
-    setRoleAccess((previous) => ({ ...previous, [roleId]: next }));
+    commitRoleAccess(roleId, next);
     try {
       await saveRolePermissions(roleId, next);
       showToast('Role permissions updated');
     } catch (error) {
-      setRoleAccess((previous) => ({ ...previous, [roleId]: current }));
+      commitRoleAccess(roleId, current);
       showToast(error instanceof Error ? error.message : 'Unable to update role permissions');
     }
   };
@@ -2106,18 +2329,18 @@ export default function AdmissionsPage() {
       return moduleConfig ? modulePermissionKeys(moduleConfig) : [];
     });
     if (affectedKeys.length === 0) return;
-    const current = roleAccess[roleId] ?? [];
+    const current = roleAccessRef.current[roleId] ?? roleAccess[roleId] ?? [];
     const next = enabled
       ? Array.from(new Set([...current, ...affectedKeys]))
       : current.filter((key) => !affectedKeys.includes(key));
-    setRoleAccess((previous) => ({ ...previous, [roleId]: next }));
+    commitRoleAccess(roleId, next);
     try {
       await saveRolePermissions(roleId, next);
       showToast(enabled
         ? `Granted ${moduleIds.length} module${moduleIds.length === 1 ? '' : 's'}`
         : `Removed ${moduleIds.length} module${moduleIds.length === 1 ? '' : 's'}`);
     } catch (error) {
-      setRoleAccess((previous) => ({ ...previous, [roleId]: current }));
+      commitRoleAccess(roleId, current);
       showToast(error instanceof Error ? error.message : 'Unable to update module access');
     }
   };
@@ -2130,33 +2353,33 @@ export default function AdmissionsPage() {
       return;
     }
     const moduleKeys = modulePermissionKeys(moduleConfig);
-    const current = roleAccess[roleId] ?? [];
+    const current = roleAccessRef.current[roleId] ?? roleAccess[roleId] ?? [];
     const moduleFullyEnabled = moduleKeys.every((key) => current.includes(key));
     const next = moduleFullyEnabled
       ? current.filter((key) => !moduleKeys.includes(key))
       : Array.from(new Set([...current, ...moduleKeys]));
-    setRoleAccess((previous) => ({ ...previous, [roleId]: next }));
+    commitRoleAccess(roleId, next);
     try {
       await saveRolePermissions(roleId, next);
       showToast('Module access updated');
     } catch (error) {
-      setRoleAccess((previous) => ({ ...previous, [roleId]: current }));
+      commitRoleAccess(roleId, current);
       showToast(error instanceof Error ? error.message : 'Unable to update module access');
     }
   };
 
   const toggleRoleFeature = async (roleId: string, module: OperationModule, feature: string) => {
     const featureKeys = featurePermissionKeys(module, feature);
-    const current = roleAccess[roleId] ?? [];
+    const current = roleAccessRef.current[roleId] ?? roleAccess[roleId] ?? [];
     const fullyEnabled = featureKeys.length > 0 && featureKeys.every((key) => current.includes(key));
     const next = fullyEnabled
       ? current.filter((key) => !featureKeys.includes(key))
       : Array.from(new Set([...current, ...featureKeys]));
-    setRoleAccess((previous) => ({ ...previous, [roleId]: next }));
+    commitRoleAccess(roleId, next);
     try {
       await saveRolePermissions(roleId, next);
     } catch (error) {
-      setRoleAccess((previous) => ({ ...previous, [roleId]: current }));
+      commitRoleAccess(roleId, current);
       showToast(error instanceof Error ? error.message : 'Unable to update feature access');
     }
   };
@@ -2223,7 +2446,7 @@ export default function AdmissionsPage() {
       const response = await createTenantUser({
         name,
         email,
-        password,
+        temporaryPassword: password,
         roleIds: [selectedAccessRole.id],
       });
       const user: StaffUser = {
@@ -2279,6 +2502,36 @@ export default function AdmissionsPage() {
     } catch (error) {
       setStaffUsers(previous);
       showToast(error instanceof Error ? error.message : 'Unable to update user roles');
+    }
+  };
+
+  const toggleUserModuleDeny = async (user: StaffUser, module: OperationModule) => {
+    if (!canUpdateUsers) {
+      showToast('You do not have permission to update user access');
+      return;
+    }
+    const moduleKeys = modulePermissionKeys(module);
+    if (!moduleKeys.length) return;
+    const currentDenied = userDeniedAccess[user.id] ?? [];
+    const isDenied = moduleKeys.every((key) => currentDenied.includes(key));
+    const nextDenied = isDenied
+      ? currentDenied.filter((key) => !moduleKeys.includes(key))
+      : Array.from(new Set([...currentDenied, ...moduleKeys]));
+    setUserDeniedAccess((previous) => ({ ...previous, [user.id]: nextDenied }));
+    try {
+      const grants: AuthorizationGrant[] = nextDenied.map((key) => ({
+        key,
+        scope: 'own',
+        mode: 'deny',
+        constraints: {},
+      }));
+      await setTenantUserAccess(user.id, { surface: 'app', grants });
+      showToast(isDenied
+        ? `${module.name} restored for ${user.name}`
+        : `${module.name} disabled for ${user.name}`);
+    } catch (error) {
+      setUserDeniedAccess((previous) => ({ ...previous, [user.id]: currentDenied }));
+      showToast(error instanceof Error ? error.message : 'Unable to update user access');
     }
   };
 
@@ -3015,55 +3268,17 @@ export default function AdmissionsPage() {
         permissions={permissions}
         sections={serverNavigation?.workspace ?? null}
         brandGradient={brandGradient}
+        collegeName={tenantBrand.collegeName}
+        suiteName={tenantBrand.suiteName}
         logoDataUrl={tenantBrand.logoDataUrl}
         user={student}
         onSignOut={handleSignOut}
       />
 
       <main className="campus-admin-main flex-1 min-w-0 flex flex-col overflow-hidden">
-        <header className="campus-admin-header h-16 shrink-0 flex items-center justify-end px-6 bg-[var(--crm-card)] border-b border-[var(--crm-border)] gap-4">
-          <div className="campus-admin-header-actions flex items-center gap-3">
-            <button onClick={toggleDarkTheme} className="p-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-muted)] hover:bg-[var(--crm-panel)] transition-colors" title="Toggle theme">
-              {theme === 'midnight' ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
+        <header className="campus-admin-header h-16 shrink-0 flex items-center justify-end px-6 bg-[var(--crm-card)] border-b border-[var(--crm-border)]">
+          <div className="campus-admin-header-actions flex items-center">
             <ActivityFeed leads={leads} />
-            {canReadCrmDashboard && (
-              <span
-                className="flex items-center gap-1.5 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[var(--crm-muted)]"
-                title={
-                  realtimeStatus === 'live'
-                    ? 'Live: pipeline changes stream in over a WebSocket'
-                    : realtimeStatus === 'connecting'
-                      ? 'Connecting to the realtime stream'
-                      : 'Realtime stream offline, reconnecting'
-                }
-              >
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    realtimeStatus === 'live'
-                      ? 'bg-emerald-500'
-                      : realtimeStatus === 'connecting'
-                        ? 'bg-amber-500 animate-pulse'
-                        : 'bg-red-500'
-                  }`}
-                />
-                {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Sync' : 'Offline'}
-              </span>
-            )}
-            {(canReadLeads || canReadCrmDashboard) && (
-              <button
-                type="button"
-                onClick={() => void refreshCrmBoard(true)}
-                disabled={crmLoading}
-                className="p-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-muted)] hover:bg-[var(--crm-panel)] transition-colors disabled:opacity-60"
-                title="Refresh CRM"
-              >
-                <RefreshCw size={15} className={crmLoading ? 'animate-spin' : ''} />
-              </button>
-            )}
-            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-xs flex items-center justify-center border border-emerald-300/40">
-              {student?.initials ?? 'AS'}
-            </div>
           </div>
         </header>
 
@@ -5182,6 +5397,34 @@ export default function AdmissionsPage() {
                       </div>
                     </div>
                   </div>
+                  <div className="mt-5 grid gap-3 border-t border-[var(--crm-border)] pt-5 md:grid-cols-2">
+                    <label className="grid gap-1.5 text-xs font-semibold text-[var(--crm-muted)]">
+                      College name
+                      <input
+                        value={tenantBrand.collegeName}
+                        onChange={(event) => setTenantBrand((current) => ({ ...current, collegeName: event.target.value }))}
+                        className="h-10 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 text-sm font-normal text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)]"
+                        placeholder="Your college name"
+                      />
+                    </label>
+                    <label className="grid gap-1.5 text-xs font-semibold text-[var(--crm-muted)]">
+                      Portal label
+                      <input
+                        value={tenantBrand.suiteName}
+                        onChange={(event) => setTenantBrand((current) => ({ ...current, suiteName: event.target.value }))}
+                        className="h-10 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 text-sm font-normal text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)]"
+                        placeholder="Admin Suite"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void saveTenantBrand(tenantBrand)}
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold text-white md:col-span-2 md:justify-self-start"
+                      style={{ background: brandGradient }}
+                    >
+                      <Save size={14} /> Save college branding
+                    </button>
+                  </div>
                 </div>
 
               <div className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5">
@@ -6316,27 +6559,97 @@ export default function AdmissionsPage() {
                     <button type="button" onClick={addUserUnderRole} disabled={!canCreateUsers} className="mt-3 w-full rounded-lg px-3 py-2 text-xs text-white disabled:cursor-not-allowed disabled:opacity-40" style={{ background: brandGradient }}>Add user</button>
                   </div>
                   <div className="grid gap-2">
-                    <p className="text-[10px] uppercase tracking-widest text-[var(--crm-muted)]">Assign existing tenant users</p>
-                    {visibleStaffUsers.length ? visibleStaffUsers.map((user) => {
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[10px] uppercase tracking-widest text-[var(--crm-muted)]">{selectedAccessRole.name} users</p>
+                      <span className="rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-2 py-1 text-[10px] font-extrabold text-[var(--crm-muted)]">
+                        {selectedRoleUsers.length}
+                      </span>
+                    </div>
+                    {selectedRoleUsers.length ? selectedRoleUsers.map((user) => {
                       const assigned = user.roleIds.includes(selectedAccessRole.id);
+                      const denied = new Set(userDeniedAccess[user.id] ?? []);
+                      const roleModules = operationModules.filter((module) =>
+                        modulePermissionKeys(module).some((key) => selectedRolePermissionSet.has(key)));
+                      const deniedModules = roleModules.filter((module) => {
+                        const moduleKeys = modulePermissionKeys(module).filter((key) => selectedRolePermissionSet.has(key));
+                        return moduleKeys.length > 0 && moduleKeys.every((key) => denied.has(key));
+                      });
+                      const expanded = expandedUserAccessId === user.id;
                       return (
-                        <button
+                        <div
                           key={user.id}
-                          type="button"
-                          onClick={() => toggleUserRole(user)}
-                          disabled={!canUpdateUsers}
-                          className={`flex items-center gap-3 rounded-xl border p-3 text-left disabled:cursor-not-allowed disabled:opacity-50 ${assigned ? 'border-[var(--tenant-primary)] bg-[color-mix(in_srgb,var(--tenant-primary)_8%,var(--crm-surface))]' : 'border-[var(--crm-border)] bg-[var(--crm-surface)]'}`}
+                          className={`rounded-xl border p-3 ${assigned ? 'border-[var(--tenant-primary)] bg-[color-mix(in_srgb,var(--tenant-primary)_8%,var(--crm-surface))]' : 'border-[var(--crm-border)] bg-[var(--crm-surface)]'}`}
                         >
-                          <span className="grid h-10 w-10 place-items-center rounded-xl text-xs text-white" style={{ background: brandGradient }}>{user.initials}</span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm">{user.name}</span>
-                            <span className="block truncate text-[10px] text-[var(--crm-muted)]">{user.email}</span>
-                          </span>
-                          <span className={`grid h-6 min-w-6 place-items-center rounded-md border px-1 text-[9px] ${assigned ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)] text-white' : 'border-[var(--crm-border)] text-[var(--crm-muted)]'}`}>{assigned ? 'ON' : 'OFF'}</span>
-                        </button>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => toggleUserRole(user)}
+                              disabled={!canUpdateUsers}
+                              className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xs text-white" style={{ background: brandGradient }}>{user.initials}</span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm">{user.name}</span>
+                                <span className="block truncate text-[10px] text-[var(--crm-muted)]">{user.email}</span>
+                              </span>
+                              <span className={`grid h-6 min-w-6 shrink-0 place-items-center rounded-md border px-1 text-[9px] ${assigned ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)] text-white' : 'border-[var(--crm-border)] text-[var(--crm-muted)]'}`}>{assigned ? 'ON' : 'OFF'}</span>
+                            </button>
+                            {assigned && (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedUserAccessId(expanded ? '' : user.id)}
+                                className="shrink-0 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-[10px] font-extrabold text-[var(--crm-muted)] hover:text-[var(--crm-text)]"
+                              >
+                                {expanded ? 'Hide' : 'Manage'}
+                              </button>
+                            )}
+                          </div>
+                          {assigned && (
+                            <div className="mt-3 border-t border-[var(--crm-border)] pt-3">
+                              <div className="flex flex-wrap items-center gap-2 text-[10px] text-[var(--crm-muted)]">
+                                <span className="rounded-full border border-[var(--crm-border)] bg-[var(--crm-card)] px-2.5 py-1 font-bold">
+                                  {roleModules.length} modules from role
+                                </span>
+                                <span className={`rounded-full border px-2.5 py-1 font-bold ${deniedModules.length ? 'border-red-200 bg-red-50 text-red-600' : 'border-[var(--crm-border)] bg-[var(--crm-card)]'}`}>
+                                  {deniedModules.length ? `${deniedModules.length} disabled for user` : 'No user exceptions'}
+                                </span>
+                              </div>
+                              {expanded && (
+                                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                  {roleModules.map((module) => {
+                                    const moduleKeys = modulePermissionKeys(module).filter((key) => selectedRolePermissionSet.has(key));
+                                    const moduleDenied = moduleKeys.length > 0 && moduleKeys.every((key) => denied.has(key));
+                                    return (
+                                      <button
+                                        key={module.id}
+                                        type="button"
+                                        onClick={() => toggleUserModuleDeny(user, module)}
+                                        disabled={!canUpdateUsers || !moduleKeys.length}
+                                        className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-[11px] font-extrabold disabled:cursor-not-allowed disabled:opacity-40 ${moduleDenied ? 'border-red-200 bg-red-50 text-red-600' : 'border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-muted)] hover:text-[var(--crm-text)]'}`}
+                                        title={moduleDenied ? `Restore ${module.name} for this user` : `Disable ${module.name} for this user`}
+                                      >
+                                        <span className="truncate">{module.name}</span>
+                                        <span className={`rounded-md px-1.5 py-0.5 text-[9px] ${moduleDenied ? 'bg-red-100 text-red-700' : 'bg-[var(--crm-panel)] text-[var(--crm-muted)]'}`}>
+                                          {moduleDenied ? 'OFF' : 'ON'}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              {expanded && roleModules.length === 0 && (
+                                <p className="mt-3 rounded-lg border border-dashed border-[var(--crm-border)] bg-[var(--crm-card)] p-3 text-[11px] text-[var(--crm-muted)]">
+                                  This role has no module permissions yet.
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       );
                     }) : (
-                      <div className="rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-surface)] p-6 text-xs text-[var(--crm-muted)]">No tenant users are available.</div>
+                      <div className="rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-surface)] p-6 text-xs text-[var(--crm-muted)]">
+                        No users are assigned to {selectedAccessRole.name} yet. Add one from the form on the left.
+                      </div>
                     )}
                   </div>
                 </div>

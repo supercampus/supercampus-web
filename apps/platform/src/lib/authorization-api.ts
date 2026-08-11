@@ -16,6 +16,7 @@ export interface AuthorizationPermission {
 export interface AuthorizationGrant {
   key: string;
   scope: PermissionScope;
+  mode?: 'allow' | 'deny';
   constraints: Record<string, unknown>;
 }
 
@@ -89,8 +90,8 @@ export function getTenantUsers() {
 export function createTenantUser(input: {
   name: string;
   email: string;
-  password: string;
   roleIds: string[];
+  temporaryPassword?: string;
 }) {
   return apiRequest<{
     data: {
@@ -98,7 +99,7 @@ export function createTenantUser(input: {
       email: string;
       name: string;
       roleIds: string[];
-      created: boolean;
+      temporaryPassword: string | null;
     };
   }>(`${AUTHORIZATION_ROOT}/users`, {
     method: 'POST',
@@ -115,5 +116,34 @@ export function assignTenantUserRoles(userId: string, roleIds: string[]) {
   }>(`${AUTHORIZATION_ROOT}/users/${userId}/roles`, {
     method: 'PUT',
     body: JSON.stringify({ roleIds }),
+  });
+}
+
+export function getTenantUserAccess(userId: string, surface: 'app' | 'website' = 'app') {
+  return apiRequest<{
+    data: {
+      surface: 'app' | 'website';
+      userId: string;
+      grants: AuthorizationGrant[];
+    };
+  }>(`${AUTHORIZATION_ROOT}/users/${userId}/access?surface=${surface}`);
+}
+
+export function setTenantUserAccess(
+  userId: string,
+  input: {
+    surface: 'app' | 'website';
+    grants: AuthorizationGrant[];
+  },
+) {
+  return apiRequest<{
+    data: {
+      userId: string;
+      surface: 'app' | 'website';
+      grantCount: number;
+    };
+  }>(`${AUTHORIZATION_ROOT}/users/${userId}/access`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
   });
 }

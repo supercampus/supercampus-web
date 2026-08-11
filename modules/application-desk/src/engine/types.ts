@@ -181,6 +181,8 @@ export type OnboardingEventName =
   | "OnboardingHeld"
   | "OnboardingReturned"
   | "OnboardingRejected"
+  /** Distinct from OnboardingFailed: an expiry is a deadline, not a breakage (§26). */
+  | "OnboardingExpired"
   | "OnboardingFailed";
 
 export interface OnboardingEvent {

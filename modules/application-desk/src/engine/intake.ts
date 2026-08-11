@@ -189,6 +189,28 @@ export function summariseQueues(cases: readonly OnboardingCase[]): Record<QueueK
   return counts;
 }
 
+/**
+ * Whether a case has outlived the workflow's `expiryDays`.
+ *
+ * The definition carried an expiry window that nothing ever read, so cases sat
+ * open forever. This is the predicate a scheduled sweep (or the desk itself)
+ * uses to decide who gets the `expire` action; the engine stays clock-free, so
+ * `now` is passed in.
+ */
+export function isExpired(
+  onboarding: OnboardingCase,
+  definition: WorkflowDefinition,
+  now: string,
+): boolean {
+  if (!definition.expiryDays) return false;
+  // Only an open case can lapse; held cases are lapsing on purpose.
+  if (onboarding.status !== "ACTIVE") return false;
+  const opened = Date.parse(onboarding.createdAt);
+  const current = Date.parse(now);
+  if (!Number.isFinite(opened) || !Number.isFinite(current)) return false;
+  return current - opened > definition.expiryDays * 86_400_000;
+}
+
 /** Average completed-onboarding duration in hours (§4 metrics). */
 export function averageOnboardingHours(cases: readonly OnboardingCase[]): number | null {
   const completed = cases.filter((entry) => entry.completedAt);
