@@ -39,6 +39,13 @@ export type DeskSource = 'api' | 'demo';
 export interface DeskSnapshot {
   source: DeskSource;
   definition: WorkflowDefinition;
+  applicationForm?: {
+    id: string;
+    name: string;
+    formType: string;
+    version: number;
+    schema: unknown;
+  } | null;
   cases: OnboardingCase[];
   audit: AuditEntry[];
   events: OnboardingEvent[];
@@ -216,6 +223,46 @@ export interface ActOnCaseResult {
   snapshot: DeskSnapshot;
 }
 
+/** Translate the browser engine's expressive casework payload to the Rust API contract. */
+function apiPayload(input?: StageInput) {
+  if (!input) return undefined;
+  return {
+    applicationForm: input.applicationForm,
+    identityMatch: input.identityMatch,
+    documents: input.document
+      ? [{
+          type: input.document.type,
+          state: input.document.state,
+          fileId: input.document.fileId,
+          rejectionReason: input.document.reason,
+        }]
+      : undefined,
+    programId: input.academic?.programId,
+    departmentId: input.academic?.departmentId,
+    batchId: input.academic?.batchId,
+    academicYear: input.academic?.academicYear,
+    sectionId: input.sectionId,
+    finance: input.finance,
+    approvalStep: input.approval?.step,
+  };
+}
+
+/** The server groups casework under verify/approve while the browser names each task. */
+function apiAction(action: ActionKind) {
+  switch (action) {
+    case 'record_application':
+      return 'save_application';
+    case 'record_identity':
+    case 'review_document':
+    case 'map_academics':
+    case 'allocate_section':
+    case 'record_finance':
+      return 'verify';
+    default:
+      return action;
+  }
+}
+
 /**
  * Apply a workflow action. Against the demo store the engine runs in-process;
  * against the API the server runs the same engine and returns the new state.
@@ -226,7 +273,11 @@ export async function actOnCase(input: ActOnCaseInput, source: DeskSource): Prom
       `${DESK_ROOT}/cases/${encodeURIComponent(input.caseId)}/actions`,
       {
         method: 'POST',
-        body: JSON.stringify({ action: input.action, reason: input.reason, input: input.input }),
+        body: JSON.stringify({
+          action: apiAction(input.action),
+          reason: input.reason,
+          payload: apiPayload(input.input),
+        }),
       },
     );
     return { ok: response.ok, error: response.error, snapshot: snapshotOf('api', response.data) };

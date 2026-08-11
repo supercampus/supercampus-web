@@ -59,6 +59,13 @@ export interface OnboardingServices {
  * while changing nothing.
  */
 export interface StageInput {
+  /** `record_application` — a versioned response to the published Application form. */
+  applicationForm?: {
+    formId: string;
+    formVersion: number;
+    status: "draft" | "submitted";
+    data: Record<string, unknown>;
+  };
   /** `record_identity` — the outcome of the duplicate search. */
   identityMatch?: IdentityMatchKind;
   /** `review_document` — one checklist item's verification outcome. */
@@ -296,6 +303,34 @@ function applyCasework(
   const input = context.input ?? {};
 
   switch (action) {
+    case "record_application": {
+      const application = input.applicationForm;
+      if (!application) return refuse(onboarding, "No application form data supplied");
+      const previous = onboarding.attributes.applicationForm as { revision?: number } | undefined;
+      const revision = (previous?.revision ?? 0) + 1;
+      const snapshot = {
+        ...application,
+        revision,
+        updatedAt: context.now,
+        updatedBy: context.actor,
+      };
+      const history = Array.isArray(onboarding.attributes.applicationFormHistory)
+        ? onboarding.attributes.applicationFormHistory
+        : [];
+      return recorded(
+        onboarding,
+        {
+          attributes: {
+            ...onboarding.attributes,
+            applicationFormRequired: true,
+            applicationForm: snapshot,
+            applicationFormHistory: [...history, snapshot],
+          },
+        },
+        action,
+        context,
+      );
+    }
     case "record_identity": {
       if (!input.identityMatch) return refuse(onboarding, "No identity match result supplied");
       return recorded(onboarding, { identityMatch: input.identityMatch }, action, context);

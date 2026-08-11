@@ -53,6 +53,7 @@ export type ActionKind =
   /** Forward movement: validate the current stage, run its effects, hand off. */
   | "advance"
   // -- casework: supply what a stage's guard is blocking on -------------------
+  | "record_application"
   | "record_identity"
   | "review_document"
   | "map_academics"
@@ -70,6 +71,7 @@ export type ActionKind =
 
 /** Casework actions record data; they never move the case between stages. */
 export const CASEWORK_ACTIONS = [
+  "record_application",
   "record_identity",
   "review_document",
   "map_academics",

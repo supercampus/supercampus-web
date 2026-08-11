@@ -25,6 +25,14 @@ export interface AdmissionTrigger {
   campusId?: string;
   batchId?: string;
   feePaid?: boolean;
+  applicant?: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    guardianName?: string;
+    guardianEmail?: string;
+  };
+  attributes?: Record<string, unknown>;
 }
 
 export type IntakeTriggerMode = "on_confirmed" | "on_fee_paid" | "manual";
@@ -46,7 +54,8 @@ export function evaluateIntake(
   existing: readonly OnboardingCase[],
   mode: IntakeTriggerMode = "on_confirmed",
 ): IntakeDecision {
-  if (mode === "on_confirmed" && trigger.admissionStatus !== "CONFIRMED") {
+  const crmApplication = Boolean(trigger.crmLeadId) && trigger.admissionStatus === "APPLICATION";
+  if (mode === "on_confirmed" && trigger.admissionStatus !== "CONFIRMED" && !crmApplication) {
     return { create: false, reason: `Admission is ${trigger.admissionStatus}, not CONFIRMED` };
   }
   if (mode === "on_fee_paid" && !trigger.feePaid) {
@@ -57,7 +66,8 @@ export function evaluateIntake(
     (entry) =>
       entry.applicantId === trigger.applicantId ||
       entry.applicationId === trigger.applicationId ||
-      entry.admissionId === trigger.admissionId,
+      entry.admissionId === trigger.admissionId ||
+      (Boolean(trigger.crmLeadId) && entry.crmLeadId === trigger.crmLeadId),
   );
   if (duplicate) {
     // A closed case must not block a legitimate re-admission.
@@ -119,10 +129,11 @@ export function createCase(
       role: step.role,
       state: "PENDING",
     })),
+    applicant: trigger.applicant ?? {},
     createdAt: options.now,
     updatedAt: options.now,
     appliedEffects: {},
-    attributes: {},
+    attributes: { ...(trigger.attributes ?? {}) },
   };
 }
 

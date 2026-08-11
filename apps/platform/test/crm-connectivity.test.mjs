@@ -28,12 +28,17 @@ const sidebarSource = await readFile(
   'utf8',
 );
 const crmEventsSource = await readFile(new URL('../src/lib/crm-events.ts', import.meta.url), 'utf8');
+const leadDetailSource = await readFile(
+  new URL('../src/components/kanban/LeadDetailSidebar.tsx', import.meta.url),
+  'utf8',
+);
 
 test('first movement ownership replaces the separate unassigned pool', () => {
   assert.doesNotMatch(admissionsSource, /Unassigned pool/);
   assert.doesNotMatch(admissionsSource, /handleClaimLead/);
   assert.match(admissionsSource, /first stage movement claims the card/i);
-  assert.match(kanbanSource, /response\.data\.assignedTo \?\? 'Unassigned'/);
+  assert.match(kanbanSource, /id: ownerId/);
+  assert.match(kanbanSource, /ownerId === currentUserId \? currentUserName/);
   assert.doesNotMatch(kanbanSource, /ownerId === 'Unassigned' \? \{ name: currentUserId \}/);
   assert.doesNotMatch(kanbanSource, /requestCrmLeadMove/);
   assert.doesNotMatch(kanbanSource, /MoveRequestsPanel/);
@@ -75,6 +80,8 @@ test('pipeline movements apply websocket lead snapshots without refetching the b
   assert.match(admissionsSource, /hasLeadSnapshot \? 50 : 250/);
   assert.match(crmEventsSource, /error instanceof ApiRequestError && error\.status === 401/);
   assert.match(crmEventsSource, /error\.status >= 500 \? 5_000 : 1_000/);
+  assert.match(kanbanSource, /const current = leads\.find\(\(lead\) => lead\.id === selectedLead\.id\)/);
+  assert.match(kanbanSource, /setSelectedLead\(current\)/);
 });
 
 test('card transfer only targets eligible pipeline users and removes the old owner copy', () => {
@@ -110,4 +117,11 @@ test('lead import is launched from settings instead of the CRM command center', 
   assert.ok(settingsStart >= 0);
   assert.ok(importTrigger > settingsStart);
   assert.equal(admissionsSource.match(/onClick=\{openLeadImport\}/g)?.length, 1);
+});
+
+test('flagged duplicate leads remain traceable in the lead workspace', () => {
+  assert.match(admissionsSource, /duplicateOf: lead\.duplicateOf/);
+  assert.match(kanbanDataSource, /duplicateOf\?: string \| null/);
+  assert.match(leadDetailSource, /Duplicate lead detected/);
+  assert.match(leadDetailSource, /lead\.duplicateOf\.slice\(0, 8\)/);
 });

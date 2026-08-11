@@ -52,11 +52,13 @@ export interface Lead {
   intake: string;
   source: string;
   city: string;
-  assignedTo: { name: string; avatar?: string };
+  assignedTo: { id?: string; name: string; avatar?: string };
   status: string;
   substate?: string;
   globalStatus?: string | null;
   globalStatusData?: Record<string, unknown>;
+  /** Existing tenant lead matched by normalized phone or email. */
+  duplicateOf?: string | null;
   offerDecision?: OfferDecision;
   documents: { uploaded: number; required: number; items?: LeadDocument[] };
   communicationCount: number;

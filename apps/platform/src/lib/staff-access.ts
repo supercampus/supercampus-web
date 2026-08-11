@@ -154,6 +154,7 @@ export function permissionForCasework(action: string): string {
     case 'allocate_section':
       return 'application-desk.assign';
     case 'map_academics':
+    case 'record_application':
       return 'application-desk.edit';
     default:
       return 'application-desk.verify';

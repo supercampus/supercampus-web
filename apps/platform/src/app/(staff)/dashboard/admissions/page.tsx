@@ -481,7 +481,7 @@ function recordText(record: Record<string, unknown> | null | undefined, keys: st
   return null;
 }
 
-function toKanbanLead(lead: CrmLead): Lead {
+function toKanbanLead(lead: CrmLead, currentUserId?: string, currentUserName?: string): Lead {
   const name = lead.fullName?.trim() || 'Unnamed lead';
   const interestRecord = (lead.interest || (lead.customFields?.interest as Record<string, unknown>)) ?? {};
   const course = recordText(interestRecord, ['programName', 'program_name', 'programId', 'program_id']);
@@ -497,11 +497,17 @@ function toKanbanLead(lead: CrmLead): Lead {
     intake: intake ?? 'Not provided',
     source: lead.source,
     city: city ?? 'Not provided',
-    assignedTo: { name: lead.assignedTo ?? 'Unassigned' },
+    assignedTo: {
+      id: lead.assignedTo ?? undefined,
+      name: lead.assignedTo && lead.assignedTo === currentUserId
+        ? currentUserName || 'Current user'
+        : lead.assignedTo ?? 'Unassigned',
+    },
     status: pipelineStatus(lead.stageKey),
     substate: lead.substateKey,
     globalStatus: lead.globalStatus,
     globalStatusData: lead.globalStatusData,
+    duplicateOf: lead.duplicateOf,
     documents: { uploaded: lead.documentsVerified ? 1 : 0, required: 1 },
     communicationCount: 0,
     nextFollowUp: lead.followUpAt,
@@ -1692,7 +1698,7 @@ export default function AdmissionsPage() {
         canReadCrmDashboard ? getCrmOperationsDashboard() : Promise.resolve(null),
       ]);
       if (boardResponse) {
-        setLeads(boardResponse.data.stages.flatMap((stage) => stage.leads.map(toKanbanLead)));
+        setLeads(boardResponse.data.stages.flatMap((stage) => stage.leads.map((lead) => toKanbanLead(lead, student?.id, student?.name))));
       }
       if (dashboardResponse) setCrmDashboard(dashboardResponse.data);
       if (notify) showToast('CRM data refreshed');
@@ -1703,7 +1709,7 @@ export default function AdmissionsPage() {
     } finally {
       setCrmLoading(false);
     }
-  }, [canReadCrmDashboard, canReadLeads, showToast]);
+  }, [canReadCrmDashboard, canReadLeads, showToast, student?.id, student?.name]);
 
   // Refetches the board without the loading state or a toast, so a stage move made by
   // another user updates the columns in place instead of blanking them.
@@ -1719,13 +1725,13 @@ export default function AdmissionsPage() {
           : Promise.resolve(null),
       ]);
       if (boardResponse) {
-        setLeads(boardResponse.data.stages.flatMap((stage) => stage.leads.map(toKanbanLead)));
+        setLeads(boardResponse.data.stages.flatMap((stage) => stage.leads.map((lead) => toKanbanLead(lead, student?.id, student?.name))));
       }
       if (dashboardResponse) setCrmDashboard(dashboardResponse.data);
     } catch {
       // A failed background refresh keeps the last good board rather than surfacing an error.
     }
-  }, [canReadCrmDashboard, canReadLeads]);
+  }, [canReadCrmDashboard, canReadLeads, student?.id, student?.name]);
 
   // Events arrive in bursts of up to 100, so collapse them into one refetch.
   const realtimeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1739,7 +1745,7 @@ export default function AdmissionsPage() {
         && typeof realtimeLead.updatedAt === 'string',
     );
     if (hasLeadSnapshot && realtimeLead) {
-      const nextLead = toKanbanLead(realtimeLead);
+      const nextLead = toKanbanLead(realtimeLead, student?.id, student?.name);
       const visibleOnPipeline = realtimeLead.stageKey === 'enquiry'
         || realtimeLead.assignedTo === student?.id;
       setLeads((current) => {
@@ -1765,7 +1771,7 @@ export default function AdmissionsPage() {
       // already current. Older event shapes still fall back to a board refetch.
       void silentlyRefreshBoard(includeDashboard, !hasLeadSnapshot);
     }, hasLeadSnapshot ? 50 : 250);
-  }, [silentlyRefreshBoard, student?.id]);
+  }, [silentlyRefreshBoard, student?.id, student?.name]);
 
   useEffect(() => () => {
     if (realtimeTimer.current) clearTimeout(realtimeTimer.current);
@@ -2446,7 +2452,7 @@ export default function AdmissionsPage() {
       const response = await createTenantUser({
         name,
         email,
-        temporaryPassword: password,
+        password,
         roleIds: [selectedAccessRole.id],
       });
       const user: StaffUser = {
@@ -3299,6 +3305,7 @@ export default function AdmissionsPage() {
                 setLeads={setLeads}
                 roleId={roleId}
                 currentUserId={student?.id ?? ''}
+                currentUserName={student?.name ?? ''}
                 canUpdateLeads={canUpdateLeads}
                 canMoveLeadStage={canMoveLeadStage}
                 canHoldLeads={canHoldLeads}

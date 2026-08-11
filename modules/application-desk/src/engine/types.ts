@@ -102,6 +102,14 @@ export interface ApprovalRecord {
   comment?: string;
 }
 
+export interface ApplicantSnapshot {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  guardianName?: string;
+  guardianEmail?: string;
+}
+
 /**
  * The onboarding case — the workflow record. The Student Master is only
  * created once the workflow reaches STUDENT_CREATION (§6).
@@ -131,6 +139,7 @@ export interface OnboardingCase {
   academic: AcademicMapping;
   finance: FinanceState;
   approvals: ApprovalRecord[];
+  applicant?: ApplicantSnapshot;
 
   /** Populated only by the corresponding provisioning stages. */
   studentNumber?: string;

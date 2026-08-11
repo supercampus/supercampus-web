@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import {
-  Archive, ArrowRightLeft, CalendarClock, Check, CheckCircle2, ClipboardCheck, FileText, LoaderCircle,
+  AlertTriangle, Archive, ArrowRightLeft, CalendarClock, Check, CheckCircle2, ClipboardCheck, FileText, LoaderCircle,
   MessageSquare, PauseCircle, Pencil, Plus, Save, UserRound, X,
 } from 'lucide-react';
 import type { Lead } from '@/lib/kanban/kanban-data';
@@ -292,6 +292,13 @@ export default function LeadDetailSidebar({
               <div><p className="text-[11px] font-bold uppercase tracking-wider text-[var(--crm-muted)]">Pipeline stage</p><div className="mt-2 flex flex-wrap gap-2"><span className="inline-flex rounded-full bg-[var(--tenant-surface)] px-3 py-1 text-xs font-bold text-[var(--tenant-primary)]">{currentStage}</span>{lead.globalStatus === 'on_hold' && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700"><PauseCircle size={12} />On hold</span>}</div></div>
               <span className="rounded-lg border border-[var(--crm-border)] px-2 py-1 text-[10px] font-semibold text-[var(--crm-muted)]">{lead.assignedTo.name === 'Unassigned' ? 'Unassigned' : 'Owned'}</span>
             </div>
+
+            {lead.duplicateOf && (
+              <div role="alert" className="mb-5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-900">
+                <p className="flex items-center gap-2 text-xs font-bold"><AlertTriangle size={15} />Duplicate lead detected</p>
+                <p className="mt-1 text-[11px] leading-5">Phone or email matches lead {lead.duplicateOf.slice(0, 8)}. Review both records before merging or advancing this card.</p>
+              </div>
+            )}
 
             <div className="mb-5 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--crm-muted)]">Card owner</p>

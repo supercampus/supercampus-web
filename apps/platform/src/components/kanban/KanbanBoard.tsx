@@ -32,6 +32,7 @@ interface KanbanBoardProps {
   setLeads: React.Dispatch<React.SetStateAction<Lead[]>>;
   roleId: string;
   currentUserId: string;
+  currentUserName: string;
   canUpdateLeads: boolean;
   canMoveLeadStage: boolean;
   canHoldLeads: boolean;
@@ -45,6 +46,7 @@ export default function KanbanBoard({
   setLeads,
   roleId,
   currentUserId,
+  currentUserName,
   canUpdateLeads,
   canMoveLeadStage,
   canHoldLeads,
@@ -69,6 +71,20 @@ export default function KanbanBoard({
   // fetched once here and handed to the detail sidebar.
   const [leadForm, setLeadForm] = useState<CrmForm | null>(null);
   const [stageCatalog, setStageCatalog] = useState<CrmStageCatalog[]>([]);
+
+  // Realtime events replace the authoritative card in `leads`. Keep an open
+  // workspace attached to that snapshot so stage, owner, and duplicate state do
+  // not remain stale while the board has already moved on.
+  useEffect(() => {
+    if (!sidebarOpen || !selectedLead) return;
+    const current = leads.find((lead) => lead.id === selectedLead.id);
+    if (current) {
+      setSelectedLead(current);
+    } else {
+      setSidebarOpen(false);
+      setSelectedLead(null);
+    }
+  }, [leads, selectedLead?.id, sidebarOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,7 +167,7 @@ export default function KanbanBoard({
     const stageKey = toColumn.replaceAll('-', '_');
     targetSubstate ??= stageCatalog.find((stage) => stage.key === stageKey)?.defaultSubstate;
 
-    const ownerId = lead.assignedTo.name;
+    const ownerId = lead.assignedTo.id ?? lead.assignedTo.name;
     if (ownerId !== 'Unassigned' && ownerId !== currentUserId) {
       onShowToast('This card belongs to another user. Refresh the pipeline.');
       return 'failed' as const;
@@ -174,7 +190,11 @@ export default function KanbanBoard({
       // landed the lead somewhere other than the drop target. Ownership must also
       // come from the locked server transaction, never from client-side inference.
       const nextStatus = response.data.stageKey.replaceAll('_', '-');
-      const assignedTo = { name: response.data.assignedTo ?? 'Unassigned' };
+      const ownerId = response.data.assignedTo ?? undefined;
+      const assignedTo = {
+        id: ownerId,
+        name: ownerId === currentUserId ? currentUserName || 'Current user' : ownerId ?? 'Unassigned',
+      };
       setLeads((previous) => previous.map((item) => item.id === lead.id
         ? { ...item, status: nextStatus, substate: response.data.substateKey, assignedTo, lastContact: 'just now' }
         : item));
@@ -195,7 +215,7 @@ export default function KanbanBoard({
       onShowToast(error instanceof Error ? error.message : 'Unable to move lead');
       return 'failed' as const;
     }
-  }, [currentUserId, onShowToast, setLeads, stageCatalog]);
+  }, [currentUserId, currentUserName, onShowToast, setLeads, stageCatalog]);
 
   const openTransfer = useCallback(async (lead: Lead) => {
     setTransferLead(lead);
@@ -470,7 +490,7 @@ export default function KanbanBoard({
           canUpdateLead={canUpdateLeads}
           canMoveLeadStage={canMoveLeadStage}
           canHoldLead={canHoldLeads}
-          canTransferLead={selectedLead.assignedTo.name === currentUserId && selectedLead.status !== 'enquiry'}
+          canTransferLead={(selectedLead.assignedTo.id ?? selectedLead.assignedTo.name) === currentUserId && selectedLead.status !== 'enquiry'}
           onTransferLead={(lead) => void openTransfer(lead)}
           stageSubstates={availableCurrentStageSubstates(
             selectedLead.status,

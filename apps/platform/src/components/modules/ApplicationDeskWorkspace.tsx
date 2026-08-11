@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
+  Ban,
   CheckCircle2,
   ChevronRight,
   Clock,
@@ -16,6 +17,7 @@ import {
   Search,
   ShieldCheck,
   Undo2,
+  UserMinus,
   Wallet,
   X,
   XCircle,
@@ -99,8 +101,29 @@ const STAGE_RAIL: Array<{ id: OnboardingCase['stage']; short: string }> = [
   { id: 'COMPLETED', short: 'Done' },
 ];
 
-const TABS = ['overview', 'documents', 'academic', 'approvals', 'activity'] as const;
+const TABS = ['application', 'overview', 'documents', 'academic', 'approvals', 'activity'] as const;
 type Tab = (typeof TABS)[number];
+
+type ApplicationField = {
+  key?: string;
+  label: string;
+  type: string;
+  required?: boolean;
+  width?: 'half' | 'full';
+  placeholder?: string;
+  helpText?: string;
+  options?: string[];
+};
+type ApplicationSection = { section: string; fields: ApplicationField[] };
+type ApplicationRecord = {
+  formId: string;
+  formVersion: number;
+  status: 'draft' | 'submitted';
+  data: Record<string, unknown>;
+  revision: number;
+  updatedAt?: string;
+  updatedBy?: string;
+};
 
 // -- value presentation -----------------------------------------------------
 
@@ -208,6 +231,14 @@ function nextAction(
       return { text: `Closed · ${humanize(onboarding.status)}`, tone: 'neutral' };
   }
 
+  if (
+    onboarding.stage === 'DATA_REVIEW'
+    && onboarding.attributes.applicationFormRequired === true
+    && applicationRecord(onboarding)?.status !== 'submitted'
+  ) {
+    return { text: 'Application form not submitted', tone: 'warning' };
+  }
+
   const stage = stageById(definition, onboarding.stage);
   if (!stage) return { text: 'Awaiting review', tone: 'neutral' };
   const guard = runGuards(onboarding, definition, stage.guards);
@@ -245,7 +276,30 @@ function relativeTime(iso: string) {
 }
 
 function applicantName(onboarding: OnboardingCase) {
-  return DEMO_APPLICANT_NAMES[onboarding.applicantId] ?? onboarding.applicantId;
+  return onboarding.applicant?.fullName ?? DEMO_APPLICANT_NAMES[onboarding.applicantId] ?? onboarding.applicantId;
+}
+
+function attribute(onboarding: OnboardingCase, key: string) {
+  const value = onboarding.attributes[key];
+  return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+function applicationRecord(onboarding: OnboardingCase): ApplicationRecord | undefined {
+  const value = onboarding.attributes.applicationForm;
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as ApplicationRecord
+    : undefined;
+}
+
+function applicationSections(schema: unknown): ApplicationSection[] {
+  if (Array.isArray(schema)) return schema as ApplicationSection[];
+  if (!schema || typeof schema !== 'object') return [];
+  const sections = (schema as { sections?: unknown }).sections;
+  return Array.isArray(sections) ? sections as ApplicationSection[] : [];
+}
+
+function formFieldKey(field: ApplicationField) {
+  return field.key ?? field.label.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 }
 
 /** Rail position of a case. `NEW` sits before the first rail entry. */
@@ -320,7 +374,8 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('oldest');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('overview');
+  const [tab, setTab] = useState<Tab>('application');
+  const [actionReason, setActionReason] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
 
   const [reloadToken, setReloadToken] = useState(0);
@@ -373,8 +428,12 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
       if (!term) return true;
       return (
         applicantName(entry).toLowerCase().includes(term) ||
+        entry.applicant?.email?.toLowerCase().includes(term) ||
+        entry.applicant?.phone?.toLowerCase().includes(term) ||
         entry.id.toLowerCase().includes(term) ||
-        entry.admissionId.toLowerCase().includes(term)
+        entry.applicationId.toLowerCase().includes(term) ||
+        entry.admissionId.toLowerCase().includes(term) ||
+        entry.crmLeadId?.toLowerCase().includes(term)
       );
     });
     return sortCases(rows, sort);
@@ -399,6 +458,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
           : Math.min(visible.length - 1, Math.max(0, current + delta));
       const target = visible[nextIndex];
       if (!target) return;
+      setActionError(null);
       setSelectedId(target.id);
       requestAnimationFrame(() => {
         const node = listRef.current?.querySelector<HTMLButtonElement>(`[data-case="${target.id}"]`);
@@ -412,6 +472,10 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   /** Why `advance` is currently refused — shown before the operator clicks. */
   const blockedReason = useMemo(() => {
     if (!snapshot || !selected || selected.status !== 'ACTIVE') return null;
+    const form = applicationRecord(selected);
+    if (selected.stage === 'DATA_REVIEW' && (snapshot.applicationForm || selected.attributes.applicationFormRequired === true) && form?.status !== 'submitted') {
+      return 'Complete and submit the application form before identity verification';
+    }
     const stage = stageById(snapshot.definition, selected.stage);
     if (!stage) return null;
     const guard = runGuards(selected, snapshot.definition, stage.guards);
@@ -510,8 +574,8 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
             <p className="text-[10px] uppercase tracking-[0.32em] text-[var(--crm-muted)]">Admissions</p>
             <h1 className="mt-2 text-2xl leading-tight text-[var(--crm-text)]">Application Desk</h1>
             <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-[var(--crm-muted)]">
-              Confirmed admissions become SuperCampus students here — identity, documents, mapping, approval, then
-              provisioning.
+              Applications enter after the applicant submits the Application form. Review identity, documents,
+              academics, finance and approvals here before student activation.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -556,7 +620,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
           <Metric label="Students activated" value={activated} icon={GraduationCap} />
         </section>
 
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(440px,520px)]">
           <section className="overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)]">
             {/* Lifecycle views — what is on the desk right now. */}
             <div className="flex items-end gap-1 overflow-x-auto border-b border-[var(--crm-border)] px-3">
@@ -699,7 +763,10 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                     data-case={entry.id}
                     role="option"
                     aria-selected={isSelected}
-                    onClick={() => setSelectedId(entry.id)}
+                    onClick={() => {
+                      setActionError(null);
+                      setSelectedId(entry.id);
+                    }}
                     className={`group grid w-full grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)_44px] items-center gap-3 px-4 py-2.5 text-left outline-none transition ${
                       isSelected
                         ? 'bg-[var(--tenant-primary)]/[0.06] shadow-[inset_2px_0_0_var(--tenant-primary)]'
@@ -775,7 +842,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                 <IdCard size={22} className="mx-auto text-[var(--crm-muted)]" />
                 <p className="mt-3 text-sm text-[var(--crm-text)]">No case selected</p>
                 <p className="mt-1 text-xs text-[var(--crm-muted)]">
-                  Pick an applicant from the queue to review their onboarding record.
+                  Pick an application from the queue to review and complete its workflow.
                 </p>
               </div>
             )}
@@ -798,6 +865,10 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       <div className="flex gap-1.5">
                         <dt className="shrink-0">Case</dt>
                         <dd className="truncate font-mono text-[var(--crm-text)]">{selected.id}</dd>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <dt className="shrink-0">Application</dt>
+                        <dd className="truncate font-mono text-[var(--crm-text)]">{selected.applicationId}</dd>
                       </div>
                       <div className="flex gap-1.5">
                         <dt className="shrink-0">Admission</dt>
@@ -849,8 +920,48 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                 </nav>
 
                 <div className="min-h-[240px] max-h-[320px] overflow-y-auto px-5 py-4 text-xs">
+                  {tab === 'application' && (
+                    snapshot.applicationForm ? (
+                      <ApplicationFormPanel
+                        key={`${selected.id}-${applicationRecord(selected)?.revision ?? 0}`}
+                        form={snapshot.applicationForm}
+                        onboarding={selected}
+                        record={applicationRecord(selected)}
+                        disabled={busy || !open || !mayRun('record_application')}
+                        onSave={(status, data) => void act(
+                          'record_application',
+                          status === 'submitted' ? 'Application form submitted' : 'Application draft saved',
+                          {
+                            applicationForm: {
+                              formId: snapshot.applicationForm!.id,
+                              formVersion: snapshot.applicationForm!.version,
+                              status,
+                              data,
+                            },
+                          },
+                        )}
+                      />
+                    ) : (
+                      <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-800">
+                        <p className="font-medium">No published Application form</p>
+                        <p className="mt-1 text-[11px] leading-relaxed">
+                          Publish an Admissions → Application form in Settings → Form Builders. It will appear here automatically without storing a duplicate application in CRM.
+                        </p>
+                      </div>
+                    )
+                  )}
+
                   {tab === 'overview' && (
                     <div className="space-y-5">
+                      <Group title="Applicant and CRM source">
+                        <Row label="Email">{selected.applicant?.email ? <Value>{selected.applicant.email}</Value> : <Muted>Not provided</Muted>}</Row>
+                        <Row label="Phone">{selected.applicant?.phone ? <Value>{selected.applicant.phone}</Value> : <Muted>Not provided</Muted>}</Row>
+                        <Row label="Lead source">{attribute(selected, 'source') ? <Value>{attribute(selected, 'source')}</Value> : <Muted>Not provided</Muted>}</Row>
+                        <Row label="Lead owner">{attribute(selected, 'leadOwner') ? <Value>{attribute(selected, 'leadOwner')}</Value> : <Muted>Unassigned</Muted>}</Row>
+                        <Row label="Priority">{attribute(selected, 'priority') ? <Pill tone="neutral">{humanize(attribute(selected, 'priority')!)}</Pill> : <Muted>Not set</Muted>}</Row>
+                        {selected.crmLeadId && <Row label="CRM lead"><Mono>{selected.crmLeadId}</Mono></Row>}
+                      </Group>
+
                       <Group title="Verification">
                         <Row label="Identity check">
                           {selected.identityMatch ? (
@@ -1059,6 +1170,22 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                         </Row>
                       </Group>
 
+                      {open && mayRun('map_academics') && (
+                        <Casework
+                          title="Update academic mapping"
+                          hint="Resolve the required academic fields before allocating a section."
+                        >
+                          <AcademicMappingEditor
+                            key={selected.id}
+                            current={selected.academic}
+                            disabled={busy}
+                            onSave={(academic) =>
+                              void act('map_academics', 'Academic mapping updated', { academic })
+                            }
+                          />
+                        </Casework>
+                      )}
+
                       {open && mayRun('allocate_section') && (
                         <Casework
                           title="Allocate section"
@@ -1163,10 +1290,92 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
 
                 {/* Actions ------------------------------------------------- */}
                 <div className="space-y-2 border-t border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
+                  {blockedReason && selected.status === 'ACTIVE' && (
+                    <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+                      <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-amber-800">
+                        Required before advancing
+                      </p>
+                      <p className="mt-1 text-[11px] leading-relaxed text-amber-700">{blockedReason}</p>
+
+                      {selected.stage === 'IDENTITY_VERIFICATION' && mayRun('record_identity') && (
+                        <div className="mt-2 grid grid-cols-2 gap-1.5">
+                          {(['NO_MATCH', 'CONFIRMED_MATCH', 'POSSIBLE_MATCH', 'DUPLICATE'] as IdentityMatchKind[]).map(
+                            (match) => (
+                              <Chip
+                                key={match}
+                                label={humanize(match)}
+                                active={selected.identityMatch === match}
+                                disabled={busy}
+                                tone={match === 'DUPLICATE' ? 'danger' : undefined}
+                                onClick={() =>
+                                  void act('record_identity', `Identity recorded as ${match}`, {
+                                    identityMatch: match,
+                                  })
+                                }
+                              />
+                            ),
+                          )}
+                        </div>
+                      )}
+
+                      {selected.stage === 'DATA_REVIEW' && snapshot.applicationForm && (
+                        <button
+                          type="button"
+                          onClick={() => setTab('application')}
+                          className="mt-2 text-[11px] font-medium text-[var(--tenant-primary)] hover:underline"
+                        >
+                          Complete application form
+                        </button>
+                      )}
+
+                      {selected.stage === 'DOCUMENT_VERIFICATION' && (
+                        <button
+                          type="button"
+                          onClick={() => setTab('documents')}
+                          className="mt-2 text-[11px] font-medium text-[var(--tenant-primary)] hover:underline"
+                        >
+                          Review required documents
+                        </button>
+                      )}
+                      {(selected.stage === 'ACADEMIC_MAPPING' || selected.stage === 'SECTION_ALLOCATION') && (
+                        <button
+                          type="button"
+                          onClick={() => setTab('academic')}
+                          className="mt-2 text-[11px] font-medium text-[var(--tenant-primary)] hover:underline"
+                        >
+                          Complete academic details
+                        </button>
+                      )}
+                      {selected.stage === 'FINANCE_VERIFICATION' && (
+                        <button
+                          type="button"
+                          onClick={() => setTab('overview')}
+                          className="mt-2 text-[11px] font-medium text-[var(--tenant-primary)] hover:underline"
+                        >
+                          Record finance clearance
+                        </button>
+                      )}
+                      {selected.stage === 'APPROVAL' && (
+                        <button
+                          type="button"
+                          onClick={() => setTab('approvals')}
+                          className="mt-2 text-[11px] font-medium text-[var(--tenant-primary)] hover:underline"
+                        >
+                          Open approval chain
+                        </button>
+                      )}
+                    </section>
+                  )}
+                  <input
+                    value={actionReason}
+                    onChange={(event) => setActionReason(event.target.value)}
+                    placeholder="Action note or reason (saved in history)"
+                    className="w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs text-[var(--crm-text)] outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)]"
+                  />
                   <Action
                     label={
                       blockedReason
-                        ? 'Advance — blocked'
+                        ? 'Complete required checks to advance'
                         : nextRailStage
                           ? `Advance to ${nextRailStage.short}`
                           : 'Complete onboarding'
@@ -1174,30 +1383,46 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                     icon={busy ? Loader2 : ChevronRight}
                     tone="primary"
                     spin={busy}
-                    disabled={busy || selected.status !== 'ACTIVE' || !mayAdvance}
-                    onClick={() => void act('advance')}
+                    disabled={busy || selected.status !== 'ACTIVE' || !mayAdvance || !!blockedReason}
+                    onClick={() => void act('advance', actionReason.trim() || undefined)}
                   />
                   <div className="grid grid-cols-3 gap-2">
                     <Action
                       label="Hold"
                       icon={PauseCircle}
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.hold}
-                      onClick={() => void act('hold', 'Held from Application Desk')}
+                      onClick={() => void act('hold', actionReason.trim() || 'Held from Application Desk')}
                     />
                     <Action
                       label="Return"
                       icon={Undo2}
-                      disabled={busy || selected.status !== 'ACTIVE' || !desk.edit}
-                      onClick={() => void act('return', 'Returned for correction')}
+                      disabled={busy || selected.status !== 'ACTIVE' || !desk.verify}
+                      onClick={() => void act('return', actionReason.trim() || 'Returned for correction')}
                     />
                     <Action
                       label="Reject"
                       icon={XCircle}
                       tone="danger"
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.reject}
-                      onClick={() => void act('reject', 'Rejected at Application Desk')}
+                      onClick={() => void act('reject', actionReason.trim() || 'Rejected at Application Desk')}
                     />
                   </div>
+                  {open && desk.reject && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Action
+                        label="Cancel case"
+                        icon={Ban}
+                        disabled={busy}
+                        onClick={() => void act('cancel', actionReason.trim() || 'Application cancelled by institution')}
+                      />
+                      <Action
+                        label="Applicant withdrew"
+                        icon={UserMinus}
+                        disabled={busy}
+                        onClick={() => void act('withdraw', actionReason.trim() || 'Application withdrawn by applicant')}
+                      />
+                    </div>
+                  )}
                   {(selected.status === 'ON_HOLD' || selected.status === 'RETURNED') && (
                     <Action
                       label={`Resume at ${STAGE_RAIL.find((s) => s.id === (selected.resumeStage ?? selected.stage))?.short ?? 'last stage'}`}
@@ -1231,6 +1456,127 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
         </footer>
       </div>
     </DeskShell>
+  );
+}
+
+function ApplicationFormPanel({
+  form,
+  onboarding,
+  record,
+  disabled,
+  onSave,
+}: {
+  form: NonNullable<DeskSnapshot['applicationForm']>;
+  onboarding: OnboardingCase;
+  record?: ApplicationRecord;
+  disabled: boolean;
+  onSave: (status: 'draft' | 'submitted', data: Record<string, unknown>) => void;
+}) {
+  const sections = applicationSections(form.schema);
+  const fields = sections.flatMap((section) => section.fields);
+  const initial = Object.fromEntries(fields.map((field) => {
+    const key = formFieldKey(field);
+    if (record?.data[key] !== undefined) return [key, record.data[key]];
+    const label = `${key} ${field.label}`.toLowerCase();
+    if (label.includes('email')) return [key, onboarding.applicant?.email ?? ''];
+    if (label.includes('phone') || label.includes('mobile')) return [key, onboarding.applicant?.phone ?? ''];
+    if (label.includes('guardian') || label.includes('parent name')) return [key, onboarding.applicant?.guardianName ?? ''];
+    if (label.includes('full name') || label.includes('applicant name') || key === 'name') {
+      return [key, onboarding.applicant?.fullName ?? ''];
+    }
+    if (label.includes('source')) return [key, attribute(onboarding, 'source') ?? ''];
+    return [key, field.type === 'Checkbox' || field.type === 'Consent' ? false : ''];
+  }));
+  const [values, setValues] = useState<Record<string, unknown>>(initial);
+  const [error, setError] = useState<string | null>(null);
+
+  const update = (key: string, value: unknown) => setValues((current) => ({ ...current, [key]: value }));
+  const save = (status: 'draft' | 'submitted') => {
+    if (status === 'submitted') {
+      const missing = fields.find((field) => {
+        if (!field.required) return false;
+        const value = values[formFieldKey(field)];
+        return value === undefined || value === null || value === '' || value === false || (Array.isArray(value) && value.length === 0);
+      });
+      if (missing) {
+        setError(`${missing.label} is required before submission`);
+        return;
+      }
+    }
+    setError(null);
+    onSave(status, values);
+  };
+
+  if (sections.length === 0) {
+    return <Muted>The published Application form has no configured fields.</Muted>;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="font-medium text-[var(--crm-text)]">{form.name}</p>
+          <p className="mt-0.5 text-[10px] text-[var(--crm-muted)]">Form v{form.version} · Application {record ? `revision ${record.revision}` : 'not started'}</p>
+        </div>
+        <Pill tone={record?.status === 'submitted' ? 'positive' : record ? 'warning' : 'neutral'}>
+          {record?.status ? humanize(record.status) : 'Not started'}
+        </Pill>
+      </div>
+
+      {sections.map((section) => (
+        <section key={section.section} className="space-y-3">
+          <p className="border-b border-[var(--crm-border)] pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--crm-muted)]">{section.section}</p>
+          <div className="grid grid-cols-2 gap-3">
+            {section.fields.map((field) => {
+              const key = formFieldKey(field);
+              const value = values[key];
+              if (field.type === 'Hidden field' || field.type === 'Automation') return null;
+              if (field.type === 'Section heading' || field.type === 'Divider') {
+                return <p key={key} className="col-span-2 border-b border-[var(--crm-border)] pb-1 text-[11px] font-medium text-[var(--crm-text)]">{field.label}</p>;
+              }
+              const wide = field.width === 'full' || ['Paragraph', 'Address', 'Guardian details', 'Education details', 'Table'].includes(field.type);
+              const controlClass = 'mt-1 min-h-9 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-2.5 text-[11px] text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)] disabled:opacity-60';
+              let control: React.ReactNode;
+              if (field.type === 'Dropdown' || field.type === 'Radio group' || field.type === 'Multi select') {
+                control = (
+                  <select disabled={disabled} value={String(value ?? '')} onChange={(event) => update(key, event.target.value)} className={controlClass}>
+                    <option value="">{field.placeholder || `Select ${field.label}`}</option>
+                    {(field.options ?? []).map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                );
+              } else if (field.type === 'Checkbox' || field.type === 'Consent') {
+                control = (
+                  <label className={`${controlClass} flex items-center gap-2`}>
+                    <input type="checkbox" disabled={disabled} checked={value === true} onChange={(event) => update(key, event.target.checked)} />
+                    {field.placeholder || `Confirm ${field.label}`}
+                  </label>
+                );
+              } else if (field.type === 'Paragraph' || wide) {
+                control = <textarea disabled={disabled} value={String(value ?? '')} placeholder={field.placeholder} onChange={(event) => update(key, event.target.value)} className={`${controlClass} min-h-20 py-2`} />;
+              } else if (field.type === 'Upload' || field.type === 'Image upload') {
+                control = <input type="file" disabled={disabled} accept={field.type === 'Image upload' ? 'image/*' : undefined} onChange={(event) => update(key, event.target.files?.[0]?.name ?? '')} className={`${controlClass} py-1.5`} />;
+              } else {
+                const type = field.type === 'Email' ? 'email' : field.type === 'Phone' ? 'tel' : field.type === 'Date' ? 'date' : field.type === 'Date time' ? 'datetime-local' : field.type === 'Number' || field.type === 'Currency' ? 'number' : 'text';
+                control = <input type={type} disabled={disabled} value={String(value ?? '')} placeholder={field.placeholder} onChange={(event) => update(key, event.target.value)} className={controlClass} />;
+              }
+              return (
+                <label key={key} className={wide ? 'col-span-2' : ''}>
+                  <span className="text-[10px] font-medium text-[var(--crm-muted)]">{field.label}{field.required && <span className="text-rose-500"> *</span>}</span>
+                  {control}
+                  {field.helpText && <span className="mt-1 block text-[9px] text-[var(--crm-muted)]">{field.helpText}</span>}
+                </label>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+
+      {error && <p className="rounded-lg bg-rose-500/10 px-3 py-2 text-[10px] text-rose-700">{error}</p>}
+      <div className="flex justify-end gap-2 border-t border-[var(--crm-border)] pt-3">
+        <button type="button" disabled={disabled} onClick={() => save('draft')} className="rounded-lg border border-[var(--crm-border)] px-3 py-2 text-[10px] font-medium text-[var(--crm-text)] disabled:opacity-50">Save draft</button>
+        <button type="button" disabled={disabled} onClick={() => save('submitted')} className="rounded-lg bg-[var(--tenant-primary)] px-3 py-2 text-[10px] font-medium text-white disabled:opacity-50">Submit application</button>
+      </div>
+    </div>
   );
 }
 
@@ -1519,6 +1865,62 @@ function Chip({
     >
       {label}
     </button>
+  );
+}
+
+function AcademicMappingEditor({
+  current,
+  disabled,
+  onSave,
+}: {
+  current: OnboardingCase['academic'];
+  disabled?: boolean;
+  onSave: (academic: NonNullable<StageInput['academic']>) => void;
+}) {
+  const [programId, setProgramId] = useState(current.programId ?? '');
+  const [departmentId, setDepartmentId] = useState(current.departmentId ?? '');
+  const [academicYear, setAcademicYear] = useState(current.academicYear ?? '');
+  const [batchId, setBatchId] = useState(current.batchId ?? '');
+  const values = { programId, departmentId, academicYear, batchId };
+  const complete = Object.values(values).every((value) => value.trim());
+
+  return (
+    <form
+      className="grid w-full grid-cols-2 gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!complete) return;
+        onSave({
+          programId: programId.trim(),
+          departmentId: departmentId.trim(),
+          academicYear: academicYear.trim(),
+          batchId: batchId.trim(),
+        });
+      }}
+    >
+      {([
+        ['Program id', programId, setProgramId],
+        ['Department id', departmentId, setDepartmentId],
+        ['Academic year', academicYear, setAcademicYear],
+        ['Batch id', batchId, setBatchId],
+      ] as const).map(([label, value, setter]) => (
+        <label key={label} className="text-[10px] text-[var(--crm-muted)]">
+          {label}
+          <input
+            value={value}
+            onChange={(event) => setter(event.target.value)}
+            className="mt-1 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-2 py-1.5 text-[11px] text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)]"
+          />
+        </label>
+      ))}
+      <button
+        type="submit"
+        disabled={disabled || !complete}
+        className="col-span-2 rounded-lg bg-[var(--tenant-primary)] px-3 py-2 text-[10px] font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Save academic mapping
+      </button>
+    </form>
   );
 }
 
