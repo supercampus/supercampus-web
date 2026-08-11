@@ -72,19 +72,12 @@ export default function KanbanBoard({
   const [leadForm, setLeadForm] = useState<CrmForm | null>(null);
   const [stageCatalog, setStageCatalog] = useState<CrmStageCatalog[]>([]);
 
-  // Realtime events replace the authoritative card in `leads`. Keep an open
-  // workspace attached to that snapshot so stage, owner, and duplicate state do
-  // not remain stale while the board has already moved on.
-  useEffect(() => {
-    if (!sidebarOpen || !selectedLead) return;
-    const current = leads.find((lead) => lead.id === selectedLead.id);
-    if (current) {
-      setSelectedLead(current);
-    } else {
-      setSidebarOpen(false);
-      setSelectedLead(null);
-    }
-  }, [leads, selectedLead?.id, sidebarOpen]);
+  // Realtime events replace the authoritative card in `leads`. Render the open
+  // workspace from that snapshot so stage, owner, and duplicate state cannot
+  // remain stale, without mirroring props into state from an effect.
+  const visibleSelectedLead = selectedLead
+    ? leads.find((lead) => lead.id === selectedLead.id) ?? null
+    : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -478,10 +471,10 @@ export default function KanbanBoard({
       </div>
 
       {/* Lead Detail Sidebar */}
-      {sidebarOpen && selectedLead && (
+      {sidebarOpen && visibleSelectedLead && (
         <LeadDetailSidebar
-          key={selectedLead.id}
-          lead={selectedLead}
+          key={visibleSelectedLead.id}
+          lead={visibleSelectedLead}
           leadForm={leadForm}
           onClose={() => { setSidebarOpen(false); setSelectedLead(null); }}
           onApplicationDecision={decideApplication}
@@ -490,12 +483,12 @@ export default function KanbanBoard({
           canUpdateLead={canUpdateLeads}
           canMoveLeadStage={canMoveLeadStage}
           canHoldLead={canHoldLeads}
-          canTransferLead={(selectedLead.assignedTo.id ?? selectedLead.assignedTo.name) === currentUserId && selectedLead.status !== 'enquiry'}
+          canTransferLead={(visibleSelectedLead.assignedTo.id ?? visibleSelectedLead.assignedTo.name) === currentUserId && visibleSelectedLead.status !== 'enquiry'}
           onTransferLead={(lead) => void openTransfer(lead)}
           stageSubstates={availableCurrentStageSubstates(
-            selectedLead.status,
-            selectedLead.substate,
-            stageCatalog.find((stage) => stage.key === selectedLead.status.replaceAll('-', '_'))?.substates ?? [],
+            visibleSelectedLead.status,
+            visibleSelectedLead.substate,
+            stageCatalog.find((stage) => stage.key === visibleSelectedLead.status.replaceAll('-', '_'))?.substates ?? [],
           )}
           onChangeSubstate={changeSubstate}
         />

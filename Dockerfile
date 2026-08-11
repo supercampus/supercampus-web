@@ -45,5 +45,5 @@ COPY --from=builder --chown=supercampus:nodejs /app/apps/platform/public ./apps/
 COPY --from=builder --chown=supercampus:nodejs /app/apps/platform/.next/static ./apps/platform/.next/static
 USER supercampus
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=8s --start-period=30s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=8s --start-period=30s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 CMD ["node", "apps/platform/server.js"]

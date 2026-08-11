@@ -1335,7 +1335,7 @@ const addPermissionCell = (
 const buildMobilePortalOperationModules = () => {
   const modules = new Map<string, OperationModule>();
   MOBILE_PORTAL_MODULES.forEach((mobileModule) => {
-    const module: OperationModule = {
+    const operationModule: OperationModule = {
       id: mobileModule.id,
       name: mobileModule.name,
       features: mobileModule.features.map((feature) => feature.label),
@@ -1343,7 +1343,7 @@ const buildMobilePortalOperationModules = () => {
       permissionCells: {},
       actionCells: {},
     };
-    modules.set(module.id, module);
+    modules.set(operationModule.id, operationModule);
   });
   return modules;
 };

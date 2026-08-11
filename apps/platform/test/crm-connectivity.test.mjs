@@ -80,8 +80,9 @@ test('pipeline movements apply websocket lead snapshots without refetching the b
   assert.match(admissionsSource, /hasLeadSnapshot \? 50 : 250/);
   assert.match(crmEventsSource, /error instanceof ApiRequestError && error\.status === 401/);
   assert.match(crmEventsSource, /error\.status >= 500 \? 5_000 : 1_000/);
-  assert.match(kanbanSource, /const current = leads\.find\(\(lead\) => lead\.id === selectedLead\.id\)/);
-  assert.match(kanbanSource, /setSelectedLead\(current\)/);
+  assert.match(kanbanSource, /const visibleSelectedLead = selectedLead/);
+  assert.match(kanbanSource, /leads\.find\(\(lead\) => lead\.id === selectedLead\.id\) \?\? null/);
+  assert.match(kanbanSource, /lead=\{visibleSelectedLead\}/);
 });
 
 test('card transfer only targets eligible pipeline users and removes the old owner copy', () => {
