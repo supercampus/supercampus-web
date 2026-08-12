@@ -26,6 +26,7 @@ import {
   runGuards,
   stageById,
   type ActionKind,
+  type FinanceState,
   type IdentityMatchKind,
   type OnboardingCase,
   type StageInput,
@@ -45,6 +46,8 @@ import {
 } from '@/lib/application-desk-api';
 
 type QueueKey = keyof DeskSnapshot['queues'];
+
+const FINANCE_STATES: FinanceState[] = ['CLEARED', 'PENDING', 'HOLD', 'NOT_REQUIRED'];
 
 /**
  * The queue filters are two tiers, not one flat row of eleven chips.
@@ -483,7 +486,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
         setLoadError(null);
       } catch (error) {
         if (cancelled) return;
-        setLoadError(error instanceof Error ? error.message : 'Unable to load the Application Desk');
+        setLoadError(error instanceof Error ? error.message : 'Unable to load the Admission Desk');
       }
     })();
     return () => {
@@ -640,7 +643,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
       <DeskShell embedded={embedded}>
         <div className="mx-auto mt-16 max-w-md rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-6 text-center">
           <ShieldCheck size={22} className="mx-auto text-[var(--crm-muted)]" />
-          <h1 className="mt-3 text-lg text-[var(--crm-text)]">Application Desk</h1>
+          <h1 className="mt-3 text-lg text-[var(--crm-text)]">Admission Desk</h1>
           <p className="mt-2 text-sm text-[var(--crm-muted)]">
             You need the <code className="text-[var(--tenant-primary)]">application-desk.view</code> permission to open
             the onboarding queue.
@@ -655,7 +658,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
       <DeskShell embedded={embedded}>
         <div className="mx-auto mt-16 max-w-md rounded-2xl border border-rose-200 bg-[var(--crm-card)] p-6 text-center shadow-sm">
           <XCircle size={24} className="mx-auto text-rose-500" />
-          <h1 className="mt-3 text-lg text-[var(--crm-text)]">Application Desk could not load</h1>
+          <h1 className="mt-3 text-lg text-[var(--crm-text)]">Admission Desk could not load</h1>
           <p className="mt-2 text-sm leading-6 text-[var(--crm-muted)]">{loadError}</p>
           <button type="button" onClick={refresh} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white">
             <RefreshCw size={15} /> Retry
@@ -670,12 +673,15 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   return (
     <DeskShell embedded={embedded}>
       <div className="mx-auto max-w-[1600px] space-y-5">
-        <header className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--crm-text)]">Application Desk</h1>
+        <header className="flex items-start gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--crm-text)]">Admission Desk</h1>
+            <p className="mt-1 text-xs text-[var(--crm-muted)]">Accepted offers awaiting completion before Student Master activation.</p>
+          </div>
           <div className="relative">
             <button
               type="button"
-              aria-label="Application Desk instructions"
+              aria-label="Admission Desk instructions"
               aria-expanded={instructionsOpen}
               onClick={() => setInstructionsOpen((open) => !open)}
               className="grid size-9 place-items-center rounded-full border border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-muted)] shadow-sm transition hover:border-[var(--tenant-primary)]/40 hover:text-[var(--tenant-primary)]"
@@ -684,7 +690,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
             </button>
             {instructionsOpen && (
               <div className="absolute left-0 top-11 z-20 w-[min(360px,calc(100vw-48px))] rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4 text-sm leading-6 text-[var(--crm-muted)] shadow-xl">
-                <p className="font-semibold text-[var(--crm-text)]">How to use Application Desk</p>
+                <p className="font-semibold text-[var(--crm-text)]">How to use Admission Desk</p>
                 <ol className="mt-2 list-decimal space-y-1 pl-4">
                   <li>Select an applicant from the live queue.</li>
                   <li>Review application, documents, identity, academic mapping and fee readiness.</li>
@@ -1145,8 +1151,10 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           hint="What Fees & Finance reported Ã¢â‚¬â€ the desk records it, finance owns it."
                         >
                           {(financeDeskField?.options?.length
-                            ? financeDeskField.options.map((option) => option.toUpperCase().replace(/[^A-Z]+/g, '_')).filter((state) => ['CLEARED', 'PENDING', 'HOLD', 'NOT_REQUIRED'].includes(state))
-                            : ['CLEARED', 'PENDING', 'HOLD', 'NOT_REQUIRED']
+                            ? financeDeskField.options
+                                .map((option) => option.toUpperCase().replace(/[^A-Z]+/g, '_'))
+                                .filter((state): state is FinanceState => FINANCE_STATES.includes(state as FinanceState))
+                            : FINANCE_STATES
                           ).map((state) => (
                             <Chip
                               key={state}

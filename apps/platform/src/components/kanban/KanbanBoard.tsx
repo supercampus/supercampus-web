@@ -38,6 +38,7 @@ interface KanbanBoardProps {
   canHoldLeads: boolean;
   canLogCalls: boolean;
   canMoveLeadBackward: boolean;
+  canTriggerErpHandoff: boolean;
   onCreateLead?: (column: Column) => void;
   onShowToast: (msg: string) => void;
   onRefresh: () => void;
@@ -54,6 +55,7 @@ export default function KanbanBoard({
   canHoldLeads,
   canLogCalls,
   canMoveLeadBackward,
+  canTriggerErpHandoff,
   onCreateLead,
   onShowToast,
   onRefresh,
@@ -406,9 +408,13 @@ export default function KanbanBoard({
   }
 
   const changeSubstate = useCallback(async (lead: Lead, substate: string) => {
+    if (lead.status === 'offer-status' && substate === 'accepted' && !canTriggerErpHandoff) {
+      onShowToast('Offer acceptance requires the ERP handoff permission.');
+      return;
+    }
     const outcome = await persistMove(lead, lead.status, `Substage changed to ${substate.replaceAll('_', ' ')}`, substate);
     if (outcome === 'moved') onShowToast(`${lead.name} updated`);
-  }, [onShowToast, persistMove]);
+  }, [canTriggerErpHandoff, onShowToast, persistMove]);
 
   return (
     <DndContext
@@ -500,7 +506,7 @@ export default function KanbanBoard({
             visibleSelectedLead.status,
             visibleSelectedLead.substate,
             stageCatalog.find((stage) => stage.key === visibleSelectedLead.status.replaceAll('-', '_'))?.substates ?? [],
-          )}
+          ).filter((substate) => canTriggerErpHandoff || visibleSelectedLead.status !== 'offer-status' || substate !== 'accepted')}
           onChangeSubstate={changeSubstate}
         />
       )}

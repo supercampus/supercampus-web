@@ -38,7 +38,7 @@ const items: NavEntry[] = [
     children: [
       { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
       { id: 'pipeline', label: 'Lead', icon: Kanban },
-      { id: 'application-desk', label: 'Application Desk', icon: IdCard },
+      { id: 'application-desk', label: 'Admission Desk', icon: IdCard },
     ],
   },
   { id: 'students', label: 'Students', icon: Users },

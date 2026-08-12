@@ -129,7 +129,7 @@ const FORM_MODULE_TYPES: Record<string, Array<{ value: string; label: string }>>
   ],
   Admissions: [
     { value: 'application', label: 'Application' },
-    { value: 'application_desk_controls', label: 'Application Desk controls' },
+    { value: 'application_desk_controls', label: 'Admission Desk controls' },
     { value: 'document_checklist', label: 'Document checklist' },
     { value: 'interview', label: 'Interview' },
   ],
@@ -620,7 +620,7 @@ const NAV_TITLES: Record<NavSection, string> = {
   crm: 'CRM',
   pipeline: 'Lead',
   admissions: 'Admissions',
-  'application-desk': 'Application Desk',
+  'application-desk': 'Admission Desk',
   students: 'Students',
   academics: 'Academics',
   fees: 'Fees & Finance',
@@ -3342,6 +3342,7 @@ export default function AdmissionsPage() {
                 canHoldLeads={canHoldLeads}
                 canLogCalls={canSendCrmCommunications}
                 canMoveLeadBackward={canMoveLeadBackward}
+                canTriggerErpHandoff={canTriggerErpHandoff}
                 onCreateLead={canCreateLeads ? openStageLeadCreation : undefined}
                 onShowToast={showToast}
                 onRefresh={() => void refreshCrmBoard()}
