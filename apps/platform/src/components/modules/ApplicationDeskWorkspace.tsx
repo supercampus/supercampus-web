@@ -102,6 +102,15 @@ const STAGE_RAIL: Array<{ id: OnboardingCase['stage']; short: string }> = [
 const TABS = ['application', 'overview', 'documents', 'academic', 'approvals', 'activity'] as const;
 type Tab = (typeof TABS)[number];
 
+const TAB_LABELS: Record<Tab, string> = {
+  application: 'Application',
+  overview: 'Review',
+  documents: 'Documents',
+  academic: 'Academic',
+  approvals: 'Approvals',
+  activity: 'History',
+};
+
 type ApplicationField = {
   key?: string;
   label: string;
@@ -300,6 +309,17 @@ function formFieldKey(field: ApplicationField) {
   return field.key ?? field.label.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 }
 
+function deskFormFields(form: DeskSnapshot['deskForm']): ApplicationField[] {
+  if (!form) return [];
+  return applicationSections(form.schema).flatMap((section) => section.fields ?? []);
+}
+
+function deskFieldMatches(field: ApplicationField, aliases: string[]) {
+  const key = formFieldKey(field).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const label = field.label.toLowerCase();
+  return aliases.some((alias) => key === alias || label.includes(alias.replace(/([A-Z])/g, ' $1').toLowerCase()));
+}
+
 /** Rail position of a case. `NEW` sits before the first rail entry. */
 function stageIndex(stage: OnboardingCase['stage']) {
   const index = STAGE_RAIL.findIndex((entry) => entry.id === stage);
@@ -321,6 +341,36 @@ function Metric({ label, value, icon: Icon }: { label: string; value: string | n
       </div>
     </div>
   );
+}
+
+function workTabForStage(stage: OnboardingCase['stage']): Tab {
+  switch (stage) {
+    case 'DATA_REVIEW': return 'application';
+    case 'DOCUMENT_VERIFICATION': return 'documents';
+    case 'ACADEMIC_MAPPING':
+    case 'SECTION_ALLOCATION': return 'academic';
+    case 'FINANCE_VERIFICATION': return 'overview';
+    case 'APPROVAL': return 'approvals';
+    case 'IDENTITY_VERIFICATION': return 'overview';
+    default: return 'overview';
+  }
+}
+
+function stageTask(stage: OnboardingCase['stage']): { title: string; description: string } {
+  switch (stage) {
+    case 'DATA_REVIEW': return { title: 'Review the application', description: 'Check the applicant form and submit any missing required information.' };
+    case 'IDENTITY_VERIFICATION': return { title: 'Complete identity verification', description: 'Record the result of the duplicate and identity search.' };
+    case 'DOCUMENT_VERIFICATION': return { title: 'Verify required documents', description: 'Review each uploaded document and verify, waive, or reject it.' };
+    case 'ACADEMIC_MAPPING': return { title: 'Map academic details', description: 'Assign the programme, department, academic year, and batch.' };
+    case 'SECTION_ALLOCATION': return { title: 'Allocate a section', description: 'Assign the applicant to the appropriate class section.' };
+    case 'FINANCE_VERIFICATION': return { title: 'Verify finance status', description: 'Record the latest status reported by the Finance team.' };
+    case 'APPROVAL': return { title: 'Complete approvals', description: 'Review and approve each step in the configured approval chain.' };
+    case 'STUDENT_CREATION': return { title: 'Create the student record', description: 'The system will create the student master record after approval.' };
+    case 'ACCOUNT_PROVISIONING': return { title: 'Create the user account', description: 'The system will provision the student account.' };
+    case 'ACCESS_PROVISIONING': return { title: 'Provision module access', description: 'The system will apply the student’s configured access.' };
+    case 'ACTIVATION': return { title: 'Activate the student', description: 'Complete the final activation step.' };
+    default: return { title: 'Review case status', description: 'Review the case details and history.' };
+  }
 }
 
 /**
@@ -450,6 +500,24 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   );
 
   const cases = useMemo(() => snapshot?.cases ?? [], [snapshot]);
+  const deskFields = useMemo(() => deskFormFields(snapshot?.deskForm), [snapshot?.deskForm]);
+  const academicDeskFields = useMemo(
+    () => deskFields.filter((field) => ['programme', 'program', 'department', 'academicyear', 'academic year', 'batch'].some((alias) => deskFieldMatches(field, [alias]))),
+    [deskFields],
+  );
+  const sectionDeskField = useMemo(
+    () => deskFields.find((field) => deskFieldMatches(field, ['sectionid', 'section'])),
+    [deskFields],
+  );
+  const financeDeskField = useMemo(
+    () => deskFields.find((field) => deskFieldMatches(field, ['finance', 'financestate', 'financestatus'])),
+    [deskFields],
+  );
+  const reasonDeskField = useMemo(
+    () => deskFields.find((field) => deskFieldMatches(field, ['actionreason', 'action note', 'reason'])),
+    [deskFields],
+  );
+  const actionReasonReady = !reasonDeskField?.required || actionReason.trim().length > 0;
   const selected = cases.find((entry) => entry.id === selectedId) ?? null;
 
   const inView = useMemo(() => cases.filter((entry) => viewMatches(entry, view)), [cases, view]);
@@ -802,6 +870,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                     aria-selected={isSelected}
                     onClick={() => {
                       setActionError(null);
+                      setTab(workTabForStage(entry.stage));
                       setSelectedId(entry.id);
                     }}
                     className={`group grid w-full grid-cols-[minmax(0,1fr)_44px] items-center gap-3 px-4 py-3.5 text-left outline-none transition sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)_44px] sm:px-5 ${
@@ -936,6 +1005,33 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                   </div>
                 )}
 
+                {/* Current task ------------------------------------------ */}
+                {(() => {
+                  const task = stageTask(selected.stage);
+                  const taskTab = workTabForStage(selected.stage);
+                  return (
+                    <section className="border-b border-[var(--crm-border)] bg-[var(--tenant-primary)]/[0.04] px-5 py-3.5 sm:px-6" aria-label="Current task">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--tenant-primary)]">Current task</p>
+                          <h3 className="mt-1 text-sm font-semibold text-[var(--crm-text)]">{task.title}</h3>
+                          <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--crm-muted)]">{task.description}</p>
+                        </div>
+                        {tab !== taskTab && (
+                          <button type="button" onClick={() => setTab(taskTab)} className="shrink-0 rounded-lg border border-[var(--tenant-primary)]/30 bg-[var(--crm-card)] px-2.5 py-1.5 text-[10px] font-semibold text-[var(--tenant-primary)] transition hover:bg-[var(--tenant-primary)]/10">
+                            Open task
+                          </button>
+                        )}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[var(--crm-muted)]">
+                        <span>Programme: <strong className="font-medium text-[var(--crm-text)]">{selected.academic.programId ?? 'Not mapped'}</strong></span>
+                        <span>Documents: <strong className="font-medium text-[var(--crm-text)]">{selected.documents.filter((doc) => doc.state === 'VERIFIED' || doc.state === 'WAIVED').length}/{snapshot.definition.documentChecklist.length}</strong></span>
+                        <span>Finance: <strong className="font-medium text-[var(--crm-text)]">{humanize(selected.finance)}</strong></span>
+                      </div>
+                    </section>
+                  );
+                })()}
+
                 {/* Detail tabs --------------------------------------------- */}
                 <nav className="flex gap-1 overflow-x-auto border-b border-[var(--crm-border)] bg-[var(--crm-surface)]/45 px-3 pt-2">
                   {TABS.map((entry) => (
@@ -949,7 +1045,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           : 'border-transparent text-[var(--crm-muted)] hover:text-[var(--crm-text)]'
                       }`}
                     >
-                      {entry}
+                      {TAB_LABELS[entry]}
                     </button>
                   ))}
                 </nav>
@@ -1048,7 +1144,10 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           title="Record finance state"
                           hint="What Fees & Finance reported Ã¢â‚¬â€ the desk records it, finance owns it."
                         >
-                          {(['CLEARED', 'PENDING', 'HOLD', 'NOT_REQUIRED'] as const).map((state) => (
+                          {(financeDeskField?.options?.length
+                            ? financeDeskField.options.map((option) => option.toUpperCase().replace(/[^A-Z]+/g, '_')).filter((state) => ['CLEARED', 'PENDING', 'HOLD', 'NOT_REQUIRED'].includes(state))
+                            : ['CLEARED', 'PENDING', 'HOLD', 'NOT_REQUIRED']
+                          ).map((state) => (
                             <Chip
                               key={state}
                               label={humanize(state)}
@@ -1210,14 +1309,26 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           title="Update academic mapping"
                           hint="Resolve the required academic fields before allocating a section."
                         >
-                          <AcademicMappingEditor
-                            key={selected.id}
-                            current={selected.academic}
-                            disabled={busy}
-                            onSave={(academic) =>
-                              void act('map_academics', 'Academic mapping updated', { academic })
-                            }
-                          />
+                          {academicDeskFields.length >= 4 ? (
+                            <DynamicAcademicMappingEditor
+                              key={selected.id}
+                              fields={academicDeskFields}
+                              current={selected.academic}
+                              disabled={busy}
+                              onSave={(academic) =>
+                                void act('map_academics', 'Academic mapping updated', { academic })
+                              }
+                            />
+                          ) : (
+                            <AcademicMappingEditor
+                              key={selected.id}
+                              current={selected.academic}
+                              disabled={busy}
+                              onSave={(academic) =>
+                                void act('map_academics', 'Academic mapping updated', { academic })
+                              }
+                            />
+                          )}
                         </Casework>
                       )}
 
@@ -1226,13 +1337,24 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           title="Allocate section"
                           hint="Capacity and allocation rules stay with Academic Management; the desk records the result."
                         >
-                          <SectionAllocator
-                            current={selected.academic.sectionId}
-                            disabled={busy}
-                            onAllocate={(sectionId) =>
-                              void act('allocate_section', `Section ${sectionId} allocated`, { sectionId })
-                            }
-                          />
+                          {sectionDeskField ? (
+                            <DynamicSectionAllocator
+                              field={sectionDeskField}
+                              current={selected.academic.sectionId}
+                              disabled={busy}
+                              onAllocate={(sectionId) =>
+                                void act('allocate_section', `Section ${sectionId} allocated`, { sectionId })
+                              }
+                            />
+                          ) : (
+                            <SectionAllocator
+                              current={selected.academic.sectionId}
+                              disabled={busy}
+                              onAllocate={(sectionId) =>
+                                void act('allocate_section', `Section ${sectionId} allocated`, { sectionId })
+                              }
+                            />
+                          )}
                         </Casework>
                       )}
                     </div>
@@ -1324,7 +1446,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                 </div>
 
                 {/* Actions ------------------------------------------------- */}
-                <div className="shrink-0 space-y-2.5 border-t border-[var(--crm-border)] bg-[var(--crm-card)] p-4 sm:px-6">
+                <div className="sticky bottom-0 z-10 shrink-0 space-y-2.5 border-t border-[var(--crm-border)] bg-[var(--crm-card)]/95 p-4 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur sm:px-6">
                   {blockedReason && selected.status === 'ACTIVE' && (
                     <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
                       <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-amber-800">
@@ -1401,12 +1523,18 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       )}
                     </section>
                   )}
-                  <input
-                    value={actionReason}
-                    onChange={(event) => setActionReason(event.target.value)}
-                    placeholder="Action note or reason (saved in history)"
-                    className="min-h-11 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs text-[var(--crm-text)] shadow-sm outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/10"
-                  />
+                  <label className="block">
+                    <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--crm-muted)]">
+                      {reasonDeskField?.label || 'Optional action note'}{reasonDeskField?.required && <span className="ml-1 text-rose-500">Required</span>}
+                    </span>
+                    <input
+                      value={actionReason}
+                      onChange={(event) => setActionReason(event.target.value)}
+                      placeholder={reasonDeskField?.placeholder || 'Add a note saved in case history'}
+                      required={reasonDeskField?.required}
+                      className="min-h-10 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs text-[var(--crm-text)] shadow-sm outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/10"
+                    />
+                  </label>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap gap-2">
                     <Action
@@ -1444,7 +1572,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       icon={busy ? Loader2 : ChevronRight}
                       tone="primary"
                       spin={busy}
-                      disabled={busy || selected.status !== 'ACTIVE' || !mayAdvance || !!blockedReason}
+                      disabled={busy || selected.status !== 'ACTIVE' || !mayAdvance || !!blockedReason || !actionReasonReady}
                       onClick={() => void act('advance', actionReason.trim() || undefined)}
                     />
                   </div>
@@ -1891,6 +2019,28 @@ function Chip({
       {label}
     </button>
   );
+}
+
+function DeskFieldControl({ field, value, onChange, disabled }: { field: ApplicationField; value: string; onChange: (value: string) => void; disabled?: boolean }) {
+  const choices = field.options?.filter(Boolean) ?? [];
+  const type = field.type.toLowerCase();
+  const common = 'mt-1 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-2 py-1.5 text-[11px] text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)]';
+  if (type.includes('dropdown') && choices.length > 0) return <select value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className={common}><option value="">Select {field.label.toLowerCase()}</option>{choices.map((option) => <option key={option} value={option}>{option}</option>)}</select>;
+  if (type.includes('radio') && choices.length > 0) return <span className="mt-1 flex flex-wrap gap-1.5">{choices.map((option) => <button key={option} type="button" disabled={disabled} onClick={() => onChange(option)} className={`rounded-md border px-2 py-1 text-[10px] ${value === option ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)]/10 text-[var(--tenant-primary)]' : 'border-[var(--crm-border)] text-[var(--crm-muted)]'}`}>{option}</button>)}</span>;
+  if (type.includes('textarea') || type.includes('long text')) return <textarea value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} placeholder={field.placeholder} className={`${common} min-h-16`} />;
+  return <input value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} placeholder={field.placeholder} className={common} />;
+}
+
+function DynamicAcademicMappingEditor({ fields, current, disabled, onSave }: { fields: ApplicationField[]; current: OnboardingCase['academic']; disabled?: boolean; onSave: (academic: NonNullable<StageInput['academic']>) => void }) {
+  const [values, setValues] = useState<Record<string, string>>({ programId: current.programId ?? '', departmentId: current.departmentId ?? '', academicYear: current.academicYear ?? '', batchId: current.batchId ?? '' });
+  const semantic = (field: ApplicationField) => { const key = formFieldKey(field).toLowerCase().replace(/[^a-z0-9]/g, ''); const label = field.label.toLowerCase(); if (key.includes('department') || label.includes('department')) return 'departmentId'; if (key.includes('academic') || label.includes('academic year')) return 'academicYear'; if (key.includes('batch') || label.includes('batch')) return 'batchId'; return 'programId'; };
+  const complete = fields.every((field) => !field.required || Boolean(values[semantic(field)]?.trim()));
+  return <form className="grid w-full grid-cols-2 gap-2" onSubmit={(event) => { event.preventDefault(); if (complete) onSave({ programId: values.programId.trim(), departmentId: values.departmentId.trim(), academicYear: values.academicYear.trim(), batchId: values.batchId.trim() }); }}>{fields.map((field) => { const key = semantic(field); return <label key={formFieldKey(field)} className="text-[10px] text-[var(--crm-muted)]">{field.label}{field.required && <span className="ml-0.5 text-rose-500">*</span>}<DeskFieldControl field={field} value={values[key] ?? ''} disabled={disabled} onChange={(value) => setValues((previous) => ({ ...previous, [key]: value }))} /></label>; })}<button type="submit" disabled={disabled || !complete} className="col-span-2 rounded-lg bg-[var(--tenant-primary)] px-3 py-2 text-[10px] font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40">Save academic mapping</button></form>;
+}
+
+function DynamicSectionAllocator({ field, current, disabled, onAllocate }: { field: ApplicationField; current?: string; disabled?: boolean; onAllocate: (sectionId: string) => void }) {
+  const [value, setValue] = useState(current ?? ''); const trimmed = value.trim();
+  return <form className="w-full" onSubmit={(event) => { event.preventDefault(); if (trimmed) onAllocate(trimmed); }}><label className="text-[10px] text-[var(--crm-muted)]">{field.label}{field.required && <span className="ml-0.5 text-rose-500">*</span>}<span className="flex items-center gap-1.5"><DeskFieldControl field={field} value={value} disabled={disabled} onChange={setValue} /><button type="submit" disabled={disabled || !trimmed || trimmed === current} className="mt-1 shrink-0 rounded-lg border border-[var(--tenant-primary)] bg-[var(--tenant-primary)] px-2 py-1.5 text-[10px] text-white disabled:opacity-40">{current ? 'Reallocate' : 'Allocate'}</button></span></label></form>;
 }
 
 function AcademicMappingEditor({

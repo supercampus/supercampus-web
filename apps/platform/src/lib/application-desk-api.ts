@@ -46,6 +46,13 @@ export interface DeskSnapshot {
     version: number;
     schema: unknown;
   } | null;
+  deskForm?: {
+    id: string;
+    name: string;
+    formType: string;
+    version: number;
+    schema: unknown;
+  } | null;
   cases: OnboardingCase[];
   audit: AuditEntry[];
   events: OnboardingEvent[];

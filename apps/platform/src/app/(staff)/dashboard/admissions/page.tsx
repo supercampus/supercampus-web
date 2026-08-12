@@ -129,6 +129,7 @@ const FORM_MODULE_TYPES: Record<string, Array<{ value: string; label: string }>>
   ],
   Admissions: [
     { value: 'application', label: 'Application' },
+    { value: 'application_desk_controls', label: 'Application Desk controls' },
     { value: 'document_checklist', label: 'Document checklist' },
     { value: 'interview', label: 'Interview' },
   ],
@@ -1847,17 +1848,24 @@ export default function AdmissionsPage() {
         role.id,
         Object.fromEntries(role.permissions.map((grant) => [grant.key, grant.scope])),
       ])));
-      const userAccessResponses = canReadUsers
+      // Per-user access overrides are only needed by access administration.
+      // Loading one request per tenant user on every CRM/Application Desk mount
+      // can exhaust the API database pool and starve the desk `cases` request.
+      const shouldLoadUserOverrides = canReadUsers
+        && (activeNav === 'users' || (activeNav === 'settings' && settingsSection === 'access'));
+      const userAccessResponses = shouldLoadUserOverrides
         ? await Promise.all(usersResponse.data.map((user) =>
             getTenantUserAccess(user.id, 'app').catch(() => null)))
         : [];
-      setUserDeniedAccess(Object.fromEntries(usersResponse.data.map((user, index) => {
-        const access = userAccessResponses[index];
-        const denied = access?.data.grants
-          .filter((grant) => grant.mode === 'deny')
-          .map((grant) => grant.key) ?? [];
-        return [user.id, denied];
-      })));
+      if (shouldLoadUserOverrides) {
+        setUserDeniedAccess(Object.fromEntries(usersResponse.data.map((user, index) => {
+          const access = userAccessResponses[index];
+          const denied = access?.data.grants
+            .filter((grant) => grant.mode === 'deny')
+            .map((grant) => grant.key) ?? [];
+          return [user.id, denied];
+        })));
+      }
       setOperationModules(modules);
       setSelectedAccessRoleId((current) => roles.some((role) => role.id === current) ? current : roles[0]?.id ?? '');
       setSelectedAccessModuleId((current) => modules.some((module) => module.id === current) ? current : modules[0]?.id ?? '');
@@ -1884,7 +1892,7 @@ export default function AdmissionsPage() {
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Unable to load tenant configuration');
     }
-  }, [canCreateLeads, canReadForms, canReadPermissionCatalog, canReadRoles, canReadUsers, showToast]);
+  }, [activeNav, canCreateLeads, canReadForms, canReadPermissionCatalog, canReadRoles, canReadUsers, settingsSection, showToast]);
 
   useEffect(() => {
     if (authStatus === 'unauthenticated') window.location.assign('/');
