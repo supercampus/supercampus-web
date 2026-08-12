@@ -3,7 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import type { Lead } from '@/lib/kanban/kanban-data';
 import { getCrmActivity, type CrmActivity } from '@/lib/crm-api';
-import { Bell, X, ArrowRight, MessageSquare } from 'lucide-react';
+import { Bell, X, ArrowRight, MessageSquare, Phone } from 'lucide-react';
 
 interface ActivityFeedProps {
   leads: Lead[];
@@ -13,6 +13,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activity, setActivity] = useState<CrmActivity[]>([]);
   const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<'All' | 'Moves' | 'Calls' | 'Notes'>('All');
 
   const toggle = useCallback(async () => {
     const opening = !isOpen;
@@ -40,6 +41,18 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
     )
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, 10);
+
+  const activityKind = (entry: CrmActivity) => {
+    const event = entry.eventType.toLowerCase();
+    const channel = String(entry.payload.channel ?? '').toLowerCase();
+    if (event.includes('stage') || event.includes('move') || event.includes('claim')) return 'Moves';
+    if (channel === 'call' || event.includes('call')) return 'Calls';
+    if (channel === 'note' || event.includes('note')) return 'Notes';
+    return 'All';
+  };
+  const filteredActivity = filter === 'All'
+    ? activity
+    : activity.filter((entry) => activityKind(entry) === filter);
 
   return (
     <div className="relative">
@@ -69,10 +82,13 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
 
             {/* Filters */}
             <div className="flex gap-1 px-4 py-2 border-b border-[var(--crm-border)] overflow-x-auto kanban-scroll-hidden">
-              {['All', 'Moves', 'Calls', 'Notes'].map((f) => (
+              {(['All', 'Moves', 'Calls', 'Notes'] as const).map((f) => (
                 <button
                   key={f}
-                  className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-[var(--crm-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-panel)] transition-colors"
+                  type="button"
+                  aria-pressed={filter === f}
+                  onClick={() => setFilter(f)}
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-semibold transition-colors ${filter === f ? 'bg-[var(--tenant-surface)] text-[var(--tenant-primary)]' : 'text-[var(--crm-muted)] hover:text-[var(--crm-text)] hover:bg-[var(--crm-panel)]'}`}
                 >
                   {f}
                 </button>
@@ -83,14 +99,16 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
             <div className="max-h-[320px] overflow-y-auto kanban-scroll-hidden">
               {loading ? (
                 <div className="py-8 text-center text-xs text-[var(--crm-muted)]">Loading activity…</div>
-              ) : activity.length > 0 ? (
-                activity.map((entry) => {
+              ) : filteredActivity.length > 0 ? (
+                filteredActivity.map((entry) => {
                   const actor = String(entry.payload.byUser ?? entry.payload.claimedBy ?? entry.payload.actorId ?? 'System');
                   const action = entry.eventType.replaceAll('.', ' ').replaceAll('_', ' ');
+                  const kind = activityKind(entry);
+                  const Icon = kind === 'Calls' ? Phone : kind === 'Notes' ? MessageSquare : ArrowRight;
                   return (
                     <div key={entry.cursor} className="flex items-start gap-3 px-4 py-3 hover:bg-[var(--crm-panel)] transition-colors border-b border-[var(--crm-border)] last:border-0">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-[var(--tenant-surface)]">
-                        <ArrowRight size={13} className="text-[var(--tenant-primary)]" />
+                        <Icon size={13} className="text-[var(--tenant-primary)]" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium text-[var(--crm-text)]"><span className="font-semibold">{actor}</span> {action} {entry.leadName ?? ''}</p>
@@ -99,10 +117,10 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
                     </div>
                   );
                 })
-              ) : allActivity.length === 0 ? (
+              ) : activity.length > 0 || allActivity.length === 0 ? (
                 <div className="text-center py-8">
                   <Bell size={24} className="mx-auto text-[var(--crm-muted)] mb-2" />
-                  <p className="text-xs text-[var(--crm-muted)]">No recent activity</p>
+                  <p className="text-xs text-[var(--crm-muted)]">No {filter === 'All' ? 'recent activity' : filter.toLowerCase()}</p>
                 </div>
               ) : (
                 allActivity.map((entry) => {

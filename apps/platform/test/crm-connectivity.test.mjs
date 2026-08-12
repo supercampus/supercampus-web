@@ -57,6 +57,20 @@ test('activity feed reads backend facts instead of only local move history', () 
   assert.match(activitySource, /entry\.eventType/);
 });
 
+test('CRM activity filters and call logging are connected to APIs', () => {
+  assert.match(activitySource, /onClick=\{\(\) => setFilter\(f\)\}/);
+  assert.match(activitySource, /'All' \| 'Moves' \| 'Calls' \| 'Notes'/);
+  assert.match(leadDetailSource, /logCrmCall\(/);
+  assert.match(leadDetailSource, /Call logged in lead activity/);
+});
+
+test('CRM roles get scoped dashboards and non-admin backward movement is blocked', () => {
+  assert.match(admissionsSource, /activeNav === 'dashboard' && !isCrmAdministrator/);
+  assert.match(admissionsSource, /Good Morning/);
+  assert.match(kanbanSource, /toIndex < fromIndex && !canMoveLeadBackward/);
+  assert.match(kanbanSource, /Only administrators can move a lead backward/);
+});
+
 test('legacy auto assignment is not offered as an active CRM control', () => {
   assert.match(admissionsSource, /automation\.action !== 'auto_assign_digital_leads'/);
   assert.match(admissionsSource, /First stage movement assigns the card owner/);

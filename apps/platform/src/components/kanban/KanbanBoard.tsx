@@ -36,6 +36,8 @@ interface KanbanBoardProps {
   canUpdateLeads: boolean;
   canMoveLeadStage: boolean;
   canHoldLeads: boolean;
+  canLogCalls: boolean;
+  canMoveLeadBackward: boolean;
   onCreateLead?: (column: Column) => void;
   onShowToast: (msg: string) => void;
   onRefresh: () => void;
@@ -50,6 +52,8 @@ export default function KanbanBoard({
   canUpdateLeads,
   canMoveLeadStage,
   canHoldLeads,
+  canLogCalls,
+  canMoveLeadBackward,
   onCreateLead,
   onShowToast,
   onRefresh,
@@ -254,9 +258,15 @@ export default function KanbanBoard({
 
     const fromColumn = lead.status;
     if (fromColumn === toColumn) return;
+    const fromIndex = COLUMN_IDS.indexOf(fromColumn);
+    const toIndex = COLUMN_IDS.indexOf(toColumn);
+    if (toIndex < fromIndex && !canMoveLeadBackward) {
+      onShowToast('Only administrators can move a lead backward.');
+      return;
+    }
 
     setMoveLogModal({ lead, from: fromColumn, to: toColumn });
-  }, [canMoveLeadStage, onShowToast]);
+  }, [canMoveLeadBackward, canMoveLeadStage, onShowToast]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     if (!canMoveLeadStage) return;
@@ -483,6 +493,7 @@ export default function KanbanBoard({
           canUpdateLead={canUpdateLeads}
           canMoveLeadStage={canMoveLeadStage}
           canHoldLead={canHoldLeads}
+          canLogCall={canLogCalls}
           canTransferLead={(visibleSelectedLead.assignedTo.id ?? visibleSelectedLead.assignedTo.name) === currentUserId && visibleSelectedLead.status !== 'enquiry'}
           onTransferLead={(lead) => void openTransfer(lead)}
           stageSubstates={availableCurrentStageSubstates(

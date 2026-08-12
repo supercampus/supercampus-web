@@ -736,7 +736,7 @@ export function sendCrmEmail(input: CrmCommunicationInput) {
 }
 
 export function logCrmCall(input: CrmCommunicationInput) {
-  return apiRequest<{ data: Record<string, unknown> }>(`${CRM_ROOT}/communications/calls`, {
+  return apiRequest<{ data: CrmTimelineCommunication }>(`${CRM_ROOT}/communications/calls`, {
     method: 'POST',
     body: JSON.stringify(input),
   });

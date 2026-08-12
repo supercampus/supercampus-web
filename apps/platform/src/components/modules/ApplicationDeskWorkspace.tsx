@@ -310,14 +310,17 @@ function stageIndex(stage: OnboardingCase['stage']) {
 
 function Metric({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Clock }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4">
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--tenant-primary)]/10 text-[var(--tenant-primary)]">
-        <Icon size={17} />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-2xl leading-none text-[var(--crm-text)]">{value}</span>
-        <span className="mt-1.5 block truncate text-[11px] text-[var(--crm-muted)]">{label}</span>
-      </span>
+    <div className="group relative overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.07)]">
+      <span className="absolute inset-y-0 left-0 w-1 bg-[var(--tenant-primary)] opacity-70" />
+      <div className="flex items-center justify-between gap-3">
+        <span className="min-w-0">
+          <span className="block text-2xl font-semibold leading-none tracking-tight text-[var(--crm-text)]">{value}</span>
+          <span className="mt-2 block truncate text-[11px] font-medium text-[var(--crm-muted)]">{label}</span>
+        </span>
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--tenant-primary)]/10 text-[var(--tenant-primary)] transition group-hover:scale-105">
+          <Icon size={17} />
+        </span>
+      </div>
     </div>
   );
 }
@@ -354,9 +357,9 @@ const DEMO_PERMISSIONS = [
  */
 function DeskShell({ embedded, children }: { embedded: boolean; children: React.ReactNode }) {
   return embedded ? (
-    <section className="flex-1 overflow-y-auto kanban-scroll-hidden bg-[var(--crm-panel)] p-6">{children}</section>
+    <section className="flex-1 overflow-y-auto kanban-scroll-hidden bg-[radial-gradient(circle_at_top_right,var(--tenant-surface),transparent_32%),var(--crm-panel)] p-4 lg:p-6">{children}</section>
   ) : (
-    <main className="min-h-screen bg-[var(--crm-panel)] p-6">{children}</main>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,var(--tenant-surface),transparent_32%),var(--crm-panel)] p-4 lg:p-6">{children}</main>
   );
 }
 
@@ -374,9 +377,40 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('oldest');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const [tab, setTab] = useState<Tab>('application');
   const [actionReason, setActionReason] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
+  const drawerCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const closeDrawer = useCallback(() => {
+    if (drawerCloseTimer.current) clearTimeout(drawerCloseTimer.current);
+    setDrawerVisible(false);
+    drawerCloseTimer.current = setTimeout(() => {
+      setSelectedId(null);
+      drawerCloseTimer.current = null;
+    }, 280);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    if (drawerCloseTimer.current) clearTimeout(drawerCloseTimer.current);
+    const frame = window.requestAnimationFrame(() => setDrawerVisible(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeDrawer();
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [closeDrawer, selectedId]);
+
+  useEffect(() => () => {
+    if (drawerCloseTimer.current) clearTimeout(drawerCloseTimer.current);
+  }, []);
 
   const [reloadToken, setReloadToken] = useState(0);
   const refresh = useCallback(() => {
@@ -568,17 +602,21 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
 
   return (
     <DeskShell embedded={embedded}>
-      <div className="mx-auto max-w-[1500px] space-y-6">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.32em] text-[var(--crm-muted)]">Admissions</p>
-            <h1 className="mt-2 text-2xl leading-tight text-[var(--crm-text)]">Application Desk</h1>
-            <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-[var(--crm-muted)]">
-              Applications enter after the applicant submits the Application form. Review identity, documents,
-              academics, finance and approvals here before student activation.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
+      <div className="mx-auto max-w-[1600px] space-y-5">
+        <header className="relative overflow-hidden rounded-3xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-5 py-5 shadow-[0_10px_36px_rgba(15,23,42,0.05)] sm:px-6 lg:px-7">
+          <div className="pointer-events-none absolute -right-16 -top-24 size-64 rounded-full bg-[var(--tenant-primary)] opacity-[0.07] blur-2xl" />
+          <div className="relative flex flex-wrap items-center justify-between gap-5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--tenant-primary)]">
+                <span className="grid size-7 place-items-center rounded-lg bg-[var(--tenant-primary)]/10"><IdCard size={14} /></span>
+                Admissions operations
+              </div>
+              <h1 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-[var(--crm-text)] sm:text-[28px]">Application Desk</h1>
+              <p className="mt-2 max-w-2xl text-xs leading-5 text-[var(--crm-muted)]">
+                Review submitted applications, clear verification checkpoints and activate students from one focused workspace.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
             {/* When the banner is up it already says this; badge is for a signed-in user. */}
             {snapshot?.source === 'demo' && !demoAccess && (
               <span className="rounded-full bg-amber-500/10 px-3 py-1.5 text-[11px] text-amber-700 ring-1 ring-amber-500/30">
@@ -591,10 +629,11 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                 if (snapshot?.source === 'demo') resetDemoDesk();
                 refresh();
               }}
-              className="flex items-center gap-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs text-[var(--crm-text)] transition hover:bg-[var(--crm-surface)]"
+              className="flex min-h-10 items-center gap-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-4 py-2 text-xs font-semibold text-[var(--crm-text)] shadow-sm transition hover:border-[var(--tenant-primary)]/40 hover:bg-[var(--tenant-surface)]"
             >
               <RefreshCw size={14} /> Refresh
             </button>
+            </div>
           </div>
         </header>
 
@@ -613,17 +652,24 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
           <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-600">{loadError}</p>
         )}
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="Awaiting onboarding" value={cases.filter((c) => c.status === 'ACTIVE').length} icon={Clock} />
           <Metric label="Documents pending" value={snapshot?.queues.documentsPending ?? 0} icon={FileText} />
           <Metric label="Approvals pending" value={snapshot?.queues.approvalPending ?? 0} icon={ShieldCheck} />
           <Metric label="Students activated" value={activated} icon={GraduationCap} />
         </section>
 
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(440px,520px)]">
-          <section className="overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)]">
+        <div>
+          <section className="overflow-hidden rounded-3xl border border-[var(--crm-border)] bg-[var(--crm-card)] shadow-[0_10px_30px_rgba(15,23,42,0.045)]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--crm-border)] px-4 py-4 sm:px-5">
+              <div>
+                <p className="text-sm font-semibold text-[var(--crm-text)]">Application queue</p>
+                <p className="mt-0.5 text-[10px] text-[var(--crm-muted)]">Prioritized cases waiting for an officer action</p>
+              </div>
+              <span className="rounded-full bg-[var(--tenant-primary)]/10 px-3 py-1 text-[10px] font-bold text-[var(--tenant-primary)]">{visible.length} visible</span>
+            </div>
             {/* Lifecycle views — what is on the desk right now. */}
-            <div className="flex items-end gap-1 overflow-x-auto border-b border-[var(--crm-border)] px-3">
+            <div className="flex items-end gap-1 overflow-x-auto border-b border-[var(--crm-border)] px-4">
               {VIEWS.map((entry) => (
                 <ViewTab
                   key={entry.key}
@@ -639,7 +685,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
             </div>
 
             {/* Search and order — the two things you reach for on a real queue. */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2.5">
+            <div className="flex flex-wrap items-center gap-2 border-b border-[var(--crm-border)] bg-[var(--crm-surface)]/55 px-4 py-3">
               <div className="relative min-w-[180px] flex-1">
                 <Search
                   size={13}
@@ -649,7 +695,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search name, case or admission id"
-                  className="w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] py-1.5 pl-7 pr-7 text-xs text-[var(--crm-text)] outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)]"
+                  className="min-h-10 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] py-2 pl-8 pr-8 text-xs text-[var(--crm-text)] shadow-sm outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/10"
                 />
                 {query && (
                   <button
@@ -667,7 +713,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                 <select
                   value={sort}
                   onChange={(event) => setSort(event.target.value as SortKey)}
-                  className="rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-2 py-1.5 text-[11px] text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)]"
+                  className="min-h-10 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-[11px] text-[var(--crm-text)] shadow-sm outline-none focus:border-[var(--tenant-primary)]"
                 >
                   {SORTS.map((entry) => (
                     <option key={entry.key} value={entry.key}>
@@ -680,7 +726,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
 
             {/* Stage narrowing, only where it is the question being asked. */}
             {view === 'live' && (
-              <div className="flex flex-wrap items-center gap-x-1 gap-y-1 border-b border-[var(--crm-border)] px-3 py-2">
+              <div className="flex flex-wrap items-center gap-1.5 border-b border-[var(--crm-border)] px-4 py-3">
                 <StageFilter
                   label="Every stage"
                   count={inView.length}
@@ -703,7 +749,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
               </div>
             )}
 
-            <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)_44px] items-center gap-3 border-b border-[var(--crm-border)] px-4 py-2 text-[10px] uppercase tracking-[0.12em] text-[var(--crm-muted)]">
+            <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)_44px] items-center gap-3 border-b border-[var(--crm-border)] bg-[var(--crm-surface)]/35 px-5 py-2.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--crm-muted)] sm:grid">
               <span>Applicant</span>
               <span>Stage</span>
               <span>Waiting on</span>
@@ -723,7 +769,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                   moveSelection(-1);
                 }
               }}
-              className="max-h-[520px] divide-y divide-[var(--crm-border)] overflow-y-auto"
+              className="max-h-[560px] divide-y divide-[var(--crm-border)] overflow-y-auto"
             >
               {visible.length === 0 && (
                 <div className="px-4 py-14 text-center">
@@ -767,7 +813,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       setActionError(null);
                       setSelectedId(entry.id);
                     }}
-                    className={`group grid w-full grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)_44px] items-center gap-3 px-4 py-2.5 text-left outline-none transition ${
+                    className={`group grid w-full grid-cols-[minmax(0,1fr)_44px] items-center gap-3 px-4 py-3.5 text-left outline-none transition sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)_44px] sm:px-5 ${
                       isSelected
                         ? 'bg-[var(--tenant-primary)]/[0.06] shadow-[inset_2px_0_0_var(--tenant-primary)]'
                         : 'hover:bg-[var(--crm-surface)] focus-visible:bg-[var(--crm-surface)]'
@@ -775,7 +821,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                   >
                     <span className="flex min-w-0 items-center gap-2.5">
                       <span
-                        className={`grid size-7 shrink-0 place-items-center rounded-full text-[10px] font-medium ${
+                        className={`grid size-9 shrink-0 place-items-center rounded-xl text-[10px] font-bold ${
                           isSelected
                             ? 'bg-[var(--tenant-primary)] text-white'
                             : 'bg-[var(--crm-surface)] text-[var(--crm-muted)] group-hover:bg-[var(--crm-card)]'
@@ -793,7 +839,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       </span>
                     </span>
 
-                    <span className="min-w-0">
+                    <span className="hidden min-w-0 sm:block">
                       <span className="block truncate text-[11px] leading-tight text-[var(--crm-text)]">
                         {stageLabel}
                       </span>
@@ -805,7 +851,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       </span>
                     </span>
 
-                    <span className="flex min-w-0 items-center gap-1.5" title={waiting?.text}>
+                    <span className="hidden min-w-0 items-center gap-1.5 sm:flex" title={waiting?.text}>
                       {entry.status !== 'ACTIVE' && (
                         <Pill tone={statusTone(entry.status)}>{humanize(entry.status)}</Pill>
                       )}
@@ -836,32 +882,35 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
             )}
           </section>
 
-          <aside className="overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] xl:sticky xl:top-6">
-            {!selected && (
-              <div className="px-6 py-20 text-center">
-                <IdCard size={22} className="mx-auto text-[var(--crm-muted)]" />
-                <p className="mt-3 text-sm text-[var(--crm-text)]">No case selected</p>
-                <p className="mt-1 text-xs text-[var(--crm-muted)]">
-                  Pick an application from the queue to review and complete its workflow.
-                </p>
-              </div>
-            )}
-
-            {selected && snapshot && (
-              <div className="flex flex-col">
+          {selected && snapshot && (
+            <div
+              className={`fixed inset-0 z-[320] bg-slate-950/25 backdrop-blur-[1px] transition-[opacity,backdrop-filter] duration-300 ease-out motion-reduce:transition-none ${drawerVisible ? 'opacity-100' : 'pointer-events-none opacity-0 backdrop-blur-0'}`}
+              role="presentation"
+              onMouseDown={(event) => {
+                if (event.currentTarget === event.target) closeDrawer();
+              }}
+            >
+              <aside
+                role="dialog"
+                aria-modal="true"
+                aria-label={`${applicantName(selected)} application workspace`}
+                className={`ml-auto flex h-full w-full flex-col overflow-hidden border-l border-[var(--crm-border)] bg-[var(--crm-card)] shadow-[-20px_0_60px_rgba(15,23,42,0.16)] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none sm:w-[92%] lg:w-3/4 ${drawerVisible ? 'translate-x-0 opacity-100' : 'translate-x-[104%] opacity-70'}`}
+              >
                 {/* Identity ------------------------------------------------ */}
-                <div className="flex items-start gap-3 border-b border-[var(--crm-border)] p-5">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--tenant-primary)]/10 text-sm font-medium text-[var(--tenant-primary)]">
+                <div className="relative flex items-start gap-3 overflow-hidden border-b border-[var(--crm-border)] bg-[linear-gradient(135deg,var(--tenant-surface),var(--crm-card)_62%)] px-5 py-4 sm:px-6">
+                  <div className="pointer-events-none absolute -right-8 -top-12 size-36 rounded-full bg-[var(--tenant-primary)] opacity-[0.06]" />
+                  <button type="button" onClick={closeDrawer} className="relative grid size-9 shrink-0 place-items-center rounded-xl text-[var(--crm-muted)] transition duration-200 hover:rotate-90 hover:bg-[var(--crm-card)] hover:text-[var(--crm-text)] motion-reduce:hover:rotate-0" aria-label="Close application workspace"><X size={18} /></button>
+                  <span className="relative grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--tenant-primary)] text-xs font-bold text-white shadow-sm">
                     {initials(applicantName(selected))}
                   </span>
-                  <div className="min-w-0 flex-1">
+                  <div className="relative min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <h2 className="truncate text-base leading-snug text-[var(--crm-text)]">
+                      <h2 className="truncate text-sm font-semibold leading-snug text-[var(--crm-text)] sm:text-base">
                         {applicantName(selected)}
                       </h2>
                       <Pill tone={statusTone(selected.status)}>{humanize(selected.status)}</Pill>
                     </div>
-                    <dl className="mt-1.5 space-y-0.5 text-[11px] text-[var(--crm-muted)]">
+                    <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[10px] text-[var(--crm-muted)]">
                       <div className="flex gap-1.5">
                         <dt className="shrink-0">Case</dt>
                         <dd className="truncate font-mono text-[var(--crm-text)]">{selected.id}</dd>
@@ -902,13 +951,13 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                 )}
 
                 {/* Detail tabs --------------------------------------------- */}
-                <nav className="flex gap-4 border-b border-[var(--crm-border)] px-5">
+                <nav className="flex gap-1 overflow-x-auto border-b border-[var(--crm-border)] bg-[var(--crm-surface)]/45 px-3 pt-2">
                   {TABS.map((entry) => (
                     <button
                       key={entry}
                       type="button"
                       onClick={() => setTab(entry)}
-                      className={`-mb-px border-b-2 py-3 text-[11px] capitalize transition ${
+                      className={`shrink-0 rounded-t-lg border-b-2 px-2.5 py-2.5 text-[10px] font-semibold capitalize transition ${
                         tab === entry
                           ? 'border-[var(--tenant-primary)] text-[var(--crm-text)]'
                           : 'border-transparent text-[var(--crm-muted)] hover:text-[var(--crm-text)]'
@@ -919,7 +968,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                   ))}
                 </nav>
 
-                <div className="min-h-[240px] max-h-[320px] overflow-y-auto px-5 py-4 text-xs">
+                <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 text-xs sm:px-6">
                   {tab === 'application' && (
                     snapshot.applicationForm ? (
                       <ApplicationFormPanel
@@ -1289,7 +1338,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                 </div>
 
                 {/* Actions ------------------------------------------------- */}
-                <div className="space-y-2 border-t border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
+                <div className="shrink-0 space-y-2.5 border-t border-[var(--crm-border)] bg-[var(--crm-card)] p-4 sm:px-6">
                   {blockedReason && selected.status === 'ACTIVE' && (
                     <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
                       <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-amber-800">
@@ -1370,32 +1419,21 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                     value={actionReason}
                     onChange={(event) => setActionReason(event.target.value)}
                     placeholder="Action note or reason (saved in history)"
-                    className="w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs text-[var(--crm-text)] outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)]"
+                    className="min-h-11 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs text-[var(--crm-text)] shadow-sm outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/10"
                   />
-                  <Action
-                    label={
-                      blockedReason
-                        ? 'Complete required checks to advance'
-                        : nextRailStage
-                          ? `Advance to ${nextRailStage.short}`
-                          : 'Complete onboarding'
-                    }
-                    icon={busy ? Loader2 : ChevronRight}
-                    tone="primary"
-                    spin={busy}
-                    disabled={busy || selected.status !== 'ACTIVE' || !mayAdvance || !!blockedReason}
-                    onClick={() => void act('advance', actionReason.trim() || undefined)}
-                  />
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Action
                       label="Hold"
                       icon={PauseCircle}
+                      compact
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.hold}
                       onClick={() => void act('hold', actionReason.trim() || 'Held from Application Desk')}
                     />
                     <Action
                       label="Return"
                       icon={Undo2}
+                      compact
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.verify}
                       onClick={() => void act('return', actionReason.trim() || 'Returned for correction')}
                     />
@@ -1403,21 +1441,41 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       label="Reject"
                       icon={XCircle}
                       tone="danger"
+                      compact
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.reject}
                       onClick={() => void act('reject', actionReason.trim() || 'Rejected at Application Desk')}
                     />
                   </div>
+                  <div className="min-w-52 flex-1 sm:max-w-xs">
+                    <Action
+                      label={
+                        blockedReason
+                          ? 'Complete required checks'
+                          : nextRailStage
+                            ? `Advance to ${nextRailStage.short}`
+                            : 'Complete onboarding'
+                      }
+                      icon={busy ? Loader2 : ChevronRight}
+                      tone="primary"
+                      spin={busy}
+                      disabled={busy || selected.status !== 'ACTIVE' || !mayAdvance || !!blockedReason}
+                      onClick={() => void act('advance', actionReason.trim() || undefined)}
+                    />
+                  </div>
+                  </div>
                   {open && desk.reject && (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Action
                         label="Cancel case"
                         icon={Ban}
+                        compact
                         disabled={busy}
                         onClick={() => void act('cancel', actionReason.trim() || 'Application cancelled by institution')}
                       />
                       <Action
                         label="Applicant withdrew"
                         icon={UserMinus}
+                        compact
                         disabled={busy}
                         onClick={() => void act('withdraw', actionReason.trim() || 'Application withdrawn by applicant')}
                       />
@@ -1438,9 +1496,9 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                     </p>
                   )}
                 </div>
-              </div>
-            )}
-          </aside>
+              </aside>
+            </div>
+          )}
         </div>
 
         <footer className="flex flex-col gap-2 border-t border-[var(--crm-border)] pt-4 text-[10px] leading-relaxed text-[var(--crm-muted)] sm:flex-row sm:gap-6">
@@ -1702,7 +1760,7 @@ function ViewTab({
       type="button"
       onClick={onClick}
       aria-current={active}
-      className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-2.5 py-2.5 text-xs transition ${
+      className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-3 text-[11px] font-semibold transition ${
         active
           ? 'border-[var(--tenant-primary)] text-[var(--crm-text)]'
           : 'border-transparent text-[var(--crm-muted)] hover:text-[var(--crm-text)]'
@@ -1745,12 +1803,12 @@ function StageFilter({
       onClick={onClick}
       aria-pressed={active}
       disabled={empty}
-      className={`rounded-md px-2 py-1 text-[11px] transition ${
+      className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold transition ${
         active
-          ? 'bg-[var(--tenant-primary)]/10 text-[var(--tenant-primary)]'
+          ? 'border-[var(--tenant-primary)]/20 bg-[var(--tenant-primary)]/10 text-[var(--tenant-primary)]'
           : empty
-            ? 'text-[var(--crm-muted)]/45'
-            : 'text-[var(--crm-muted)] hover:bg-[var(--crm-surface)] hover:text-[var(--crm-text)]'
+            ? 'border-transparent text-[var(--crm-muted)]/40'
+            : 'border-[var(--crm-border)] text-[var(--crm-muted)] hover:border-[var(--tenant-primary)]/30 hover:bg-[var(--crm-surface)] hover:text-[var(--crm-text)]'
       }`}
     >
       {label} <span className="tabular-nums opacity-70">{count}</span>
@@ -1770,8 +1828,8 @@ function Key({ children }: { children: React.ReactNode }) {
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section>
-      <h3 className="text-[10px] uppercase tracking-[0.14em] text-[var(--crm-muted)]">{title}</h3>
+    <section className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3.5 py-3">
+      <h3 className="text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--crm-muted)]">{title}</h3>
       <dl className="mt-2 divide-y divide-[var(--crm-border)]">{children}</dl>
     </section>
   );
@@ -1825,7 +1883,7 @@ function fallback(value: string | undefined) {
  */
 function Casework({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-surface)] p-3">
+    <section className="rounded-xl border border-[var(--tenant-primary)]/20 bg-[var(--tenant-primary)]/[0.04] p-3.5">
       <h3 className="text-[10px] uppercase tracking-[0.14em] text-[var(--crm-muted)]">{title}</h3>
       <p className="mt-1 text-[10px] leading-relaxed text-[var(--crm-muted)]">{hint}</p>
       <div className="mt-2 flex flex-wrap items-center gap-1">{children}</div>
@@ -1968,6 +2026,7 @@ function Action({
   disabled,
   tone,
   spin,
+  compact,
 }: {
   label: string;
   icon: typeof Clock;
@@ -1975,6 +2034,7 @@ function Action({
   disabled?: boolean;
   tone?: 'primary' | 'danger';
   spin?: boolean;
+  compact?: boolean;
 }) {
   const palette =
     tone === 'primary'
@@ -1987,7 +2047,8 @@ function Action({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs transition disabled:cursor-not-allowed disabled:opacity-40 ${palette}`}
+      title={label}
+      className={`flex min-h-10 items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${compact ? 'w-auto px-3 py-2 shadow-none hover:bg-[var(--crm-surface)]' : 'w-full px-4 py-2.5 shadow-sm hover:-translate-y-px hover:shadow-md disabled:hover:translate-y-0'} ${palette}`}
     >
       <Icon size={14} className={spin ? 'animate-spin' : undefined} /> {label}
     </button>

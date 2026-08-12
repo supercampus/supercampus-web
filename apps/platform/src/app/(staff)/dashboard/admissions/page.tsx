@@ -1541,7 +1541,16 @@ export default function AdmissionsPage() {
   const dashboardAccess = useMemo(() => dashboardCapabilities(permissions), [permissions]);
   const roleId = student?.role ?? (hasPermission(permissions, 'authorization.roles.update') || hasPermission(permissions, 'authorization.users.create') ? 'admin' : 'counselor');
   const [requestedNav, setActiveNav] = useState<NavSection>('dashboard');
-  const [theme, setTheme] = useState<ThemeId>('classic');
+  const [theme, setTheme] = useState<ThemeId>(() => {
+    if (typeof window === 'undefined') return 'classic';
+    const saved = window.localStorage.getItem('supercampus:crm-theme') as ThemeId | null;
+    return saved && Object.hasOwn(THEMES, saved) ? saved : 'classic';
+  });
+  const [dashboardNow] = useState(() => Date.now());
+  const [greeting] = useState(() => {
+    const hour = new Date().getHours();
+    return hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+  });
   const [requestedSettings, setSettingsSection] = useState<SettingsSection>('account');
   // The open section is clamped to what the administrator granted, derived rather than
   // corrected after the fact so an ungranted section is never rendered even briefly.
@@ -1559,8 +1568,16 @@ export default function AdmissionsPage() {
   const canAssignLeads = hasPermission(permissions, 'crm.leads.assign')
     || hasPermission(permissions, 'crm.leads.claim');
   const canMoveLeadStage = hasPermission(permissions, 'crm.leads.stage.move');
+  const normalizedRole = roleId.toLowerCase().replaceAll('_', '-');
+  const isCrmAdministrator = permissions.includes('*')
+    || normalizedRole === 'admin'
+    || normalizedRole.endsWith('-admin')
+    || normalizedRole.endsWith('-administrator');
+  const canMoveLeadBackward = isCrmAdministrator
+    && hasPermission(permissions, 'crm.leads.stage.backward');
   const canHoldLeads = hasPermission(permissions, 'crm.leads.hold');
   const canSendCrmCommunications = hasPermission(permissions, 'crm.communications.send');
+  const canUpdateTenantBranding = hasPermission(permissions, 'platform.configuration.update');
   const canReadCrmConfiguration = hasPermission(permissions, 'crm.configuration.read');
   const canUpdateCrmConfiguration = hasPermission(permissions, 'crm.configuration.update');
   const canTriggerErpHandoff = hasPermission(permissions, 'crm.erp.handoff');
@@ -1680,9 +1697,13 @@ export default function AdmissionsPage() {
 
   const applyTheme = useCallback((nextTheme: ThemeId) => {
     setTheme(nextTheme);
-    const root = document.documentElement;
-    Object.entries(THEMES[nextTheme]).forEach(([key, value]) => root.style.setProperty(key, value));
+    try { window.localStorage.setItem('supercampus:crm-theme', nextTheme); } catch {}
   }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    Object.entries(THEMES[theme]).forEach(([key, value]) => root.style.setProperty(key, value));
+  }, [theme]);
 
   const showToast = useCallback((msg: string, durationMs = 3000) => {
     setToast(msg);
@@ -2575,6 +2596,9 @@ export default function AdmissionsPage() {
     { label: 'Offer Accepted', value: totalOfferAccepted, icon: ShieldCheck },
     { label: 'Team Users', value: visibleStaffUsers.length, icon: UserCog },
   ];
+  const crmUserLeads = leads.filter((lead) => lead.assignedTo.id === student?.id);
+  const crmUserApplications = crmUserLeads.filter((lead) => lead.status === 'application' || lead.status === 'application-status').length;
+  const crmUserFollowUps = crmUserLeads.filter((lead) => lead.nextFollowUp && new Date(lead.nextFollowUp).getTime() <= dashboardNow).length;
   const pipelineSummary = COLUMNS.filter((column) => column.id !== 'archived').map((column) => {
     const count = leads.filter((lead) => lead.status === column.id).length;
     const percent = leads.length ? Math.round((count / leads.length) * 100) : 0;
@@ -3282,7 +3306,11 @@ export default function AdmissionsPage() {
       />
 
       <main className="campus-admin-main flex-1 min-w-0 flex flex-col overflow-hidden">
-        <header className="campus-admin-header h-16 shrink-0 flex items-center justify-end px-6 bg-[var(--crm-card)] border-b border-[var(--crm-border)]">
+        <header className="campus-admin-header h-16 shrink-0 flex items-center justify-between gap-4 px-6 bg-[var(--crm-card)] border-b border-[var(--crm-border)]">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-[var(--crm-text)]">{greeting}, {student?.name ?? 'User'}!</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--crm-muted)]">Welcome to your CRM workspace</p>
+          </div>
           <div className="campus-admin-header-actions flex items-center">
             <ActivityFeed leads={leads} />
           </div>
@@ -3309,6 +3337,8 @@ export default function AdmissionsPage() {
                 canUpdateLeads={canUpdateLeads}
                 canMoveLeadStage={canMoveLeadStage}
                 canHoldLeads={canHoldLeads}
+                canLogCalls={canSendCrmCommunications}
+                canMoveLeadBackward={canMoveLeadBackward}
                 onCreateLead={canCreateLeads ? openStageLeadCreation : undefined}
                 onShowToast={showToast}
                 onRefresh={() => void refreshCrmBoard()}
@@ -3319,7 +3349,41 @@ export default function AdmissionsPage() {
 
         {activeNav === 'application-desk' && <ApplicationDeskWorkspace embedded />}
 
-        {activeNav === 'dashboard' && (
+        {activeNav === 'dashboard' && !isCrmAdministrator && (
+          <section className="flex-1 overflow-y-auto bg-[var(--crm-bg)] p-6">
+            <div className="mx-auto max-w-5xl space-y-5">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--tenant-primary)]">My workspace</p>
+                <h1 className="mt-1 text-2xl font-bold">CRM overview</h1>
+                <p className="mt-1 text-xs text-[var(--crm-muted)]">A focused view of leads assigned to you. Shared enquiries remain available in the Lead pipeline.</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {[
+                  { label: 'My leads', value: crmUserLeads.length, icon: Users },
+                  { label: 'Applications', value: crmUserApplications, icon: FileText },
+                  { label: 'Follow-ups due', value: crmUserFollowUps, icon: CalendarDays },
+                ].map(({ label, value, icon: Icon }) => (
+                  <div key={label} className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                    <div className="flex items-center justify-between"><p className="text-xs font-semibold text-[var(--crm-muted)]">{label}</p><Icon size={18} className="text-[var(--tenant-primary)]" /></div>
+                    <p className="mt-4 text-3xl font-extrabold">{value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div><h2 className="text-sm font-extrabold">My recent leads</h2><p className="mt-1 text-xs text-[var(--crm-muted)]">Only your assigned records are summarized here.</p></div>
+                  <button type="button" onClick={() => setActiveNav('pipeline')} className="rounded-xl bg-[var(--tenant-primary)] px-4 py-2 text-xs font-bold text-white">Open Lead pipeline</button>
+                </div>
+                <div className="mt-4 divide-y divide-[var(--crm-border)]">
+                  {crmUserLeads.slice(0, 6).map((lead) => <div key={lead.id} className="flex items-center justify-between gap-3 py-3 text-xs"><div><p className="font-bold">{lead.name}</p><p className="mt-0.5 text-[var(--crm-muted)]">{lead.course || 'Course not set'}</p></div><span className="rounded-full bg-[var(--tenant-surface)] px-3 py-1 font-semibold capitalize text-[var(--tenant-primary)]">{lead.status.replaceAll('-', ' ')}</span></div>)}
+                  {crmUserLeads.length === 0 && <p className="py-8 text-center text-xs text-[var(--crm-muted)]">No leads are assigned to you yet.</p>}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeNav === 'dashboard' && isCrmAdministrator && (
           <section className="campus-dashboard flex-1 overflow-y-auto kanban-scroll-hidden bg-[#fafafa] dark:bg-[var(--crm-bg)] p-6 space-y-6">
             {/* Header Title Section */}
             <div className="flex flex-wrap items-center justify-between gap-3 animate-fade-in-up">
@@ -5381,6 +5445,16 @@ export default function AdmissionsPage() {
 
             {settingsSection === 'theme' && (
               <div className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
+                    <p className="text-xs font-extrabold">Personal theme — no approval</p>
+                    <p className="mt-1 text-[11px] leading-5">Your CRM color theme applies immediately to this browser and does not affect other users.</p>
+                  </div>
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+                    <p className="text-xs font-extrabold">Tenant branding — administrator controlled</p>
+                    <p className="mt-1 text-[11px] leading-5">Logo, college name, and shared brand colors require the tenant configuration permission and affect every user.</p>
+                  </div>
+                </div>
                 <div className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -5393,11 +5467,11 @@ export default function AdmissionsPage() {
                         {tenantBrand.logoDataUrl ? <img src={tenantBrand.logoDataUrl} alt="Tenant logo preview" className="h-full w-full object-contain p-2 bg-white" /> : <span className="text-2xl">SC</span>}
                       </div>
                       <div className="grid gap-2">
-                        <label className="inline-flex min-h-9 cursor-pointer items-center justify-center rounded-full px-4 text-xs text-white" style={{ background: brandGradient }}>
+                        <label className={`inline-flex min-h-9 items-center justify-center rounded-full px-4 text-xs text-white ${canUpdateTenantBranding ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'}`} style={{ background: brandGradient }}>
                           Upload logo
-                          <input type="file" accept="image/*" onChange={handleTenantLogoUpload} className="hidden" />
+                          <input type="file" accept="image/*" disabled={!canUpdateTenantBranding} onChange={handleTenantLogoUpload} className="hidden" />
                         </label>
-                        <button type="button" onClick={resetTenantBrand} className="min-h-9 rounded-full bg-[var(--crm-panel)] px-4 text-xs text-[var(--crm-muted)]">Reset</button>
+                        <button type="button" disabled={!canUpdateTenantBranding} onClick={resetTenantBrand} className="min-h-9 rounded-full bg-[var(--crm-panel)] px-4 text-xs text-[var(--crm-muted)] disabled:cursor-not-allowed disabled:opacity-45">Reset</button>
                         <div className="flex justify-center gap-2">
                           {[tenantBrand.primary, tenantBrand.secondary, tenantBrand.surface].map((color) => <span key={color} className="h-5 w-5 rounded-full border border-[var(--crm-border)]" style={{ background: color }} />)}
                         </div>
@@ -5409,6 +5483,7 @@ export default function AdmissionsPage() {
                       College name
                       <input
                         value={tenantBrand.collegeName}
+                        disabled={!canUpdateTenantBranding}
                         onChange={(event) => setTenantBrand((current) => ({ ...current, collegeName: event.target.value }))}
                         className="h-10 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 text-sm font-normal text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)]"
                         placeholder="Your college name"
@@ -5418,6 +5493,7 @@ export default function AdmissionsPage() {
                       Portal label
                       <input
                         value={tenantBrand.suiteName}
+                        disabled={!canUpdateTenantBranding}
                         onChange={(event) => setTenantBrand((current) => ({ ...current, suiteName: event.target.value }))}
                         className="h-10 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 text-sm font-normal text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)]"
                         placeholder="Admin Suite"
@@ -5425,8 +5501,9 @@ export default function AdmissionsPage() {
                     </label>
                     <button
                       type="button"
+                      disabled={!canUpdateTenantBranding}
                       onClick={() => void saveTenantBrand(tenantBrand)}
-                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold text-white md:col-span-2 md:justify-self-start"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-45 md:col-span-2 md:justify-self-start"
                       style={{ background: brandGradient }}
                     >
                       <Save size={14} /> Save college branding
@@ -5436,7 +5513,7 @@ export default function AdmissionsPage() {
 
               <div className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5">
                 <h3 className="text-sm font-extrabold mb-1">Theme</h3>
-                <p className="text-xs text-[var(--crm-muted)] mb-4">Change the CRM theme and column color system.</p>
+                <p className="text-xs text-[var(--crm-muted)] mb-4">Change your CRM theme immediately. No administrator approval is required.</p>
                 <div className="grid grid-cols-4 gap-3">
                   {(Object.keys(THEMES) as ThemeId[]).map((themeId) => (
                     <button

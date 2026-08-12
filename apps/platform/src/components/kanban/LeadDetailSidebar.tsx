@@ -4,12 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import {
   AlertTriangle, Archive, ArrowRightLeft, CalendarClock, Check, CheckCircle2, ClipboardCheck, FileText, LoaderCircle,
-  MessageSquare, PauseCircle, Pencil, Plus, Save, UserRound, X,
+  MessageSquare, PauseCircle, Pencil, Phone, Plus, Save, UserRound, X,
 } from 'lucide-react';
 import type { Lead } from '@/lib/kanban/kanban-data';
 import { COLUMNS } from '@/lib/kanban/kanban-data';
 import type { CrmForm, CrmLeadTask, CrmLeadTimeline } from '@/lib/crm-api';
-import { addCrmLeadNote, addCrmLeadTask, getCrmLeadTimeline } from '@/lib/crm-api';
+import { addCrmLeadNote, addCrmLeadTask, getCrmLeadTimeline, logCrmCall } from '@/lib/crm-api';
 import { LEAD_SOURCES, pipelineValueLabel } from '@/lib/crm-catalog';
 
 interface LeadDetailSidebarProps {
@@ -22,6 +22,7 @@ interface LeadDetailSidebarProps {
   canMoveLeadStage: boolean;
   canHoldLead: boolean;
   canTransferLead: boolean;
+  canLogCall: boolean;
   onTransferLead: (lead: Lead) => void;
   stageSubstates: string[];
   onChangeSubstate: (lead: Lead, substate: string) => Promise<void>;
@@ -99,19 +100,21 @@ function publishedValue(lead: Lead, field: PublishedField) {
 
 export default function LeadDetailSidebar({
   lead, onClose, onApplicationDecision, onUpdate, onShowToast,
-  canUpdateLead, canMoveLeadStage, canHoldLead, canTransferLead, onTransferLead,
+  canUpdateLead, canMoveLeadStage, canHoldLead, canTransferLead, canLogCall, onTransferLead,
   stageSubstates, onChangeSubstate, leadForm,
 }: LeadDetailSidebarProps) {
   const [visible, setVisible] = useState(false);
   const [tab, setTab] = useState<WorkspaceTab>('activity');
   const [editing, setEditing] = useState(false);
-  const [composer, setComposer] = useState<'note' | 'task' | null>(null);
+  const [composer, setComposer] = useState<'note' | 'task' | 'call' | null>(null);
   const [timeline, setTimeline] = useState<CrmLeadTimeline | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [decisionBusy, setDecisionBusy] = useState<'accept' | 'deny' | 'hold' | null>(null);
   const [substateBusy, setSubstateBusy] = useState(false);
   const [note, setNote] = useState('');
+  const [callOutcome, setCallOutcome] = useState('connected');
+  const [callNotes, setCallNotes] = useState('');
   const [taskTitle, setTaskTitle] = useState('');
   const [taskPriority, setTaskPriority] = useState<CrmLeadTask['priority']>('medium');
   const [taskDueAt, setTaskDueAt] = useState(() => {
@@ -172,6 +175,10 @@ export default function LeadDetailSidebar({
     () => timeline?.communications.filter((item) => item.channel === 'note') ?? [],
     [timeline],
   );
+  const calls = useMemo(
+    () => timeline?.communications.filter((item) => item.channel === 'call') ?? [],
+    [timeline],
+  );
   const tasks = useMemo(() => timeline?.tasks ?? [], [timeline]);
   const activity = useMemo(() => {
     const stageItems = (timeline?.stageHistory ?? []).map((item) => ({
@@ -183,13 +190,37 @@ export default function LeadDetailSidebar({
       id: `note-${item.id}`, at: item.createdAt, icon: 'note' as const,
       title: 'Note added', detail: noteText(item.content),
     }));
+    const callItems = calls.map((item) => ({
+      id: `call-${item.id}`, at: item.createdAt, icon: 'call' as const,
+      title: 'Call logged', detail: String(item.content.notes ?? item.content.outcome ?? 'Call activity recorded'),
+    }));
     const taskItems = tasks.map((item) => ({
       id: `task-${item.id}`, at: item.createdAt, icon: 'task' as const,
       title: 'Task created', detail: `${item.title} · due ${activityDate(item.dueAt)}`,
     }));
-    return [...stageItems, ...noteItems, ...taskItems]
+    return [...stageItems, ...noteItems, ...callItems, ...taskItems]
       .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
-  }, [notes, tasks, timeline]);
+  }, [calls, notes, tasks, timeline]);
+
+  async function saveCall() {
+    setSaving(true);
+    try {
+      const response = await logCrmCall({
+        leadId: lead.id,
+        outcome: callOutcome,
+        content: { outcome: callOutcome, notes: callNotes.trim() },
+      });
+      setTimeline((current) => current ? {
+        ...current,
+        communications: [response.data, ...current.communications.filter((item) => item.id !== response.data.id)],
+      } : current);
+      setCallNotes(''); setComposer(null); setTab('activity');
+      await loadTimeline(false);
+      onShowToast('Call logged in lead activity');
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : 'Unable to log call');
+    } finally { setSaving(false); }
+  }
 
   function saveEdits() {
     const valueFor = (includes: string[], excludes: string[] = []) => {
@@ -300,6 +331,13 @@ export default function LeadDetailSidebar({
               </div>
             )}
 
+            {lead.status === 'archived' && (
+              <div className="mb-5 rounded-xl border border-slate-300 bg-slate-50 p-3 text-slate-700">
+                <p className="flex items-center gap-2 text-xs font-bold"><Archive size={15} />Archived — recoverable</p>
+                <p className="mt-1 text-[11px] leading-5">This record is retained with its history. It is not permanently deleted and can only be restored by a user with restore permission.</p>
+              </div>
+            )}
+
             <div className="mb-5 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--crm-muted)]">Card owner</p>
               <p className="mt-1.5 flex items-center gap-2 break-all text-xs font-semibold text-[var(--crm-text)]"><UserRound size={14} className="shrink-0" />{lead.assignedTo.name}</p>
@@ -405,6 +443,23 @@ export default function LeadDetailSidebar({
           </ComposerDialog>
         )}
 
+        {composer === 'call' && (
+          <ComposerDialog
+            title="Log call"
+            description="Save the call outcome and notes to the authoritative lead activity history."
+            icon={<Phone size={18} />}
+            onCancel={() => setComposer(null)}
+            onSave={() => void saveCall()}
+            saving={saving}
+            saveDisabled={!callOutcome}
+          >
+            <div className="grid gap-4">
+              <label><span className="mb-2 block text-xs font-semibold text-[var(--crm-muted)]">Outcome</span><select value={callOutcome} onChange={(event) => setCallOutcome(event.target.value)} className={inputClass}><option value="connected">Connected</option><option value="not-answered">Not answered</option><option value="wrong-number">Wrong number</option><option value="callback-requested">Callback requested</option></select></label>
+              <label><span className="mb-2 block text-xs font-semibold text-[var(--crm-muted)]">Call notes</span><textarea rows={4} maxLength={2000} value={callNotes} onChange={(event) => setCallNotes(event.target.value)} className={`${inputClass} resize-y`} placeholder="What was discussed?" /></label>
+            </div>
+          </ComposerDialog>
+        )}
+
         {lead.status === 'application-status' && !editing && (
           <section aria-label="Application decision" className="shrink-0 border-t border-[var(--crm-border)] bg-[var(--crm-card)] px-6 py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -430,6 +485,7 @@ export default function LeadDetailSidebar({
         <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-[var(--crm-border)] bg-[var(--crm-card)] px-6 py-4">
           {editing ? <button type="button" onClick={saveEdits} className="inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white"><Save size={15} />Save changes</button> : <button type="button" disabled={!canUpdateLead || !formSections.length} onClick={() => { setEditValues(formValues); setEditing(true); }} className="inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"><Pencil size={15} />Edit</button>}
           <button type="button" disabled={!canUpdateLead} onClick={() => { setComposer('note'); setTab('notes'); }} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><MessageSquare size={15} />Add note</button>
+          <button type="button" disabled={!canLogCall} onClick={() => { setComposer('call'); setTab('activity'); }} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><Phone size={15} />Log call</button>
           <button type="button" disabled={!canUpdateLead} onClick={() => { setComposer('task'); setTab('tasks'); }} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><Plus size={15} />Add task</button>
           <button type="button" disabled={!canTransferLead} onClick={() => onTransferLead(lead)} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><ArrowRightLeft size={15} />Transfer card</button>
           <button type="button" onClick={requestClose} className="ml-auto rounded-xl border border-[var(--crm-border)] px-5 py-2.5 text-sm font-semibold hover:bg-[var(--crm-panel)]">Close</button>
@@ -503,7 +559,7 @@ function ComposerDialog({ title, description, icon, children, onCancel, onSave, 
   );
 }
 
-function TimelineRow({ title, detail, at, kind }: { title: string; detail: string; at: string; kind: 'stage' | 'note' | 'task' }) {
-  const Icon = kind === 'note' ? MessageSquare : kind === 'task' ? ClipboardCheck : CalendarClock;
+function TimelineRow({ title, detail, at, kind }: { title: string; detail: string; at: string; kind: 'stage' | 'note' | 'call' | 'task' }) {
+  const Icon = kind === 'note' ? MessageSquare : kind === 'call' ? Phone : kind === 'task' ? ClipboardCheck : CalendarClock;
   return <div className="grid grid-cols-[34px_minmax(0,1fr)_auto] gap-3 border-b border-[var(--crm-border)] py-4 last:border-0"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--tenant-surface)] text-[var(--tenant-primary)]"><Icon size={15} /></span><div><p className="text-sm font-semibold text-[var(--crm-text)]">{title}</p><p className="mt-1 text-xs leading-5 text-[var(--crm-muted)]">{detail}</p></div><time className="text-[11px] text-[var(--crm-muted)]">{activityDate(at)}</time></div>;
 }
