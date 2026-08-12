@@ -9,7 +9,7 @@ import {
   Clock,
   FileText,
   GraduationCap,
-  IdCard,
+  Info,
   Loader2,
   PauseCircle,
   PlayCircle,
@@ -18,7 +18,6 @@ import {
   ShieldCheck,
   Undo2,
   UserMinus,
-  Wallet,
   X,
   XCircle,
 } from 'lucide-react';
@@ -42,7 +41,6 @@ import {
   DEMO_APPLICANT_NAMES,
   actOnCase,
   loadDesk,
-  resetDemoDesk,
   type DeskSnapshot,
 } from '@/lib/application-desk-api';
 
@@ -52,7 +50,7 @@ type QueueKey = keyof DeskSnapshot['queues'];
  * The queue filters are two tiers, not one flat row of eleven chips.
  *
  * An officer's first question is "what is live on my desk", not "how many cases
- * are in ACCESS_PROVISIONING" — and a flat row answers the second question
+ * are in ACCESS_PROVISIONING" Ã¢â‚¬â€ and a flat row answers the second question
  * eleven times, mostly with zero. So: lifecycle views first, and the stage
  * narrowing only appears inside the live view, where it is the follow-up
  * question that actually gets asked.
@@ -81,7 +79,7 @@ const SORTS = [
   { key: 'oldest', label: 'Oldest first' },
   { key: 'newest', label: 'Recently updated' },
   { key: 'stage', label: 'Furthest along' },
-  { key: 'name', label: 'Name A–Z' },
+  { key: 'name', label: 'Name AÃ¢â‚¬â€œZ' },
 ] as const;
 
 type SortKey = (typeof SORTS)[number]['key'];
@@ -187,7 +185,7 @@ function approvalTone(state: string): Tone {
 }
 
 /**
- * `NO_MATCH` → `No match`, `application-desk-officer` → `Application desk officer`.
+ * `NO_MATCH` Ã¢â€ â€™ `No match`, `application-desk-officer` Ã¢â€ â€™ `Application desk officer`.
  * Enum codes and role slugs are for the API, not for the operator.
  */
 function humanize(value: string) {
@@ -207,7 +205,7 @@ function initials(name: string) {
 /**
  * What this case is actually waiting on, in the words the operator needs.
  *
- * The workflow engine already knows — `runGuards` returns the exact reason a
+ * The workflow engine already knows Ã¢â‚¬â€ `runGuards` returns the exact reason a
  * stage refuses to advance ("Missing documents: Transfer certificate"). Putting
  * that on the row means the queue tells you what to do next instead of making
  * you open four cases to find the one you can clear.
@@ -222,13 +220,13 @@ function nextAction(
     case 'RETURNED':
       return { text: 'Returned for correction', tone: 'warning' };
     case 'FAILED':
-      return { text: 'Provisioning failed — retry needed', tone: 'danger' };
+      return { text: 'Provisioning failed Ã¢â‚¬â€ retry needed', tone: 'danger' };
     case 'COMPLETED':
       return { text: 'Onboarding complete', tone: 'positive' };
     case 'ACTIVE':
       break;
     default:
-      return { text: `Closed · ${humanize(onboarding.status)}`, tone: 'neutral' };
+      return { text: `Closed Ã‚Â· ${humanize(onboarding.status)}`, tone: 'neutral' };
   }
 
   if (
@@ -254,7 +252,7 @@ function nextAction(
  */
 function ageOf(iso: string): { label: string; className: string; title: string } {
   const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return { label: '—', className: 'text-[var(--crm-muted)]', title: '' };
+  if (!Number.isFinite(then)) return { label: 'Ã¢â‚¬â€', className: 'text-[var(--crm-muted)]', title: '' };
   const hours = (Date.now() - then) / 3600000;
   const days = Math.floor(hours / 24);
   const label = hours < 1 ? 'new' : hours < 24 ? `${Math.floor(hours)}h` : `${days}d`;
@@ -327,8 +325,8 @@ function Metric({ label, value, icon: Icon }: { label: string; value: string | n
 
 /**
  * Dev-only escape hatch. There is no backend in local development, so no staff
- * session can exist and the desk would be permanently unreachable. When — and
- * only when — this is a development build, there is no session, and the data
+ * session can exist and the desk would be permanently unreachable. When Ã¢â‚¬â€ and
+ * only when Ã¢â‚¬â€ this is a development build, there is no session, and the data
  * layer fell back to the demo store, the desk renders read/write against demo
  * data behind a loud banner.
  *
@@ -380,6 +378,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [tab, setTab] = useState<Tab>('application');
   const [actionReason, setActionReason] = useState('');
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const drawerCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -473,13 +472,13 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
     return sortCases(rows, sort);
   }, [inView, query, sort, stageFilter, view]);
 
-  /** Per-row "what is this waiting on" — the engine's own guard reasons. */
+  /** Per-row "what is this waiting on" Ã¢â‚¬â€ the engine's own guard reasons. */
   const pending = useMemo(() => {
     if (!snapshot) return new Map<string, ReturnType<typeof nextAction>>();
     return new Map(visible.map((entry) => [entry.id, nextAction(entry, snapshot.definition)]));
   }, [snapshot, visible]);
 
-  /** Arrow keys walk the queue — a desk is worked with hands on the keyboard. */
+  /** Arrow keys walk the queue Ã¢â‚¬â€ a desk is worked with hands on the keyboard. */
   const moveSelection = useCallback(
     (delta: number) => {
       if (visible.length === 0) return;
@@ -503,7 +502,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
     [selectedId, visible],
   );
 
-  /** Why `advance` is currently refused — shown before the operator clicks. */
+  /** Why `advance` is currently refused Ã¢â‚¬â€ shown before the operator clicks. */
   const blockedReason = useMemo(() => {
     if (!snapshot || !selected || selected.status !== 'ACTIVE') return null;
     const form = applicationRecord(selected);
@@ -541,7 +540,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
     [actorName, selectedCaseId, source],
   );
 
-  /** Effective permission set — demo mode stands in for a session in dev only. */
+  /** Effective permission set Ã¢â‚¬â€ demo mode stands in for a session in dev only. */
   const effective = useMemo(
     () => (demoAccess ? DEMO_PERMISSIONS : permissions),
     [demoAccess, permissions],
@@ -555,7 +554,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
     [effective],
   );
 
-  /** A closed case is a record, not a workbench — casework controls hide. */
+  /** A closed case is a record, not a workbench Ã¢â‚¬â€ casework controls hide. */
   const open = !!selected && !TERMINAL_STATUSES.includes(selected.status);
   const mayAdvance = !!selected && mayRun('advance', selected.stage);
   const nextRailStage = selected ? STAGE_RAIL[stageIndex(selected.stage) + 1] : undefined;
@@ -563,7 +562,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   if (authStatus === 'checking' || (mayLoad && !snapshot && !loadError)) {
     return (
       <DeskShell embedded={embedded}>
-        <p className="grid min-h-[40vh] place-items-center text-sm text-[var(--crm-muted)]">Loading the desk…</p>
+        <p className="grid min-h-[40vh] place-items-center text-sm text-[var(--crm-muted)]">Loading the deskÃ¢â‚¬Â¦</p>
       </DeskShell>
     );
   }
@@ -603,37 +602,29 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   return (
     <DeskShell embedded={embedded}>
       <div className="mx-auto max-w-[1600px] space-y-5">
-        <header className="relative overflow-hidden rounded-3xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-5 py-5 shadow-[0_10px_36px_rgba(15,23,42,0.05)] sm:px-6 lg:px-7">
-          <div className="pointer-events-none absolute -right-16 -top-24 size-64 rounded-full bg-[var(--tenant-primary)] opacity-[0.07] blur-2xl" />
-          <div className="relative flex flex-wrap items-center justify-between gap-5">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--tenant-primary)]">
-                <span className="grid size-7 place-items-center rounded-lg bg-[var(--tenant-primary)]/10"><IdCard size={14} /></span>
-                Admissions operations
-              </div>
-              <h1 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-[var(--crm-text)] sm:text-[28px]">Application Desk</h1>
-              <p className="mt-2 max-w-2xl text-xs leading-5 text-[var(--crm-muted)]">
-                Review submitted applications, clear verification checkpoints and activate students from one focused workspace.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-            {/* When the banner is up it already says this; badge is for a signed-in user. */}
-            {snapshot?.source === 'demo' && !demoAccess && (
-              <span className="rounded-full bg-amber-500/10 px-3 py-1.5 text-[11px] text-amber-700 ring-1 ring-amber-500/30">
-                Demo data — onboarding API not connected
-              </span>
-            )}
+        <header className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--crm-text)]">Application Desk</h1>
+          <div className="relative">
             <button
               type="button"
-              onClick={() => {
-                if (snapshot?.source === 'demo') resetDemoDesk();
-                refresh();
-              }}
-              className="flex min-h-10 items-center gap-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-4 py-2 text-xs font-semibold text-[var(--crm-text)] shadow-sm transition hover:border-[var(--tenant-primary)]/40 hover:bg-[var(--tenant-surface)]"
+              aria-label="Application Desk instructions"
+              aria-expanded={instructionsOpen}
+              onClick={() => setInstructionsOpen((open) => !open)}
+              className="grid size-9 place-items-center rounded-full border border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-muted)] shadow-sm transition hover:border-[var(--tenant-primary)]/40 hover:text-[var(--tenant-primary)]"
             >
-              <RefreshCw size={14} /> Refresh
+              <Info size={17} />
             </button>
-            </div>
+            {instructionsOpen && (
+              <div className="absolute left-0 top-11 z-20 w-[min(360px,calc(100vw-48px))] rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4 text-sm leading-6 text-[var(--crm-muted)] shadow-xl">
+                <p className="font-semibold text-[var(--crm-text)]">How to use Application Desk</p>
+                <ol className="mt-2 list-decimal space-y-1 pl-4">
+                  <li>Select an applicant from the live queue.</li>
+                  <li>Review application, documents, identity, academic mapping and fee readiness.</li>
+                  <li>Clear each checkpoint using the available stage action.</li>
+                  <li>Approve activation only after all required checks are complete.</li>
+                </ol>
+              </div>
+            )}
           </div>
         </header>
 
@@ -641,7 +632,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
           <p className="flex items-start gap-2 rounded-xl border-2 border-dashed border-amber-500/60 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <span>
-              <strong>Demo mode — no signed-in user.</strong> This development build has no backend session, so the desk
+              <strong>Demo mode Ã¢â‚¬â€ no signed-in user.</strong> This development build has no backend session, so the desk
               is showing seeded cases with all Application Desk permissions granted. Nothing here is a real applicant,
               and this branch does not exist in a production build.
             </span>
@@ -668,7 +659,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
               </div>
               <span className="rounded-full bg-[var(--tenant-primary)]/10 px-3 py-1 text-[10px] font-bold text-[var(--tenant-primary)]">{visible.length} visible</span>
             </div>
-            {/* Lifecycle views — what is on the desk right now. */}
+            {/* Lifecycle views Ã¢â‚¬â€ what is on the desk right now. */}
             <div className="flex items-end gap-1 overflow-x-auto border-b border-[var(--crm-border)] px-4">
               {VIEWS.map((entry) => (
                 <ViewTab
@@ -684,7 +675,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
               ))}
             </div>
 
-            {/* Search and order — the two things you reach for on a real queue. */}
+            {/* Search and order Ã¢â‚¬â€ the two things you reach for on a real queue. */}
             <div className="flex flex-wrap items-center gap-2 border-b border-[var(--crm-border)] bg-[var(--crm-surface)]/55 px-4 py-3">
               <div className="relative min-w-[180px] flex-1">
                 <Search
@@ -774,7 +765,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
               {visible.length === 0 && (
                 <div className="px-4 py-14 text-center">
                   <p className="text-sm text-[var(--crm-text)]">
-                    {query ? `Nothing matches “${query.trim()}”` : 'This view is clear'}
+                    {query ? `Nothing matches Ã¢â‚¬Å“${query.trim()}Ã¢â‚¬Â` : 'This view is clear'}
                   </p>
                   <p className="mt-1 text-xs text-[var(--crm-muted)]">
                     {query ? 'Try a name, case id or admission id.' : 'No cases are sitting here right now.'}
@@ -869,14 +860,9 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
             </div>
 
             {visible.length > 0 && (
-              <div className="flex items-center justify-between gap-3 border-t border-[var(--crm-border)] bg-[var(--crm-surface)] px-4 py-2 text-[10px] text-[var(--crm-muted)]">
+              <div className="border-t border-[var(--crm-border)] bg-[var(--crm-surface)] px-4 py-2 text-[10px] text-[var(--crm-muted)]">
                 <span>
                   {visible.length} of {cases.length} cases
-                </span>
-                <span className="hidden items-center gap-1 sm:flex">
-                  <Key>↑</Key>
-                  <Key>↓</Key>
-                  to move through the queue
                 </span>
               </div>
             )}
@@ -994,7 +980,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-800">
                         <p className="font-medium">No published Application form</p>
                         <p className="mt-1 text-[11px] leading-relaxed">
-                          Publish an Admissions → Application form in Settings → Form Builders. It will appear here automatically without storing a duplicate application in CRM.
+                          Publish an Admissions Ã¢â€ â€™ Application form in Settings Ã¢â€ â€™ Form Builders. It will appear here automatically without storing a duplicate application in CRM.
                         </p>
                       </div>
                     )
@@ -1060,7 +1046,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       {open && mayRun('record_finance') && (
                         <Casework
                           title="Record finance state"
-                          hint="What Fees & Finance reported — the desk records it, finance owns it."
+                          hint="What Fees & Finance reported Ã¢â‚¬â€ the desk records it, finance owns it."
                         >
                           {(['CLEARED', 'PENDING', 'HOLD', 'NOT_REQUIRED'] as const).map((state) => (
                             <Chip
@@ -1148,14 +1134,14 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                             {record?.verifiedBy && (
                               <p className="mt-1 pl-6 text-[10px] text-[var(--crm-muted)]">
                                 {humanize(record.state)} by {record.verifiedBy}
-                                {record.verifiedAt ? ` · ${relativeTime(record.verifiedAt)}` : ''}
+                                {record.verifiedAt ? ` Ã‚Â· ${relativeTime(record.verifiedAt)}` : ''}
                               </p>
                             )}
                             {record?.rejectionReason && (
                               <p className="mt-1 pl-6 text-[10px] text-rose-600">{record.rejectionReason}</p>
                             )}
 
-                            {/* One decision per checklist item — this is the work
+                            {/* One decision per checklist item Ã¢â‚¬â€ this is the work
                                 the document stage is actually waiting for. */}
                             {reviewable && (
                               <div className="mt-1.5 flex flex-wrap gap-1 pl-6">
@@ -1282,7 +1268,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                                   </span>
                                   <span className="block truncate text-[10px] text-[var(--crm-muted)]">
                                     {entry.actedBy
-                                      ? `${entry.actedBy}${entry.actedAt ? ` · ${relativeTime(entry.actedAt)}` : ''}`
+                                      ? `${entry.actedBy}${entry.actedAt ? ` Ã‚Â· ${relativeTime(entry.actedAt)}` : ''}`
                                       : blockedBy
                                         ? `Waiting for step ${blockedBy.step}`
                                         : 'Awaiting signature'}
@@ -1323,10 +1309,10 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           >
                             <p className="text-[var(--crm-text)]">{humanize(entry.action)}</p>
                             <p className="mt-0.5 text-[10px] text-[var(--crm-muted)]">
-                              {humanize(entry.fromStage)} → {humanize(entry.toStage)}
+                              {humanize(entry.fromStage)} Ã¢â€ â€™ {humanize(entry.toStage)}
                             </p>
                             <p className="text-[10px] text-[var(--crm-muted)]">
-                              {entry.actor} · {relativeTime(entry.timestamp)}
+                              {entry.actor} Ã‚Â· {relativeTime(entry.timestamp)}
                             </p>
                           </li>
                         ))}
@@ -1501,17 +1487,6 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
           )}
         </div>
 
-        <footer className="flex flex-col gap-2 border-t border-[var(--crm-border)] pt-4 text-[10px] leading-relaxed text-[var(--crm-muted)] sm:flex-row sm:gap-6">
-          <p className="flex items-start gap-1.5">
-            <IdCard size={12} className="mt-0.5 shrink-0" />
-            Student numbers, Student Master records and user accounts are created only at their workflow stages, and
-            each effect is idempotent — retrying never produces a second student.
-          </p>
-          <p className="flex items-start gap-1.5 sm:shrink-0">
-            <Wallet size={12} className="mt-0.5 shrink-0" />
-            Fee structures stay owned by Fees &amp; Finance.
-          </p>
-        </footer>
       </div>
     </DeskShell>
   );
@@ -1574,7 +1549,7 @@ function ApplicationFormPanel({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-medium text-[var(--crm-text)]">{form.name}</p>
-          <p className="mt-0.5 text-[10px] text-[var(--crm-muted)]">Form v{form.version} · Application {record ? `revision ${record.revision}` : 'not started'}</p>
+          <p className="mt-0.5 text-[10px] text-[var(--crm-muted)]">Form v{form.version} Ã‚Â· Application {record ? `revision ${record.revision}` : 'not started'}</p>
         </div>
         <Pill tone={record?.status === 'submitted' ? 'positive' : record ? 'warning' : 'neutral'}>
           {record?.status ? humanize(record.status) : 'Not started'}
@@ -1674,7 +1649,7 @@ function queueMatches(onboarding: OnboardingCase, queue: QueueKey): boolean {
 }
 
 /**
- * Twelve stages will not fit as readable chips in a 400px panel — the old chip
+ * Twelve stages will not fit as readable chips in a 400px panel Ã¢â‚¬â€ the old chip
  * wall was the main source of visual noise. A segmented bar carries the same
  * information (how far along, what is next) in two lines.
  */
@@ -1705,7 +1680,7 @@ function StageProgress({ stage }: { stage: OnboardingCase['stage'] }) {
         ))}
       </div>
       <p className="mt-2 text-[10px] text-[var(--crm-muted)]">
-        {next ? `Next · ${next.short}` : 'Final stage'}
+        {next ? `Next Ã‚Â· ${next.short}` : 'Final stage'}
       </p>
     </div>
   );
@@ -1781,7 +1756,7 @@ function ViewTab({
 }
 
 /**
- * Stage narrowing. Empty stages stay visible but recede — knowing Finance is
+ * Stage narrowing. Empty stages stay visible but recede Ã¢â‚¬â€ knowing Finance is
  * clear is useful, and hiding them would make the row jump around as work moves.
  */
 function StageFilter({
@@ -1813,14 +1788,6 @@ function StageFilter({
     >
       {label} <span className="tabular-nums opacity-70">{count}</span>
     </button>
-  );
-}
-
-function Key({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="rounded border border-[var(--crm-border)] bg-[var(--crm-card)] px-1 font-sans text-[10px] text-[var(--crm-muted)]">
-      {children}
-    </kbd>
   );
 }
 

@@ -16,16 +16,24 @@ const initialState: AppState = {
 
 const defaultTenantBrand: TenantBrand = {
   logoDataUrl: null,
-  primary: '#0b3d2e',
-  secondary: '#b9f43b',
-  surface: '#eef7e8',
+  primary: '#000000',
+  secondary: '#000000',
+  surface: '#ffffff',
 };
+
+function normalizeTenantBrand(brand: TenantBrand): TenantBrand {
+  const wasLegacyDefault = brand.primary === '#0b3d2e'
+    && brand.secondary === '#b9f43b'
+    && brand.surface === '#eef7e8'
+    && !brand.logoDataUrl;
+  return wasLegacyDefault ? defaultTenantBrand : brand;
+}
 
 function readTenantBrand(): TenantBrand {
   if (typeof window === 'undefined') return defaultTenantBrand;
   try {
     const raw = window.localStorage.getItem('supercampus:tenant-brand');
-    return raw ? { ...defaultTenantBrand, ...JSON.parse(raw) } : defaultTenantBrand;
+    return raw ? normalizeTenantBrand({ ...defaultTenantBrand, ...JSON.parse(raw) }) : defaultTenantBrand;
   } catch {
     return defaultTenantBrand;
   }

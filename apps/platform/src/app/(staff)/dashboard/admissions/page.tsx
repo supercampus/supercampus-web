@@ -532,18 +532,26 @@ const DEFAULT_TENANT_BRAND: TenantBrand = {
   collegeName: 'SuperCampus',
   suiteName: 'Admin Suite',
   logoDataUrl: null,
-  primary: '#0b3d2e',
-  secondary: '#b9f43b',
-  surface: '#eef7e8',
+  primary: '#000000',
+  secondary: '#000000',
+  surface: '#ffffff',
 };
 
 const brandGradient = 'linear-gradient(135deg, var(--tenant-primary), var(--tenant-secondary))';
+
+function normalizeTenantBrand(brand: TenantBrand): TenantBrand {
+  const wasLegacyDefault = brand.primary === '#0b3d2e'
+    && brand.secondary === '#b9f43b'
+    && brand.surface === '#eef7e8'
+    && !brand.logoDataUrl;
+  return wasLegacyDefault ? DEFAULT_TENANT_BRAND : brand;
+}
 
 function readTenantBrand(): TenantBrand {
   if (typeof window === 'undefined') return DEFAULT_TENANT_BRAND;
   try {
     const raw = window.localStorage.getItem('supercampus:tenant-brand');
-    return raw ? { ...DEFAULT_TENANT_BRAND, ...JSON.parse(raw) } : DEFAULT_TENANT_BRAND;
+    return raw ? normalizeTenantBrand({ ...DEFAULT_TENANT_BRAND, ...JSON.parse(raw) }) : DEFAULT_TENANT_BRAND;
   } catch {
     return DEFAULT_TENANT_BRAND;
   }
@@ -1463,13 +1471,13 @@ const FIELD_PALETTE: FieldPaletteItem[] = [
 
 const THEMES: Record<ThemeId, Record<string, string>> = {
   classic: {
-    '--crm-bg': '#f7f4ef',
-    '--crm-surface': '#fffaf4',
-    '--crm-panel': '#f1ece7',
+    '--crm-bg': '#ffffff',
+    '--crm-surface': '#ffffff',
+    '--crm-panel': '#ffffff',
     '--crm-card': '#ffffff',
-    '--crm-text': '#161318',
-    '--crm-muted': '#6f6875',
-    '--crm-border': '#e7ded8',
+    '--crm-text': '#000000',
+    '--crm-muted': '#000000',
+    '--crm-border': '#000000',
   },
   ocean: {
     '--crm-bg': '#eef6ff',
@@ -1490,13 +1498,13 @@ const THEMES: Record<ThemeId, Record<string, string>> = {
     '--crm-border': '#c6ead7',
   },
   midnight: {
-    '--crm-bg': '#090914',
-    '--crm-surface': '#111122',
-    '--crm-panel': '#18182c',
-    '--crm-card': '#1f1f35',
-    '--crm-text': '#f7f3ff',
-    '--crm-muted': '#b9b2ce',
-    '--crm-border': 'rgba(255,255,255,0.1)',
+    '--crm-bg': '#000000',
+    '--crm-surface': '#000000',
+    '--crm-panel': '#000000',
+    '--crm-card': '#000000',
+    '--crm-text': '#ffffff',
+    '--crm-muted': '#ffffff',
+    '--crm-border': '#ffffff',
   },
 };
 
@@ -1547,10 +1555,6 @@ export default function AdmissionsPage() {
     return saved && Object.hasOwn(THEMES, saved) ? saved : 'classic';
   });
   const [dashboardNow] = useState(() => Date.now());
-  const [greeting] = useState(() => {
-    const hour = new Date().getHours();
-    return hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
-  });
   const [requestedSettings, setSettingsSection] = useState<SettingsSection>('account');
   // The open section is clamped to what the administrator granted, derived rather than
   // corrected after the fact so an ungranted section is never rendered even briefly.
@@ -1912,7 +1916,7 @@ export default function AdmissionsPage() {
     if (authStatus !== 'authenticated') return;
     void getTenantBranding()
       .then(({ data }) => {
-        const brand = { ...DEFAULT_TENANT_BRAND, ...data.value } as TenantBrand;
+        const brand = normalizeTenantBrand({ ...DEFAULT_TENANT_BRAND, ...data.value } as TenantBrand);
         setTenantBrand(brand);
         applyTenantBrand(brand);
         try { window.localStorage.setItem('supercampus:tenant-brand', JSON.stringify(brand)); } catch {}
@@ -3306,16 +3310,6 @@ export default function AdmissionsPage() {
       />
 
       <main className="campus-admin-main flex-1 min-w-0 flex flex-col overflow-hidden">
-        <header className="campus-admin-header h-16 shrink-0 flex items-center justify-between gap-4 px-6 bg-[var(--crm-card)] border-b border-[var(--crm-border)]">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-[var(--crm-text)]">{greeting}, {student?.name ?? 'User'}!</p>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--crm-muted)]">Welcome to your CRM workspace</p>
-          </div>
-          <div className="campus-admin-header-actions flex items-center">
-            <ActivityFeed leads={leads} />
-          </div>
-        </header>
-
         {activeNav === 'pipeline' && (
           <section className="campus-admin-pipeline flex-1 overflow-hidden p-5 flex flex-col bg-[var(--crm-panel)]">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -3323,6 +3317,7 @@ export default function AdmissionsPage() {
                 <h1 className="text-lg font-semibold">Lead</h1>
                 <p className="mt-0.5 text-xs text-[var(--crm-muted)]">Enquiry is shared. The first stage movement claims the card; later stages show only cards you own.</p>
               </div>
+              <ActivityFeed leads={leads} />
             </div>
             {crmError && <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">{crmError}</div>}
             {crmLoading && leads.length === 0 ? (
@@ -3398,6 +3393,7 @@ export default function AdmissionsPage() {
                 </span>
                 {dashboardAccess.leads && <span className="rounded-full bg-[var(--tenant-surface)] px-3 py-1 text-xs font-semibold text-[var(--tenant-primary)]">Leads Pipeline</span>}
                 {dashboardAccess.team && <span className="rounded-full bg-[var(--tenant-surface)] px-3 py-1 text-xs font-semibold text-[var(--tenant-primary)]">Counselor SLA</span>}
+                <ActivityFeed leads={leads} />
               </div>
             </div>
 
