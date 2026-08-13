@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Clock,
   FileText,
+  ExternalLink,
   GraduationCap,
   Info,
   Loader2,
@@ -32,6 +33,7 @@ import {
   type StageInput,
 } from '@supercampus/application-desk';
 import { useApp } from '@/lib/context';
+import { CloudinaryFileField, isStoredMediaValue } from '@/components/forms/CloudinaryFileField';
 import {
   applicationDeskCapabilities,
   hasPermission,
@@ -48,6 +50,12 @@ import {
 type QueueKey = keyof DeskSnapshot['queues'];
 
 const FINANCE_STATES: FinanceState[] = ['CLEARED', 'PENDING', 'HOLD', 'NOT_REQUIRED'];
+const IDENTITY_RESULTS: IdentityMatchKind[] = [
+  'NO_MATCH',
+  'POSSIBLE_MATCH',
+  'CONFIRMED_MATCH',
+  'DUPLICATE',
+];
 
 /**
  * The queue filters are two tiers, not one flat row of eleven chips.
@@ -123,11 +131,18 @@ type ApplicationField = {
   placeholder?: string;
   helpText?: string;
   options?: string[];
+  documentConfig?: {
+    enabled?: boolean;
+    documentType?: string;
+    documentLabel?: string;
+    requiredForDesk?: boolean;
+  };
 };
 type ApplicationSection = { section: string; fields: ApplicationField[] };
 type ApplicationRecord = {
   formId: string;
   formVersion: number;
+  schema?: unknown;
   status: 'draft' | 'submitted';
   data: Record<string, unknown>;
   revision: number;
@@ -197,7 +212,7 @@ function approvalTone(state: string): Tone {
 }
 
 /**
- * `NO_MATCH` Ã¢â€ â€™ `No match`, `application-desk-officer` Ã¢â€ â€™ `Application desk officer`.
+ * `NO_MATCH` → `No match`, `application-desk-officer` → `Admission desk officer`.
  * Enum codes and role slugs are for the API, not for the operator.
  */
 function humanize(value: string) {
@@ -299,6 +314,22 @@ function applicationRecord(onboarding: OnboardingCase): ApplicationRecord | unde
   return value && typeof value === 'object' && !Array.isArray(value)
     ? value as ApplicationRecord
     : undefined;
+}
+
+function applicationValues(record: ApplicationRecord | undefined): Record<string, unknown> {
+  if (!record?.data || typeof record.data !== 'object') return {};
+  const nested = record.data.values;
+  return nested && typeof nested === 'object' && !Array.isArray(nested)
+    ? nested as Record<string, unknown>
+    : record.data;
+}
+
+function displayApplicationValue(value: unknown): React.ReactNode {
+  if (value === undefined || value === null || value === '') return <Muted>Not provided</Muted>;
+  if (typeof value === 'boolean') return <Value>{value ? 'Yes' : 'No'}</Value>;
+  if (Array.isArray(value)) return <Value>{value.map(String).join(', ') || 'Not provided'}</Value>;
+  if (typeof value === 'object') return <Value>{JSON.stringify(value)}</Value>;
+  return <Value>{String(value)}</Value>;
 }
 
 function applicationSections(schema: unknown): ApplicationSection[] {
@@ -495,6 +526,30 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
     };
   }, [mayLoad, reloadToken]);
 
+  // A file upload and its application submission may finish while the drawer
+  // remains open. Refresh from the authoritative API whenever Documents is
+  // opened so the tab never renders a stale pre-upload case snapshot.
+  useEffect(() => {
+    if (!mayLoad || tab !== 'documents' || !selectedId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const next = await loadDesk();
+        if (!cancelled) {
+          setSnapshot(next);
+          setLoadError(null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(error instanceof Error ? error.message : 'Unable to refresh submitted documents');
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mayLoad, selectedId, tab]);
+
   /** True only in a dev build, with no session, against the demo store. */
   const demoAccess = DEV_BUILD && !student && snapshot?.source === 'demo';
   const canView = grantedView || demoAccess;
@@ -513,15 +568,6 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
     () => deskFields.find((field) => deskFieldMatches(field, ['sectionid', 'section'])),
     [deskFields],
   );
-  const financeDeskField = useMemo(
-    () => deskFields.find((field) => deskFieldMatches(field, ['finance', 'financestate', 'financestatus'])),
-    [deskFields],
-  );
-  const reasonDeskField = useMemo(
-    () => deskFields.find((field) => deskFieldMatches(field, ['actionreason', 'action note', 'reason'])),
-    [deskFields],
-  );
-  const actionReasonReady = !reasonDeskField?.required || actionReason.trim().length > 0;
   const selected = cases.find((entry) => entry.id === selectedId) ?? null;
 
   const inView = useMemo(() => cases.filter((entry) => viewMatches(entry, view)), [cases, view]);
@@ -708,7 +754,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <span>
               <strong>Demo mode Ã¢â‚¬â€ no signed-in user.</strong> This development build has no backend session, so the desk
-              is showing seeded cases with all Application Desk permissions granted. Nothing here is a real applicant,
+              is showing seeded cases with all Admission Desk permissions granted. Nothing here is a real applicant,
               and this branch does not exist in a production build.
             </span>
           </p>
@@ -1032,7 +1078,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       </div>
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[var(--crm-muted)]">
                         <span>Programme: <strong className="font-medium text-[var(--crm-text)]">{selected.academic.programId ?? 'Not mapped'}</strong></span>
-                        <span>Documents: <strong className="font-medium text-[var(--crm-text)]">{selected.documents.filter((doc) => doc.state === 'VERIFIED' || doc.state === 'WAIVED').length}/{snapshot.definition.documentChecklist.length}</strong></span>
+                        <span>Documents: <strong className="font-medium text-[var(--crm-text)]">{selected.documents.filter((doc) => doc.state === 'VERIFIED' || doc.state === 'WAIVED').length}/{selected.documents.length}</strong></span>
                         <span>Finance: <strong className="font-medium text-[var(--crm-text)]">{humanize(selected.finance)}</strong></span>
                       </div>
                     </section>
@@ -1059,13 +1105,19 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 text-xs sm:px-6">
                   {tab === 'application' && (
-                    snapshot.applicationForm ? (
+                    (snapshot.applicationForm || applicationRecord(selected)) ? (
                       <ApplicationFormPanel
                         key={`${selected.id}-${applicationRecord(selected)?.revision ?? 0}`}
-                        form={snapshot.applicationForm}
+                        form={snapshot.applicationForm ?? {
+                          id: applicationRecord(selected)!.formId,
+                          name: 'Submitted Application',
+                          formType: 'application',
+                          version: applicationRecord(selected)!.formVersion,
+                          schema: applicationRecord(selected)!.schema,
+                        }}
                         onboarding={selected}
                         record={applicationRecord(selected)}
-                        disabled={busy || !open || !mayRun('record_application')}
+                        disabled={busy || !open || !mayRun('record_application') || !snapshot.applicationForm}
                         onSave={(status, data) => void act(
                           'record_application',
                           status === 'submitted' ? 'Application form submitted' : 'Application draft saved',
@@ -1100,6 +1152,8 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                         {selected.crmLeadId && <Row label="CRM lead"><Mono>{selected.crmLeadId}</Mono></Row>}
                       </Group>
 
+                      <ApplicationSubmissionReview record={applicationRecord(selected)} />
+
                       <Group title="Verification">
                         <Row label="Identity check">
                           {selected.identityMatch ? (
@@ -1115,7 +1169,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           <Value>
                             {selected.documents.filter((doc) => doc.state === 'VERIFIED' || doc.state === 'WAIVED')
                               .length}{' '}
-                            of {snapshot.definition.documentChecklist.length} cleared
+                            of {selected.documents.length} cleared
                           </Value>
                         </Row>
                       </Group>
@@ -1124,25 +1178,16 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           releases the identity gate. Without it the case cannot
                           leave IDENTITY_VERIFICATION at all. */}
                       {open && mayRun('record_identity') && (
-                        <Casework
-                          title="Record identity result"
-                          hint="Outcome of the duplicate search against existing people."
-                        >
-                          {(['NO_MATCH', 'POSSIBLE_MATCH', 'CONFIRMED_MATCH', 'DUPLICATE'] as IdentityMatchKind[]).map(
-                            (match) => (
-                              <Chip
-                                key={match}
-                                label={humanize(match)}
-                                active={selected.identityMatch === match}
-                                disabled={busy}
-                                onClick={() =>
-                                  void act('record_identity', `Identity recorded as ${match}`, {
-                                    identityMatch: match,
-                                  })
-                                }
-                              />
-                            ),
-                          )}
+                        <Casework title="Record identity result" hint="Outcome of the duplicate and identity search.">
+                          {IDENTITY_RESULTS.map((match) => (
+                            <Chip
+                              key={match}
+                              label={humanize(match)}
+                              active={selected.identityMatch === match}
+                              disabled={busy}
+                              onClick={() => void act('record_identity', `Identity recorded as ${match}`, { identityMatch: match })}
+                            />
+                          ))}
                         </Casework>
                       )}
 
@@ -1151,12 +1196,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           title="Record finance state"
                           hint="What Fees & Finance reported Ã¢â‚¬â€ the desk records it, finance owns it."
                         >
-                          {(financeDeskField?.options?.length
-                            ? financeDeskField.options
-                                .map((option) => option.toUpperCase().replace(/[^A-Z]+/g, '_'))
-                                .filter((state): state is FinanceState => FINANCE_STATES.includes(state as FinanceState))
-                            : FINANCE_STATES
-                          ).map((state) => (
+                          {FINANCE_STATES.map((state) => (
                             <Chip
                               key={state}
                               label={humanize(state)}
@@ -1215,9 +1255,29 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                   )}
 
                   {tab === 'documents' && (
-                    <ul className="divide-y divide-[var(--crm-border)]">
-                      {snapshot.definition.documentChecklist.map((requirement) => {
-                        const record = selected.documents.find((doc) => doc.type === requirement.type);
+                    <div className="space-y-5">
+                      {loadError && (
+                        <div className="flex items-start justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-3 text-amber-800">
+                          <div>
+                            <p className="text-[11px] font-semibold">Documents could not refresh</p>
+                            <p className="mt-0.5 text-[10px]">{loadError}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={refresh}
+                            className="shrink-0 rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-[10px] font-semibold"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      )}
+                      <ul className="divide-y divide-[var(--crm-border)]">
+                      {selected.documents.map((record) => {
+                        const requirement = {
+                          type: record.type,
+                          label: record.label ?? record.sourceFormFieldKey ?? record.type,
+                          required: record.required === true,
+                        };
                         const satisfied = record?.state === 'VERIFIED' || record?.state === 'WAIVED';
                         const reviewable = open && mayRun('review_document');
                         return (
@@ -1248,6 +1308,26 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                             {record?.rejectionReason && (
                               <p className="mt-1 pl-6 text-[10px] text-rose-600">{record.rejectionReason}</p>
                             )}
+                            {record?.secureUrl && (
+                              <div className="mt-1.5 flex items-center gap-2 pl-6 text-[10px]">
+                                <FileText size={13} className="shrink-0 text-[var(--tenant-primary)]" />
+                                <a
+                                  href={record.secureUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="min-w-0 truncate font-medium text-[var(--tenant-primary)] hover:underline"
+                                  title="Open the document submitted through the Application form"
+                                >
+                                  {record.fileName ?? 'Open submitted document'}
+                                </a>
+                                <ExternalLink size={11} className="shrink-0 text-[var(--crm-muted)]" />
+                                {typeof record.bytes === 'number' && (
+                                  <span className="shrink-0 text-[var(--crm-muted)]">
+                                    {record.bytes < 1048576 ? `${Math.ceil(record.bytes / 1024)} KB` : `${(record.bytes / 1048576).toFixed(1)} MB`}
+                                  </span>
+                                )}
+                              </div>
+                            )}
 
                             {/* One decision per checklist item Ã¢â‚¬â€ this is the work
                                 the document stage is actually waiting for. */}
@@ -1256,7 +1336,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                                 <Chip
                                   label="Verify"
                                   active={record?.state === 'VERIFIED'}
-                                  disabled={busy}
+                                  disabled={busy || !record?.fileId}
                                   onClick={() =>
                                     void act('review_document', `${requirement.label} verified`, {
                                       document: { type: requirement.type, state: 'VERIFIED' },
@@ -1283,7 +1363,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                                       document: {
                                         type: requirement.type,
                                         state: 'REJECTED',
-                                        reason: 'Rejected at Application Desk',
+                                        reason: 'Rejected at Admission Desk',
                                       },
                                     })
                                   }
@@ -1293,7 +1373,11 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           </li>
                         );
                       })}
-                    </ul>
+                      {selected.documents.length === 0 && (
+                        <li className="py-3 text-[var(--crm-muted)]">The submitted Application form has no upload fields.</li>
+                      )}
+                      </ul>
+                    </div>
                   )}
 
                   {tab === 'academic' && (
@@ -1318,7 +1402,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                           title="Update academic mapping"
                           hint="Resolve the required academic fields before allocating a section."
                         >
-                          {academicDeskFields.length >= 4 ? (
+                          {academicDeskFields.length > 0 ? (
                             <DynamicAcademicMappingEditor
                               key={selected.id}
                               fields={academicDeskFields}
@@ -1329,14 +1413,9 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                               }
                             />
                           ) : (
-                            <AcademicMappingEditor
-                              key={selected.id}
-                              current={selected.academic}
-                              disabled={busy}
-                              onSave={(academic) =>
-                                void act('map_academics', 'Academic mapping updated', { academic })
-                              }
-                            />
+                            <DeskConfigurationNotice>
+                              Add the academic mapping fields to the published Admission Desk controls form.
+                            </DeskConfigurationNotice>
                           )}
                         </Casework>
                       )}
@@ -1356,13 +1435,9 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                               }
                             />
                           ) : (
-                            <SectionAllocator
-                              current={selected.academic.sectionId}
-                              disabled={busy}
-                              onAllocate={(sectionId) =>
-                                void act('allocate_section', `Section ${sectionId} allocated`, { sectionId })
-                              }
-                            />
+                            <DeskConfigurationNotice>
+                              Add a section field to the published Admission Desk controls form.
+                            </DeskConfigurationNotice>
                           )}
                         </Casework>
                       )}
@@ -1465,8 +1540,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
 
                       {selected.stage === 'IDENTITY_VERIFICATION' && mayRun('record_identity') && (
                         <div className="mt-2 grid grid-cols-2 gap-1.5">
-                          {(['NO_MATCH', 'CONFIRMED_MATCH', 'POSSIBLE_MATCH', 'DUPLICATE'] as IdentityMatchKind[]).map(
-                            (match) => (
+                            {IDENTITY_RESULTS.map((match) => (
                               <Chip
                                 key={match}
                                 label={humanize(match)}
@@ -1479,8 +1553,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                                   })
                                 }
                               />
-                            ),
-                          )}
+                            ))}
                         </div>
                       )}
 
@@ -1532,21 +1605,20 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       )}
                     </section>
                   )}
-                  {reasonDeskField?.required || noteOpen ? (
+                  {noteOpen ? (
                     <label className="block">
                       <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--crm-muted)]">
-                        {reasonDeskField?.label || 'Action note'}{reasonDeskField?.required && <span className="ml-1 text-rose-500">Required</span>}
+                        Action note or reason
                       </span>
                       <div className="flex items-center gap-2">
                         <input
-                          autoFocus={!reasonDeskField?.required}
+                          autoFocus
                           value={actionReason}
                           onChange={(event) => setActionReason(event.target.value)}
-                          placeholder={reasonDeskField?.placeholder || 'Add a note'}
-                          required={reasonDeskField?.required}
+                          placeholder="Add a note"
                           className="min-h-9 flex-1 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-1.5 text-xs text-[var(--crm-text)] outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/10"
                         />
-                        {!reasonDeskField?.required && <button type="button" onClick={() => { setNoteOpen(false); setActionReason(''); }} className="text-xs font-semibold text-[var(--crm-muted)] hover:text-[var(--crm-text)]">Cancel</button>}
+                        <button type="button" onClick={() => { setNoteOpen(false); setActionReason(''); }} className="text-xs font-semibold text-[var(--crm-muted)] hover:text-[var(--crm-text)]">Cancel</button>
                       </div>
                     </label>
                   ) : (
@@ -1561,14 +1633,14 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       icon={PauseCircle}
                       compact
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.hold}
-                      onClick={() => void act('hold', actionReason.trim() || 'Held from Application Desk')}
+                      onClick={() => void act('hold', actionReason.trim() || undefined)}
                     />
                     <Action
                       label="Return"
                       icon={Undo2}
                       compact
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.verify}
-                      onClick={() => void act('return', actionReason.trim() || 'Returned for correction')}
+                      onClick={() => void act('return', actionReason.trim() || undefined)}
                     />
                     <Action
                       label="Reject"
@@ -1576,7 +1648,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       tone="danger"
                       compact
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.reject}
-                      onClick={() => void act('reject', actionReason.trim() || 'Rejected at Application Desk')}
+                      onClick={() => void act('reject', actionReason.trim() || undefined)}
                     />
                   </div>
                   <div className="min-w-52 flex-1 sm:max-w-xs">
@@ -1591,7 +1663,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       icon={busy ? Loader2 : ChevronRight}
                       tone="primary"
                       spin={busy}
-                      disabled={busy || selected.status !== 'ACTIVE' || !mayAdvance || !!blockedReason || !actionReasonReady}
+                      disabled={busy || selected.status !== 'ACTIVE' || !mayAdvance || !!blockedReason}
                       onClick={() => void act('advance', actionReason.trim() || undefined)}
                     />
                   </div>
@@ -1603,14 +1675,14 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                         icon={Ban}
                         compact
                         disabled={busy}
-                        onClick={() => void act('cancel', actionReason.trim() || 'Application cancelled by institution')}
+                        onClick={() => void act('cancel', actionReason.trim() || undefined)}
                       />
                       <Action
                         label="Applicant withdrew"
                         icon={UserMinus}
                         compact
                         disabled={busy}
-                        onClick={() => void act('withdraw', actionReason.trim() || 'Application withdrawn by applicant')}
+                        onClick={() => void act('withdraw', actionReason.trim() || undefined)}
                       />
                     </div>
                   )}
@@ -1652,7 +1724,9 @@ function ApplicationFormPanel({
   disabled: boolean;
   onSave: (status: 'draft' | 'submitted', data: Record<string, unknown>) => void;
 }) {
-  const sections = applicationSections(form.schema);
+  // Applicant answers are rendered against the immutable schema snapshot
+  // stored with their submission, not a later Form Builder revision.
+  const sections = applicationSections(record?.schema ?? form.schema);
   const fields = sections.flatMap((section) => section.fields);
   const initial = Object.fromEntries(fields.map((field) => {
     const key = formFieldKey(field);
@@ -1669,13 +1743,19 @@ function ApplicationFormPanel({
   }));
   const [values, setValues] = useState<Record<string, unknown>>(initial);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
 
   const update = (key: string, value: unknown) => setValues((current) => ({ ...current, [key]: value }));
   const save = (status: 'draft' | 'submitted') => {
+    if (uploadingFields.size > 0) {
+      setError('Wait for all files to finish uploading before saving the application');
+      return;
+    }
     if (status === 'submitted') {
       const missing = fields.find((field) => {
         if (!field.required) return false;
         const value = values[formFieldKey(field)];
+        if (field.type === 'Upload' || field.type === 'Image upload') return !isStoredMediaValue(value);
         return value === undefined || value === null || value === '' || value === false || (Array.isArray(value) && value.length === 0);
       });
       if (missing) {
@@ -1696,7 +1776,7 @@ function ApplicationFormPanel({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-medium text-[var(--crm-text)]">{form.name}</p>
-          <p className="mt-0.5 text-[10px] text-[var(--crm-muted)]">Form v{form.version} Ã‚Â· Application {record ? `revision ${record.revision}` : 'not started'}</p>
+          <p className="mt-0.5 text-[10px] text-[var(--crm-muted)]">Form v{record?.formVersion ?? form.version} Ã‚Â· Application {record ? `revision ${record.revision}` : 'not started'}</p>
         </div>
         <Pill tone={record?.status === 'submitted' ? 'positive' : record ? 'warning' : 'neutral'}>
           {record?.status ? humanize(record.status) : 'Not started'}
@@ -1734,7 +1814,20 @@ function ApplicationFormPanel({
               } else if (field.type === 'Paragraph' || wide) {
                 control = <textarea disabled={disabled} value={String(value ?? '')} placeholder={field.placeholder} onChange={(event) => update(key, event.target.value)} className={`${controlClass} min-h-20 py-2`} />;
               } else if (field.type === 'Upload' || field.type === 'Image upload') {
-                control = <input type="file" disabled={disabled} accept={field.type === 'Image upload' ? 'image/*' : undefined} onChange={(event) => update(key, event.target.files?.[0]?.name ?? '')} className={`${controlClass} py-1.5`} />;
+                control = (
+                  <CloudinaryFileField
+                    value={value}
+                    imageOnly={field.type === 'Image upload'}
+                    disabled={disabled}
+                    required={field.required}
+                    onChange={(media) => update(key, media)}
+                    onUploadingChange={(uploading) => setUploadingFields((current) => {
+                      const next = new Set(current);
+                      if (uploading) next.add(key); else next.delete(key);
+                      return next;
+                    })}
+                  />
+                );
               } else {
                 const type = field.type === 'Email' ? 'email' : field.type === 'Phone' ? 'tel' : field.type === 'Date' ? 'date' : field.type === 'Date time' ? 'datetime-local' : field.type === 'Number' || field.type === 'Currency' ? 'number' : 'text';
                 control = <input type={type} disabled={disabled} value={String(value ?? '')} placeholder={field.placeholder} onChange={(event) => update(key, event.target.value)} className={controlClass} />;
@@ -1949,6 +2042,57 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
+function DeskConfigurationNotice({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-3 text-[11px] leading-relaxed text-amber-800">
+      {children}
+    </div>
+  );
+}
+
+function ApplicationSubmissionReview({ record }: { record?: ApplicationRecord }) {
+  if (!record || record.status !== 'submitted') {
+    return (
+      <Group title="Submitted application">
+        <Row label="Status"><Muted>Application not submitted</Muted></Row>
+      </Group>
+    );
+  }
+  const values = applicationValues(record);
+  const sections = applicationSections(record.schema);
+  const answerSections = sections
+    .map((section) => ({
+      ...section,
+      fields: section.fields.filter((field) => ![
+        'Upload', 'Image upload', 'Hidden field', 'Automation', 'Section heading', 'Divider',
+      ].includes(field.type)),
+    }))
+    .filter((section) => section.fields.length > 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--crm-muted)]">Submitted application details</p>
+        <Pill tone="positive">Form v{record.formVersion}</Pill>
+      </div>
+      {answerSections.map((section) => (
+        <Group key={section.section} title={section.section || 'Application details'}>
+          {section.fields.map((field) => (
+            <Row key={formFieldKey(field)} label={field.label} stacked={field.type === 'Paragraph' || field.width === 'full'}>
+              {displayApplicationValue(values[formFieldKey(field)])}
+            </Row>
+          ))}
+        </Group>
+      ))}
+      {answerSections.length === 0 && (
+        <Group title="Application details">
+          <Row label="Status"><Muted>No non-document answers were configured.</Muted></Row>
+        </Group>
+      )}
+    </div>
+  );
+}
+
 function Row({ label, children, stacked }: { label: string; children: React.ReactNode; stacked?: boolean }) {
   return stacked ? (
     <div className="py-2">
@@ -2060,99 +2204,6 @@ function DynamicAcademicMappingEditor({ fields, current, disabled, onSave }: { f
 function DynamicSectionAllocator({ field, current, disabled, onAllocate }: { field: ApplicationField; current?: string; disabled?: boolean; onAllocate: (sectionId: string) => void }) {
   const [value, setValue] = useState(current ?? ''); const trimmed = value.trim();
   return <form className="w-full" onSubmit={(event) => { event.preventDefault(); if (trimmed) onAllocate(trimmed); }}><label className="text-[10px] text-[var(--crm-muted)]">{field.label}{field.required && <span className="ml-0.5 text-rose-500">*</span>}<span className="flex items-center gap-1.5"><DeskFieldControl field={field} value={value} disabled={disabled} onChange={setValue} /><button type="submit" disabled={disabled || !trimmed || trimmed === current} className="mt-1 shrink-0 rounded-lg border border-[var(--tenant-primary)] bg-[var(--tenant-primary)] px-2 py-1.5 text-[10px] text-white disabled:opacity-40">{current ? 'Reallocate' : 'Allocate'}</button></span></label></form>;
-}
-
-function AcademicMappingEditor({
-  current,
-  disabled,
-  onSave,
-}: {
-  current: OnboardingCase['academic'];
-  disabled?: boolean;
-  onSave: (academic: NonNullable<StageInput['academic']>) => void;
-}) {
-  const [programId, setProgramId] = useState(current.programId ?? '');
-  const [departmentId, setDepartmentId] = useState(current.departmentId ?? '');
-  const [academicYear, setAcademicYear] = useState(current.academicYear ?? '');
-  const [batchId, setBatchId] = useState(current.batchId ?? '');
-  const values = { programId, departmentId, academicYear, batchId };
-  const complete = Object.values(values).every((value) => value.trim());
-
-  return (
-    <form
-      className="grid w-full grid-cols-2 gap-2"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (!complete) return;
-        onSave({
-          programId: programId.trim(),
-          departmentId: departmentId.trim(),
-          academicYear: academicYear.trim(),
-          batchId: batchId.trim(),
-        });
-      }}
-    >
-      {([
-        ['Program id', programId, setProgramId],
-        ['Department id', departmentId, setDepartmentId],
-        ['Academic year', academicYear, setAcademicYear],
-        ['Batch id', batchId, setBatchId],
-      ] as const).map(([label, value, setter]) => (
-        <label key={label} className="text-[10px] text-[var(--crm-muted)]">
-          {label}
-          <input
-            value={value}
-            onChange={(event) => setter(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-2 py-1.5 text-[11px] text-[var(--crm-text)] outline-none focus:border-[var(--tenant-primary)]"
-          />
-        </label>
-      ))}
-      <button
-        type="submit"
-        disabled={disabled || !complete}
-        className="col-span-2 rounded-lg bg-[var(--tenant-primary)] px-3 py-2 text-[10px] font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        Save academic mapping
-      </button>
-    </form>
-  );
-}
-
-/** Sections are owned by Academic Management; the desk records the allocation. */
-function SectionAllocator({
-  current,
-  disabled,
-  onAllocate,
-}: {
-  current?: string;
-  disabled?: boolean;
-  onAllocate: (sectionId: string) => void;
-}) {
-  const [value, setValue] = useState(current ?? '');
-  const trimmed = value.trim();
-  return (
-    <form
-      className="flex w-full items-center gap-1.5"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (trimmed) onAllocate(trimmed);
-      }}
-    >
-      <input
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        placeholder="Section id"
-        className="min-w-0 flex-1 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-2 py-1 text-[11px] text-[var(--crm-text)] outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)]"
-      />
-      <button
-        type="submit"
-        disabled={disabled || !trimmed || trimmed === current}
-        className="shrink-0 rounded-lg border border-[var(--tenant-primary)] bg-[var(--tenant-primary)] px-2 py-1 text-[10px] text-white transition disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {current ? 'Reallocate' : 'Allocate'}
-      </button>
-    </form>
-  );
 }
 
 function Action({

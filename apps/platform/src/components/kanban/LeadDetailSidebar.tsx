@@ -25,6 +25,7 @@ interface LeadDetailSidebarProps {
   canLogCall: boolean;
   onTransferLead: (lead: Lead) => void;
   stageSubstates: string[];
+  allStageSubstates: string[];
   onChangeSubstate: (lead: Lead, substate: string) => Promise<void>;
   leadForm?: CrmForm | null;
 }
@@ -101,7 +102,7 @@ function publishedValue(lead: Lead, field: PublishedField) {
 export default function LeadDetailSidebar({
   lead, onClose, onApplicationDecision, onUpdate, onShowToast,
   canUpdateLead, canMoveLeadStage, canHoldLead, canTransferLead, canLogCall, onTransferLead,
-  stageSubstates, onChangeSubstate, leadForm,
+  stageSubstates, allStageSubstates, onChangeSubstate, leadForm,
 }: LeadDetailSidebarProps) {
   const [visible, setVisible] = useState(false);
   const [tab, setTab] = useState<WorkspaceTab>('activity');
@@ -356,9 +357,18 @@ export default function LeadDetailSidebar({
                 }}
                 className={inputClass}
               >
-                {stageSubstates.map((substate) => <option key={substate} value={substate}>{pipelineValueLabel(substate)}</option>)}
+                {allStageSubstates.map((substate) => (
+                  <option key={substate} value={substate} disabled={!stageSubstates.includes(substate)}>
+                    {pipelineValueLabel(substate)}{stageSubstates.includes(substate) ? '' : ' — unavailable from current substage'}
+                  </option>
+                ))}
               </select>
               {!canMoveLeadStage && <span className="mt-1 block text-[10px] text-[var(--crm-muted)]">Stage-move permission is required.</span>}
+              {canMoveLeadStage && lead.status === 'application' && lead.substate === 'technical_issue' && (
+                <span className="mt-1.5 block text-[10px] leading-4 text-[var(--crm-muted)]">
+                  Application Submitted is available after moving to To Do, then Application In Progress.
+                </span>
+              )}
             </label>
 
             {formSections.length ? (

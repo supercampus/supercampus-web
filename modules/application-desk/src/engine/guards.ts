@@ -21,18 +21,14 @@ function block(reason: string): GuardResult {
 /** Every mandatory document from the checklist is VERIFIED or WAIVED (§13). */
 function mandatoryDocumentsSatisfied(
   onboarding: OnboardingCase,
-  definition: WorkflowDefinition,
+  _definition: WorkflowDefinition,
 ): GuardResult {
-  const outstanding = definition.documentChecklist
-    .filter((requirement) => requirement.required)
-    .filter((requirement) => {
-      const record = onboarding.documents.find((entry) => entry.type === requirement.type);
-      return !record || !SATISFIED_DOCUMENT_STATES.includes(record.state);
-    });
+  const outstanding = onboarding.documents
+    .filter((record) => record.required && !SATISFIED_DOCUMENT_STATES.includes(record.state));
   if (outstanding.length === 0) return OK;
   return block(
     `${outstanding.length} mandatory document(s) outstanding: ${outstanding
-      .map((requirement) => requirement.label)
+      .map((record) => record.label ?? record.type)
       .join(", ")}`,
   );
 }

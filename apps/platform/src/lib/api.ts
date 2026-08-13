@@ -2,7 +2,11 @@ import type { AppState, AuthStudent, LoginCredentials, PersistedAppState } from 
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? '/api').replace(/\/$/, '');
 const REQUEST_TIMEOUT_MS = 12_000;
+const UPLOAD_TIMEOUT_MS = 45_000;
 let refreshPromise: Promise<void> | null = null;
+const AUTH_REFRESH_LOCK = 'supercampus-auth-refresh';
+
+type ApiRequestInit = RequestInit & { timeoutMs?: number };
 
 export class ApiRequestError extends Error {
   constructor(message: string, public status: number) {
@@ -23,16 +27,22 @@ function canRefresh(path: string) {
   return !['/auth/login', '/auth/forgot-password', '/auth/reset-password', '/auth/refresh', '/auth/logout'].includes(path);
 }
 
-async function send(path: string, init?: RequestInit) {
+async function send(path: string, init?: ApiRequestInit) {
+  const { timeoutMs = REQUEST_TIMEOUT_MS, ...requestInit } = init ?? {};
   const headers = new Headers(init?.headers);
-  if (init?.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  // Browsers must generate the multipart boundary for FormData. Supplying an
+  // application/json header here makes an otherwise valid media upload
+  // impossible for the Rust multipart extractor to parse.
+  if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
   const controller = new AbortController();
   const abortFromCaller = () => controller.abort(init?.signal?.reason);
   if (init?.signal?.aborted) abortFromCaller();
   else init?.signal?.addEventListener('abort', abortFromCaller, { once: true });
-  const timeout = setTimeout(() => controller.abort('request-timeout'), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort('request-timeout'), timeoutMs);
   try {
-    return await fetch(`${API_URL}${path}`, { ...init, headers, credentials: 'include', signal: controller.signal });
+    return await fetch(`${API_URL}${path}`, { ...requestInit, headers, credentials: 'include', signal: controller.signal });
   } catch (error) {
     if (controller.signal.aborted && !init?.signal?.aborted) {
       throw new ApiRequestError('The request took too long. Check the API connection and try again.', 408);
@@ -45,15 +55,43 @@ async function send(path: string, init?: RequestInit) {
   }
 }
 
-export async function apiRequest<T>(path: string, init?: RequestInit, retryAuth = true): Promise<T> {
+/**
+ * Recover an expired access cookie without letting multiple browser tabs
+ * rotate the same refresh token concurrently. After acquiring the origin-wide
+ * lock, retry the original request first: another tab may already have renewed
+ * the shared cookies while this tab was waiting.
+ */
+async function refreshAndRetry(path: string, init?: ApiRequestInit): Promise<Response> {
+  const recover = async () => {
+    const afterWaiting = await send(path, init);
+    if (afterWaiting.status !== 401) return afterWaiting;
+
+    const refreshed = await send('/auth/refresh', { method: 'POST' });
+    if (!refreshed.ok) {
+      const body: unknown = await refreshed.json().catch(() => null);
+      throw new ApiRequestError(errorMessage(body, refreshed.status), refreshed.status);
+    }
+    return send(path, init);
+  };
+
+  if (typeof navigator !== 'undefined' && navigator.locks) {
+    return navigator.locks.request(AUTH_REFRESH_LOCK, { mode: 'exclusive' }, recover);
+  }
+
+  // Server-side and older-browser fallback: still deduplicate within this
+  // JavaScript context, then replay the original request with the new cookie.
+  refreshPromise ??= apiRequest<unknown>('/auth/refresh', { method: 'POST' }, false)
+    .then(() => undefined)
+    .finally(() => { refreshPromise = null; });
+  await refreshPromise;
+  return send(path, init);
+}
+
+export async function apiRequest<T>(path: string, init?: ApiRequestInit, retryAuth = true): Promise<T> {
   let response = await send(path, init);
   if (response.status === 401 && retryAuth && canRefresh(path)) {
-    refreshPromise ??= apiRequest<unknown>('/auth/refresh', { method: 'POST' }, false)
-      .then(() => undefined)
-      .finally(() => { refreshPromise = null; });
     try {
-      await refreshPromise;
-      response = await send(path, init);
+      response = await refreshAndRetry(path, init);
     } catch {
       // The original 401 is returned below with a stable authentication error.
     }
@@ -128,7 +166,7 @@ export async function uploadMedia(file: File) {
   form.append('file', file);
   return apiRequest<{ data: { secureUrl: string; publicId: string; resourceType: string; bytes: number } }>(
     '/media/upload',
-    { method: 'POST', body: form },
+    { method: 'POST', body: form, timeoutMs: UPLOAD_TIMEOUT_MS },
   );
 }
 

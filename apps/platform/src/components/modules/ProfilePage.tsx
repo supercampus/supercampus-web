@@ -262,11 +262,17 @@ export default function ProfilePage() {
     }
 
     const previewUrl = URL.createObjectURL(file);
-    const palette = await extractLogoPalette(previewUrl);
-    const uploaded = await uploadMedia(file);
-    URL.revokeObjectURL(previewUrl);
-    setTenantBrand({ logoDataUrl: uploaded.data.secureUrl, ...palette });
-    toast('Tenant logo and dashboard colors updated');
+    try {
+      const palette = await extractLogoPalette(previewUrl);
+      const uploaded = await uploadMedia(file);
+      setTenantBrand({ logoDataUrl: uploaded.data.secureUrl, ...palette });
+      toast('Tenant logo and dashboard colors updated');
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Unable to upload tenant logo');
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+      event.target.value = '';
+    }
   }
 
   function resetBrand() {

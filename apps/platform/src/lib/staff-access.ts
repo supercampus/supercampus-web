@@ -106,7 +106,7 @@ export function availableStaffSettings(permissions: readonly string[]): StaffSet
 }
 
 /**
- * Application Desk actions are permission-gated individually, so verification,
+ * Admission Desk actions are permission-gated individually, so verification,
  * approval and activation can sit with different teams.
  */
 export function applicationDeskCapabilities(permissions: readonly string[]) {

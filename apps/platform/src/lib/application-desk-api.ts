@@ -1,5 +1,5 @@
 /**
- * Application Desk data layer.
+ * Admission Desk data layer.
  *
  * The onboarding API is not deployed yet, so this module talks to it when it is
  * reachable and otherwise falls back to an in-process demo store driven by the

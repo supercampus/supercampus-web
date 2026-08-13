@@ -9,19 +9,7 @@
  * STUDENT_CREATION.
  */
 
-import type { DocumentRequirement } from "./types.ts";
 import type { WorkflowDefinition, WorkflowStage } from "./workflow.ts";
-
-export const DEFAULT_DOCUMENT_CHECKLIST: DocumentRequirement[] = [
-  { type: "certificate-10", label: "10th Certificate", required: true },
-  { type: "certificate-12", label: "12th Certificate", required: true },
-  { type: "transfer-certificate", label: "Transfer Certificate", required: true },
-  { type: "identity-proof", label: "Identity Proof", required: true },
-  { type: "address-proof", label: "Address Proof", required: false },
-  { type: "photo", label: "Passport Photo", required: true },
-  { type: "admission-proof", label: "Admission Proof", required: true },
-  { type: "category-certificate", label: "Category Certificate", required: false },
-];
 
 const STAGES: WorkflowStage[] = [
   { id: "NEW", label: "Case Created", sequence: 0, enabled: true, mandatory: true },
@@ -137,7 +125,7 @@ export function defaultWorkflow(tenantId: string): WorkflowDefinition {
       // Bad imported data surfaces at document check; send it back for correction.
       { from: "DOCUMENT_VERIFICATION", action: "return", to: "DATA_REVIEW" },
     ],
-    documentChecklist: DEFAULT_DOCUMENT_CHECKLIST,
+    documentChecklist: [],
     approvalChain: [
       { step: 1, role: "application-desk-officer" },
       { step: 2, role: "registrar" },
@@ -156,11 +144,7 @@ export function internationalWorkflow(tenantId: string): WorkflowDefinition {
     ...base,
     id: "application-desk-international",
     name: "International Admission Onboarding",
-    documentChecklist: [
-      ...base.documentChecklist,
-      { type: "passport", label: "Passport", required: true },
-      { type: "visa", label: "Student Visa", required: true },
-    ],
+    documentChecklist: [],
     approvalChain: [...base.approvalChain, { step: 3, role: "international-office" }],
   };
 }

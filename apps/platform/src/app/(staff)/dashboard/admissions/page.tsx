@@ -7,6 +7,7 @@ import KanbanBoard from '@/components/kanban/KanbanBoard';
 import ActivityFeed from '@/components/kanban/ActivityFeed';
 import { AdmissionsSidebar } from '@/components/modules/AdmissionsSidebar';
 import { ApplicationDeskWorkspace } from '@/components/modules/ApplicationDeskWorkspace';
+import { CloudinaryFileField, isStoredMediaValue, type StoredMediaValue } from '@/components/forms/CloudinaryFileField';
 import {
   availableStaffNavigation,
   availableStaffSettings,
@@ -95,7 +96,24 @@ type FormField = {
   placeholder?: string;
   helpText?: string;
   options?: string[];
+  documentConfig?: {
+    enabled?: boolean;
+    documentType?: string;
+    documentLabel?: string;
+    requiredForDesk?: boolean;
+  };
 };
+
+const ADMISSION_DOCUMENT_TYPES = [
+  { value: 'certificate-10', label: '10th Certificate' },
+  { value: 'certificate-12', label: '12th Certificate' },
+  { value: 'transfer-certificate', label: 'Transfer Certificate' },
+  { value: 'identity-proof', label: 'Identity Proof' },
+  { value: 'address-proof', label: 'Address Proof' },
+  { value: 'photo', label: 'Passport Photo' },
+  { value: 'admission-proof', label: 'Admission Proof' },
+  { value: 'category-certificate', label: 'Category Certificate' },
+] as const;
 type FormSchemaSection = { section: string; fields: FormField[] };
 type FormDraft = Pick<FormBuilder, 'id' | 'name' | 'module' | 'formType' | 'status' | 'owner' | 'usage'>;
 type LeadImportField = 'name' | 'email' | 'phone' | 'whatsapp' | 'program' | 'source' | 'priority' | 'parentName' | 'parentPhone';
@@ -1528,7 +1546,7 @@ export default function AdmissionsPage() {
       && !resolved.includes('application-desk')
       && canOpenStaffNavigation(permissions, 'application-desk')
     ) {
-      // Compatibility for navigation documents created before Application Desk was
+      // Compatibility for navigation documents created before Admission Desk was
       // introduced. Preserve the canonical order while the backend migration catches up.
       return NAVIGATION_ORDER.filter((section) =>
         resolved.includes(section) || section === 'application-desk');
@@ -1641,7 +1659,8 @@ export default function AdmissionsPage() {
   const [completedActions, setCompletedActions] = useState<Record<string, string[]>>({});
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [operationModal, setOperationModal] = useState<OperationModal>(null);
-  const [operationValues, setOperationValues] = useState<Record<string, string>>({});
+  const [operationValues, setOperationValues] = useState<Record<string, string | StoredMediaValue | null>>({});
+  const [operationUploadingFields, setOperationUploadingFields] = useState<Set<string>>(new Set());
   const [leadImportFileName, setLeadImportFileName] = useState('');
   const [leadImportHeaders, setLeadImportHeaders] = useState<string[]>([]);
   const [leadImportRows, setLeadImportRows] = useState<string[][]>([]);
@@ -1849,7 +1868,7 @@ export default function AdmissionsPage() {
         Object.fromEntries(role.permissions.map((grant) => [grant.key, grant.scope])),
       ])));
       // Per-user access overrides are only needed by access administration.
-      // Loading one request per tenant user on every CRM/Application Desk mount
+      // Loading one request per tenant user on every CRM/Admission Desk mount
       // can exhaust the API database pool and starve the desk `cases` request.
       const shouldLoadUserOverrides = canReadUsers
         && (activeNav === 'users' || (activeNav === 'settings' && settingsSection === 'access'));
@@ -1940,10 +1959,16 @@ export default function AdmissionsPage() {
       return;
     }
     const previewUrl = URL.createObjectURL(file);
-    const palette = await extractLogoPalette(previewUrl);
-    const uploaded = await uploadMedia(file);
-    URL.revokeObjectURL(previewUrl);
-    await saveTenantBrand({ ...tenantBrand, logoDataUrl: uploaded.data.secureUrl, ...palette });
+    try {
+      const palette = await extractLogoPalette(previewUrl);
+      const uploaded = await uploadMedia(file);
+      await saveTenantBrand({ ...tenantBrand, logoDataUrl: uploaded.data.secureUrl, ...palette });
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Unable to upload tenant logo');
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+      event.target.value = '';
+    }
   }, [saveTenantBrand, showToast, tenantBrand]);
 
   const resetTenantBrand = useCallback(() => {
@@ -2141,6 +2166,12 @@ export default function AdmissionsPage() {
       showToast(`Add at least one choice to ${cleanLabel}`);
       return;
     }
+    const isApplicationUpload = formDraft?.formType.replace('-', '_') === 'application'
+      && (fieldDraft.field.type === 'Upload' || fieldDraft.field.type === 'Image upload');
+    if (isApplicationUpload && fieldDraft.field.documentConfig?.enabled && !fieldDraft.field.documentConfig.documentType?.trim()) {
+      showToast(`Select an Admission Desk document type for ${cleanLabel}`);
+      return;
+    }
     const savedField = { ...fieldDraft.field, label: cleanLabel, options };
     const [sectionIndex, fieldIndex] = fieldDraft.key.split(':').map(Number);
     updateSelectedFormSchema((schema) => schema.map((section, currentSectionIndex) => (
@@ -2156,7 +2187,7 @@ export default function AdmissionsPage() {
     setSelectedFieldKey(fieldDraft.key);
     setFieldDraft(null);
     showToast('Field settings saved');
-  }, [fieldDraft, showToast, updateSelectedFormSchema]);
+  }, [fieldDraft, formDraft?.formType, showToast, updateSelectedFormSchema]);
 
   const removeSelectedField = useCallback(() => {
     if (!selectedFieldKey) return;
@@ -2598,6 +2629,7 @@ export default function AdmissionsPage() {
   };
 
   const totalOfferAccepted = leads.filter((lead) => lead.offerDecision === 'accepted').length;
+  const activeLeads = leads.filter((lead) => lead.status !== 'archived');
   const activeApplications = leads.filter((lead) => lead.status === 'application' || lead.status === 'application-status').length;
   const dashboardStats: { label: string; value: number; icon: LucideIcon }[] = [
     { label: 'Total Leads', value: leads.length, icon: BarChart3 },
@@ -2610,7 +2642,7 @@ export default function AdmissionsPage() {
   const crmUserFollowUps = crmUserLeads.filter((lead) => lead.nextFollowUp && new Date(lead.nextFollowUp).getTime() <= dashboardNow).length;
   const pipelineSummary = COLUMNS.filter((column) => column.id !== 'archived').map((column) => {
     const count = leads.filter((lead) => lead.status === column.id).length;
-    const percent = leads.length ? Math.round((count / leads.length) * 100) : 0;
+    const percent = activeLeads.length ? Math.round((count / activeLeads.length) * 100) : 0;
     return { ...column, count, percent };
   });
   const maxStageCount = Math.max(...pipelineSummary.map((stage) => stage.count), 1);
@@ -2670,7 +2702,8 @@ export default function AdmissionsPage() {
 
   const renderLeadField = (field: FormField) => {
     const key = field.key ?? slugify(field.label);
-    const value = operationValues[key] ?? '';
+    const rawValue = operationValues[key];
+    const value = typeof rawValue === 'string' ? rawValue : '';
     const isSourceField = `${key} ${field.label}`.toLowerCase().includes('source');
     const isAddressField = field.type === 'Address' || field.label.toLowerCase().includes('address');
     const fieldClass = field.width === 'full' || isAddressField ? 'col-span-2' : '';
@@ -2767,12 +2800,16 @@ export default function AdmissionsPage() {
       );
     } else if (field.type === 'Upload' || field.type === 'Image upload') {
       control = (
-        <input
-          type="file"
+        <CloudinaryFileField
+          value={rawValue}
+          imageOnly={field.type === 'Image upload'}
           required={field.required}
-          accept={field.type === 'Image upload' ? 'image/*' : undefined}
-          onChange={(event) => setOperationValues((current) => ({ ...current, [key]: event.target.files?.[0]?.name ?? '' }))}
-          className={`${controlClass} py-2`}
+          onChange={(media) => setOperationValues((current) => ({ ...current, [key]: media }))}
+          onUploadingChange={(uploading) => setOperationUploadingFields((current) => {
+            const next = new Set(current);
+            if (uploading) next.add(key); else next.delete(key);
+            return next;
+          })}
         />
       );
     } else {
@@ -3098,11 +3135,20 @@ export default function AdmissionsPage() {
       return;
     }
     if (operationCreatesLead) {
+      if (operationUploadingFields.size > 0) {
+        showToast('Wait for all files to finish uploading');
+        return;
+      }
       if (!publishedLeadForm || publishedLeadFields.length === 0) {
         showToast('Publish a CRM lead capture form before creating leads');
         return;
       }
-      const missing = publishedLeadFields.find((field) => field.required && !operationValues[field.key ?? slugify(field.label)]?.trim());
+      const missing = publishedLeadFields.find((field) => {
+        if (!field.required) return false;
+        const fieldValue = operationValues[field.key ?? slugify(field.label)];
+        if (field.type === 'Upload' || field.type === 'Image upload') return !isStoredMediaValue(fieldValue);
+        return typeof fieldValue !== 'string' || !fieldValue.trim();
+      });
       if (missing) {
         showToast(`${missing.label} is required`);
         return;
@@ -3113,7 +3159,8 @@ export default function AdmissionsPage() {
           return includes.some((term) => label.includes(term))
             && !excludes.some((term) => label.includes(term));
         });
-        return field ? operationValues[field.key ?? slugify(field.label)]?.trim() : undefined;
+        const candidate = field ? operationValues[field.key ?? slugify(field.label)] : undefined;
+        return typeof candidate === 'string' ? candidate.trim() : undefined;
       };
       const name = fieldValue(['student name', 'full name', 'applicant name', 'name'], ['parent', 'guardian']);
       const whatsapp = fieldValue(['whatsapp']);
@@ -3155,6 +3202,7 @@ export default function AdmissionsPage() {
     executeLeadImport,
     operationModal,
     operationCreatesLead,
+    operationUploadingFields,
     operationValues,
     publishedLeadFields,
     publishedLeadForm,
@@ -3407,7 +3455,7 @@ export default function AdmissionsPage() {
                   </div>
                 </div>
                 <div className="mt-3">
-                  <p className="text-3xl font-extrabold tracking-tight text-[var(--crm-text)]">{leads.length}</p>
+                  <p className="text-3xl font-extrabold tracking-tight text-[var(--crm-text)]">{activeLeads.length}</p>
                   <p className="mt-1 inline-flex items-center text-xs font-semibold text-emerald-600">
                     <TrendingUp size={12} className="mr-1" /> +12.4% vs last week
                   </p>
@@ -3697,7 +3745,7 @@ export default function AdmissionsPage() {
                       })()}
                     </svg>
                     <div className="absolute flex flex-col items-center justify-center text-center">
-                      <span className="text-2xl font-black tracking-tight text-[var(--crm-text)]">{leads.length}</span>
+                      <span className="text-2xl font-black tracking-tight text-[var(--crm-text)]">{activeLeads.length}</span>
                       <span className="text-[11px] font-semibold text-[var(--crm-muted)]">Active Leads</span>
                     </div>
                   </div>
@@ -5468,7 +5516,7 @@ export default function AdmissionsPage() {
                         </label>
                         <button type="button" disabled={!canUpdateTenantBranding} onClick={resetTenantBrand} className="min-h-9 rounded-full bg-[var(--crm-panel)] px-4 text-xs text-[var(--crm-muted)] disabled:cursor-not-allowed disabled:opacity-45">Reset</button>
                         <div className="flex justify-center gap-2">
-                          {[tenantBrand.primary, tenantBrand.secondary, tenantBrand.surface].map((color) => <span key={color} className="h-5 w-5 rounded-full border border-[var(--crm-border)]" style={{ background: color }} />)}
+                          {[tenantBrand.primary, tenantBrand.secondary, tenantBrand.surface].map((color, index) => <span key={`brand-color-${index}`} className="h-5 w-5 rounded-full border border-[var(--crm-border)]" style={{ background: color }} />)}
                         </div>
                       </div>
                     </div>
@@ -6909,6 +6957,7 @@ export default function AdmissionsPage() {
                       Module
                       <select
                         value={formDraft.module}
+                        disabled={formDraftIsPersisted}
                         onChange={(event) => {
                           const selectedModuleName = event.target.value;
                           const availableTypes = FORM_MODULE_TYPES[selectedModuleName] ?? [];
@@ -6917,7 +6966,7 @@ export default function AdmissionsPage() {
                             : availableTypes[0]?.value ?? '';
                           setFormDraft({ ...formDraft, module: selectedModuleName, formType });
                         }}
-                        className="mt-1 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs text-[var(--crm-text)] outline-none"
+                        className="mt-1 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs text-[var(--crm-text)] outline-none disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {Object.keys(FORM_MODULE_TYPES).map((module) => <option key={module} value={module}>{module}</option>)}
                       </select>
@@ -6926,8 +6975,9 @@ export default function AdmissionsPage() {
                       Form type / purpose
                       <select
                         value={formDraft.formType}
+                        disabled={formDraftIsPersisted}
                         onChange={(event) => setFormDraft({ ...formDraft, formType: event.target.value })}
-                        className="mt-1 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs text-[var(--crm-text)] outline-none"
+                        className="mt-1 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs text-[var(--crm-text)] outline-none disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {(FORM_MODULE_TYPES[formDraft.module] ?? []).map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
                       </select>
@@ -7063,6 +7113,67 @@ export default function AdmissionsPage() {
                   />
                   <span className="mt-1 block text-[10px]">Enter one option per line. Duplicate and empty options are removed when you save.</span>
                 </label>
+              )}
+              {formDraft?.formType.replace('-', '_') === 'application'
+                && (fieldDraft.field.type === 'Upload' || fieldDraft.field.type === 'Image upload') && (
+                <div className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
+                  <label className="flex items-center justify-between gap-3 text-xs text-[var(--crm-text)]">
+                    <span>
+                      Send to Admission Desk
+                      <span className="mt-1 block text-[10px] text-[var(--crm-muted)]">Only this Application form field will be mapped. Other form types are excluded.</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={fieldDraft.field.documentConfig?.enabled === true}
+                      onChange={(event) => setFieldDraft({
+                        ...fieldDraft,
+                        field: {
+                          ...fieldDraft.field,
+                          documentConfig: {
+                            ...fieldDraft.field.documentConfig,
+                            enabled: event.target.checked,
+                            documentLabel: fieldDraft.field.documentConfig?.documentLabel ?? fieldDraft.field.label,
+                          },
+                        },
+                      })}
+                    />
+                  </label>
+                  {fieldDraft.field.documentConfig?.enabled && (
+                    <label className="mt-4 block text-xs text-[var(--crm-muted)]">
+                      Admission Desk document type <span className="text-rose-500">*</span>
+                      <select
+                        value={fieldDraft.field.documentConfig.documentType ?? ''}
+                        onChange={(event) => {
+                          const match = ADMISSION_DOCUMENT_TYPES.find((item) => item.value === event.target.value);
+                          setFieldDraft({
+                            ...fieldDraft,
+                            field: {
+                              ...fieldDraft.field,
+                              documentConfig: {
+                                ...fieldDraft.field.documentConfig,
+                                enabled: true,
+                                documentType: event.target.value,
+                                documentLabel: match?.label ?? fieldDraft.field.label,
+                                requiredForDesk: fieldDraft.field.required === true,
+                              },
+                            },
+                          });
+                        }}
+                        className="mt-2 h-11 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-sm text-[var(--crm-text)] outline-none"
+                      >
+                        <option value="">Select document type</option>
+                        {ADMISSION_DOCUMENT_TYPES.map((document) => (
+                          <option key={document.value} value={document.value}>{document.label}</option>
+                        ))}
+                      </select>
+                      {formDraftIsPersisted && (
+                        <span className="mt-1 block text-[9px] leading-relaxed">
+                          Purpose is locked after creation. Create a separate form for another workflow.
+                        </span>
+                      )}
+                    </label>
+                  )}
+                </div>
               )}
               <div className="grid grid-cols-2 gap-3">
                 <button

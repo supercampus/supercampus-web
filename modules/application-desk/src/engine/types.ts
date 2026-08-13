@@ -75,8 +75,18 @@ export interface DocumentRequirement {
 
 export interface DocumentRecord {
   type: string;
+  label?: string;
+  required?: boolean;
   state: DocumentState;
   fileId?: string;
+  fileName?: string;
+  contentType?: string;
+  secureUrl?: string;
+  bytes?: number;
+  uploadedAt?: string;
+  sourceFormFieldKey?: string;
+  sourceSubmissionId?: string;
+  sourceFormVersion?: number;
   verifiedBy?: string;
   verifiedAt?: string;
   rejectionReason?: string;

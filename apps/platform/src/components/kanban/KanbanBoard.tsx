@@ -509,6 +509,8 @@ export default function KanbanBoard({
             visibleSelectedLead.substate,
             stageCatalog.find((stage) => stage.key === visibleSelectedLead.status.replaceAll('-', '_'))?.substates ?? [],
           ).filter((substate) => canTriggerErpHandoff || visibleSelectedLead.status !== 'offer-status' || substate !== 'accepted')}
+          allStageSubstates={(stageCatalog.find((stage) => stage.key === visibleSelectedLead.status.replaceAll('-', '_'))?.substates ?? [])
+            .filter((substate) => canTriggerErpHandoff || visibleSelectedLead.status !== 'offer-status' || substate !== 'accepted')}
           onChangeSubstate={changeSubstate}
         />
       )}

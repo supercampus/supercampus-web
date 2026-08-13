@@ -101,7 +101,7 @@ export function AdmissionsSidebar({
     ? [
         ...configuredSections.keys(),
         // Compatibility for tenants whose server-driven navigation rows predate
-        // Application Desk. The API still authorizes every operation independently.
+        // Admission Desk. The API still authorizes every operation independently.
         ...(permissionNavigation.includes('application-desk') && !configuredSections.has('application-desk')
           ? ['application-desk' as const]
           : []),

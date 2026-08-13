@@ -96,10 +96,7 @@ export function createCase(
   definition: WorkflowDefinition,
   options: CreateCaseOptions,
 ): OnboardingCase {
-  const documents: DocumentRecord[] = definition.documentChecklist.map((requirement) => ({
-    type: requirement.type,
-    state: "NOT_SUBMITTED",
-  }));
+  const documents: DocumentRecord[] = [];
 
   return {
     id: options.id,
