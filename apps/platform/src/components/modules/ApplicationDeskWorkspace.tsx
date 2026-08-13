@@ -431,6 +431,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [tab, setTab] = useState<Tab>('application');
   const [actionReason, setActionReason] = useState('');
+  const [noteOpen, setNoteOpen] = useState(false);
   const [instructionsOpen, setInstructionsOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const drawerCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1531,18 +1532,28 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       )}
                     </section>
                   )}
-                  <label className="block">
-                    <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--crm-muted)]">
-                      {reasonDeskField?.label || 'Optional action note'}{reasonDeskField?.required && <span className="ml-1 text-rose-500">Required</span>}
-                    </span>
-                    <input
-                      value={actionReason}
-                      onChange={(event) => setActionReason(event.target.value)}
-                      placeholder={reasonDeskField?.placeholder || 'Add a note saved in case history'}
-                      required={reasonDeskField?.required}
-                      className="min-h-10 w-full rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs text-[var(--crm-text)] shadow-sm outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/10"
-                    />
-                  </label>
+                  {reasonDeskField?.required || noteOpen ? (
+                    <label className="block">
+                      <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--crm-muted)]">
+                        {reasonDeskField?.label || 'Action note'}{reasonDeskField?.required && <span className="ml-1 text-rose-500">Required</span>}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus={!reasonDeskField?.required}
+                          value={actionReason}
+                          onChange={(event) => setActionReason(event.target.value)}
+                          placeholder={reasonDeskField?.placeholder || 'Add a note'}
+                          required={reasonDeskField?.required}
+                          className="min-h-9 flex-1 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-1.5 text-xs text-[var(--crm-text)] outline-none placeholder:text-[var(--crm-muted)] focus:border-[var(--tenant-primary)] focus:ring-2 focus:ring-[var(--tenant-primary)]/10"
+                        />
+                        {!reasonDeskField?.required && <button type="button" onClick={() => { setNoteOpen(false); setActionReason(''); }} className="text-xs font-semibold text-[var(--crm-muted)] hover:text-[var(--crm-text)]">Cancel</button>}
+                      </div>
+                    </label>
+                  ) : (
+                    <button type="button" onClick={() => setNoteOpen(true)} className="text-xs font-semibold text-[var(--crm-muted)] underline decoration-dotted underline-offset-4 hover:text-[var(--tenant-primary)]">
+                      + Add note (optional)
+                    </button>
+                  )}
                   <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap gap-2">
                     <Action

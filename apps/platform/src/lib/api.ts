@@ -123,6 +123,15 @@ export function saveTenantBranding(value: Record<string, unknown>) {
   );
 }
 
+export async function uploadMedia(file: File) {
+  const form = new FormData();
+  form.append('file', file);
+  return apiRequest<{ data: { secureUrl: string; publicId: string; resourceType: string; bytes: number } }>(
+    '/media/upload',
+    { method: 'POST', body: form },
+  );
+}
+
 export function toPersistedState(state: AppState): PersistedAppState {
   return {
     persona: state.persona,

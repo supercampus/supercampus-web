@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/lib/context';
+import { uploadMedia } from '@/lib/api';
 import { ICONS, STUDENT, CGPA, attPct, duesTotal, fmtDues } from '@/lib/data';
 import { Card, Icon } from '@/components/ui/primitives';
 import type { NavId } from '@/lib/types';
@@ -260,14 +261,11 @@ export default function ProfilePage() {
       return;
     }
 
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    const palette = await extractLogoPalette(dataUrl);
-    setTenantBrand({ logoDataUrl: dataUrl, ...palette });
+    const previewUrl = URL.createObjectURL(file);
+    const palette = await extractLogoPalette(previewUrl);
+    const uploaded = await uploadMedia(file);
+    URL.revokeObjectURL(previewUrl);
+    setTenantBrand({ logoDataUrl: uploaded.data.secureUrl, ...palette });
     toast('Tenant logo and dashboard colors updated');
   }
 

@@ -26,7 +26,7 @@ import {
 import { useCrmEvents, type CrmEvent } from '@/lib/crm-events';
 import { LEAD_SOURCES } from '@/lib/crm-catalog';
 import { useApp } from '@/lib/context';
-import { getTenantBranding, saveTenantBranding as saveTenantBrandingConfiguration } from '@/lib/api';
+import { getTenantBranding, saveTenantBranding as saveTenantBrandingConfiguration, uploadMedia } from '@/lib/api';
 import {
   bulkImportCrmLeads,
   createCrmForm,
@@ -1939,14 +1939,11 @@ export default function AdmissionsPage() {
       showToast('Upload an image logo');
       return;
     }
-    const logoDataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    const palette = await extractLogoPalette(logoDataUrl);
-    await saveTenantBrand({ ...tenantBrand, logoDataUrl, ...palette });
+    const previewUrl = URL.createObjectURL(file);
+    const palette = await extractLogoPalette(previewUrl);
+    const uploaded = await uploadMedia(file);
+    URL.revokeObjectURL(previewUrl);
+    await saveTenantBrand({ ...tenantBrand, logoDataUrl: uploaded.data.secureUrl, ...palette });
   }, [saveTenantBrand, showToast, tenantBrand]);
 
   const resetTenantBrand = useCallback(() => {
@@ -3320,13 +3317,6 @@ export default function AdmissionsPage() {
       <main className="campus-admin-main flex-1 min-w-0 flex flex-col overflow-hidden">
         {activeNav === 'pipeline' && (
           <section className="campus-admin-pipeline flex-1 overflow-hidden p-5 flex flex-col bg-[var(--crm-panel)]">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h1 className="text-lg font-semibold">Lead</h1>
-                <p className="mt-0.5 text-xs text-[var(--crm-muted)]">Enquiry is shared. The first stage movement claims the card; later stages show only cards you own.</p>
-              </div>
-              <ActivityFeed leads={leads} />
-            </div>
             {crmError && <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">{crmError}</div>}
             {crmLoading && leads.length === 0 ? (
               <div className="flex flex-1 items-center justify-center text-sm text-[var(--crm-muted)]">Loading live pipeline…</div>

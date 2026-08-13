@@ -5,7 +5,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { Lead, Column } from '@/lib/kanban/kanban-data';
 import LeadCard from './LeadCard';
-import { Plus } from 'lucide-react';
+import { MoreHorizontal, Plus } from 'lucide-react';
 
 interface KanbanColumnProps {
   column: Column;
@@ -26,78 +26,74 @@ export default function KanbanColumn({
 
   return (
     <div
-      className="crm-kanban-column flex flex-col rounded-xl border bg-[var(--crm-card)] border-[var(--crm-border)] w-[300px] shrink-0 overflow-hidden"
+      className="crm-kanban-column flex w-[320px] shrink-0 flex-col overflow-hidden rounded-t-xl bg-[var(--crm-card)]"
       style={{
-        boxShadow: isOver
-          ? `0 0 0 2px ${column.accent}42, 0 18px 40px rgba(20, 24, 40, 0.12)`
-          : '0 8px 24px rgba(20, 24, 40, 0.05)',
+        boxShadow: isOver ? `0 0 0 3px ${column.accent}55, 0 18px 40px rgba(20, 24, 40, 0.12)` : 'none',
         transform: isOver ? 'translateY(-2px)' : 'translateY(0)',
-        background: `linear-gradient(180deg, ${column.accent}12, var(--crm-card) 78px)`,
       }}
     >
       {/* Column Header */}
       <div
-        className="flex items-center justify-between px-4 py-3 border-b border-[var(--crm-border)]"
-        style={{ borderLeft: `4px solid ${column.accent}`, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+        className="flex items-center justify-between px-5 pb-4 pt-5"
       >
-        <div className="flex items-center gap-2.5">
-          <h3 className="text-sm font-semibold text-[var(--crm-text)] uppercase tracking-wide">
+        <div className="flex items-center gap-2">
+          <h3 className="text-[15px] font-semibold uppercase tracking-[0.03em] text-black">
             {column.title}
           </h3>
           <span
-            className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full text-[11px] font-bold"
+            className="inline-flex min-w-6 items-center justify-center rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-black"
             style={{
-              backgroundColor: `${column.accent}18`,
-              color: column.accent,
+              display: leads.length ? undefined : 'none',
             }}
           >
             {leads.length}
           </span>
         </div>
-        {onCreateLead && (
+        <div className="flex items-center gap-1">
+          {onCreateLead && (
+            <button
+              type="button"
+              onClick={() => onCreateLead(column)}
+              className="rounded-full p-1 text-black/60 transition-colors hover:bg-black/10 hover:text-black"
+              aria-label={`Create lead from ${column.title}`}
+              title={`Create lead from ${column.title}`}
+            >
+              <Plus size={18} />
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => onCreateLead(column)}
-            className="p-1 rounded-md hover:bg-[var(--crm-panel)] text-[var(--crm-muted)] transition-colors"
-            aria-label={`Create lead from ${column.title}`}
-            title={`Create lead from ${column.title}`}
+            className="rounded-full p-1 text-black/60 transition-colors hover:bg-black/10 hover:text-black"
+            aria-label={`More options for ${column.title}`}
+            title={`More options for ${column.title}`}
           >
-            <Plus size={17} />
+            <MoreHorizontal size={18} />
           </button>
-        )}
+        </div>
       </div>
+
+      <div aria-hidden="true" className="h-1 w-full" style={{ backgroundColor: column.accent }} />
 
       {/* Cards Area */}
       <div
         ref={setNodeRef}
-        className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2.5 min-h-[200px] kanban-scroll-hidden"
+        className="flex-1 min-h-[220px] overflow-y-auto px-5 pb-5 pt-1 kanban-scroll-hidden"
         style={{
-          backgroundColor: isOver ? `${column.accent}08` : 'transparent',
+          backgroundColor: isOver ? 'rgba(255,255,255,0.26)' : 'transparent',
         }}
       >
         <SortableContext items={leads.map((lead) => lead.id)} strategy={verticalListSortingStrategy}>
           {leads.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-8 px-4">
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center mb-2"
-                style={{ backgroundColor: `${column.accent}12` }}
-              >
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-black/10">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={column.accent} strokeWidth="2">
                   <path d="M4 7h16M4 12h10M4 17h7" />
                 </svg>
               </div>
-              <p className="text-xs text-[var(--crm-muted)] font-medium">{canDrag ? 'Drop a lead here' : 'No leads'}</p>
+              <p className="text-xs font-medium text-black/55">{canDrag ? 'Drop a lead here' : 'No leads'}</p>
             </div>
           ) : (
-            leads.map((lead) => (
-              <LeadCard
-                key={lead.id}
-                lead={lead}
-                columnAccent={column.accent}
-                onClick={onLeadClick}
-                canDrag={canDrag}
-              />
-            ))
+            leads.map((lead) => <LeadCard key={lead.id} lead={lead} columnAccent={column.accent} onClick={onLeadClick} canDrag={canDrag} />)
           )}
         </SortableContext>
       </div>

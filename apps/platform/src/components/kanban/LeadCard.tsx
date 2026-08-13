@@ -4,8 +4,7 @@ import React from 'react';
 import { defaultAnimateLayoutChanges, useSortable, type AnimateLayoutChanges } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Lead } from '@/lib/kanban/kanban-data';
-import { Phone, Mail, MapPin, Paperclip, MessageSquare, Clock } from 'lucide-react';
-import { pipelineValueLabel } from '@/lib/crm-catalog';
+import { MoreHorizontal } from 'lucide-react';
 
 interface LeadCardProps {
   lead: Lead;
@@ -20,7 +19,7 @@ function LeadCardContent({ lead, columnAccent, onClick, canDrag, isOverdue, clas
     <div
       style={style}
       onClick={() => onClick(lead)}
-      className={`crm-lead-card bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-xl p-3 shadow-sm group ${canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${className}`}
+      className={`crm-lead-card group mb-3 rounded-[28px] bg-white p-5 text-black shadow-[0_8px_22px_rgba(20,24,40,0.06)] transition-transform hover:-translate-y-0.5 ${canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${className}`}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = columnAccent;
       }}
@@ -28,71 +27,39 @@ function LeadCardContent({ lead, columnAccent, onClick, canDrag, isOverdue, clas
         (e.currentTarget as HTMLElement).style.borderColor = 'var(--crm-border)';
       }}
     >
-      <h4 className="font-semibold text-sm text-[var(--crm-text)] leading-tight mb-1 pr-2">
-        {lead.name}
-      </h4>
-
-      <p className="text-xs text-[var(--crm-on-surface-variant)] mb-2.5">
-        {lead.course} | {lead.intake}
-      </p>
-
-      {lead.substate && (
-        <span className="mb-2.5 inline-flex max-w-full rounded-full bg-[var(--tenant-surface)] px-2 py-1 text-[10px] font-semibold text-[var(--tenant-primary)]">
-          <span className="truncate">{pipelineValueLabel(lead.substate)}</span>
-        </span>
-      )}
-
-      <div className="flex flex-col gap-1 mb-2.5">
-        <div className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">
-          <Phone size={11} />
-          <span>{lead.phone}</span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h4 className="truncate pr-2 text-[21px] font-medium leading-tight">{lead.name}</h4>
+          <p className="mt-1 text-[13px] text-black/75">{lead.course}{lead.intake ? ` · ${lead.intake}` : ''}</p>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">
-          <Mail size={11} />
-          <span className="truncate">{lead.email}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-[var(--crm-muted)]">
-          <MapPin size={11} />
-          <span>{lead.city}</span>
-        </div>
+        <button type="button" aria-label={`More actions for ${lead.name}`} className="shrink-0 rounded-full p-0.5 text-black hover:bg-black/10">
+          <MoreHorizontal size={21} strokeWidth={2.5} />
+        </button>
       </div>
 
-      <div className="border-t border-[var(--crm-border)] pt-2.5 mt-1" />
+      <div className="mt-4 flex items-center justify-between gap-3 text-[13px] text-black/85">
+        <span>Next follow-up action <span aria-hidden="true">→</span></span>
+        <span className={`h-3 w-3 shrink-0 rounded-full ${isOverdue ? 'bg-red-500' : lead.nextFollowUp ? 'bg-amber-400' : 'bg-green-500'}`} title={isOverdue ? 'Overdue' : lead.nextFollowUp ? 'Follow-up scheduled' : 'No follow-up pending'} />
+      </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-            style={{
-              background: 'var(--primary-grad)',
-            }}
-          >
-            {lead.assignedTo.name.slice(0, 2).toUpperCase()}
-          </div>
-          <div className="flex items-center gap-2 text-[10px] text-[var(--crm-muted)] font-medium">
-            <span className="flex items-center gap-0.5">
-              <Paperclip size={10} />
-              {lead.documents.uploaded}/{lead.documents.required}
-            </span>
-            <span className="flex items-center gap-0.5">
-              <MessageSquare size={10} />
-              {lead.communicationCount}
-            </span>
-          </div>
+      <div className="mt-5 flex items-end justify-between gap-3">
+        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-black/80 bg-black text-xs font-semibold text-white">
+          {lead.assignedTo.avatar ? <img src={lead.assignedTo.avatar} alt="" className="h-full w-full object-cover" /> : lead.assignedTo.name.slice(0, 2).toUpperCase()}
         </div>
-
-        <div className="flex items-center gap-1 text-[10px] font-medium">
-          {isOverdue && <Clock size={10} className="text-[var(--crm-danger)]" />}
-          <span
-            className={isOverdue ? 'text-[var(--crm-danger)]' : 'text-[var(--crm-muted)]'}
-            style={{ color: isOverdue ? '#ff005c' : undefined }}
-          >
-            {lead.lastContact}
-          </span>
+        <div className="text-right text-[12px] leading-5 text-black/50">
+          <p>updated on</p>
+          <p>{formatUpdatedAt(lead.updatedAt ?? lead.createdAt ?? lead.lastContact)}</p>
         </div>
       </div>
     </div>
   );
+}
+
+function formatUpdatedAt(value?: string) {
+  if (!value) return 'recently';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('en-IN', { day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 function LeadCard({ lead, columnAccent, onClick, canDrag, isOverdue }: LeadCardProps) {

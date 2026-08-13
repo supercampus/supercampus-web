@@ -24,7 +24,7 @@ import KanbanColumn from './KanbanColumn';
 import LeadCard from './LeadCard';
 import LeadDetailSidebar from './LeadDetailSidebar';
 import MoveLogModal from './MoveLogModal';
-import { ArrowRightLeft, Filter, LoaderCircle, Search, X } from 'lucide-react';
+import { ArrowRightLeft, ChevronDown, Filter, LoaderCircle, Search, X } from 'lucide-react';
 import { availableCurrentStageSubstates } from '@/lib/crm-catalog';
 
 interface KanbanBoardProps {
@@ -73,6 +73,8 @@ export default function KanbanBoard({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSource, setFilterSource] = useState<string | null>(null);
   const [filterCourse, setFilterCourse] = useState<string | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'updated' | 'name' | 'follow-up'>('updated');
   // The lead editor is built from whatever the administrator published, so it is
   // fetched once here and handed to the detail sidebar.
   const [leadForm, setLeadForm] = useState<CrmForm | null>(null);
@@ -141,13 +143,17 @@ export default function KanbanBoard({
       if (filterSource && lead.source !== filterSource) return;
       if (filterCourse && lead.course !== filterCourse) return;
 
-      if (grouped[lead.status]) {
-        grouped[lead.status].push(lead);
-      }
+      if (grouped[lead.status]) grouped[lead.status].push(lead);
     });
 
+    Object.values(grouped).forEach((items) => items.sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'follow-up') return String(a.nextFollowUp ?? '9999').localeCompare(String(b.nextFollowUp ?? '9999'));
+      return new Date(b.updatedAt ?? b.createdAt ?? 0).getTime() - new Date(a.updatedAt ?? a.createdAt ?? 0).getTime();
+    }));
+
     return grouped;
-  }, [leads, searchQuery, filterSource, filterCourse]);
+  }, [leads, searchQuery, filterSource, filterCourse, sortBy]);
 
   const filterOptions = useMemo(() => {
     const sources = new Set<string>();
@@ -425,7 +431,7 @@ export default function KanbanBoard({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="campus-kanban-toolbar flex items-center gap-3 mb-4 flex-wrap">
+      <div className="campus-kanban-toolbar mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="campus-kanban-search relative flex-1 max-w-xs">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--crm-muted)]" />
           <input
@@ -437,28 +443,24 @@ export default function KanbanBoard({
           />
         </div>
 
-        <div className="campus-kanban-filters flex items-center gap-2">
-          <Filter size={14} className="text-[var(--crm-muted)]" />
-          <select
-            value={filterSource ?? ''}
-            onChange={(e) => setFilterSource(e.target.value || null)}
-            className="px-2.5 py-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] text-xs text-[var(--crm-text)] focus:outline-none"
-          >
-            <option value="">Source: All</option>
-            {filterOptions.sources.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <select
-            value={filterCourse ?? ''}
-            onChange={(e) => setFilterCourse(e.target.value || null)}
-            className="px-2.5 py-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] text-xs text-[var(--crm-text)] focus:outline-none"
-          >
-            <option value="">Course: All</option>
-            {filterOptions.courses.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+        <div className="campus-kanban-filters relative ml-auto flex items-center gap-2">
+          <button type="button" onClick={() => setFilterOpen((open) => !open)} className="inline-flex items-center gap-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs font-semibold text-[var(--crm-text)] hover:bg-[var(--crm-panel)]" aria-expanded={filterOpen}>
+            <Filter size={14} />
+            Filter
+            {(filterSource || filterCourse || sortBy !== 'updated') && <span className="h-1.5 w-1.5 rounded-full bg-[var(--tenant-primary)]" />}
+            <ChevronDown size={13} />
+          </button>
+          {filterOpen && (
+            <div className="absolute right-0 top-full z-30 mt-2 w-72 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-3 shadow-xl">
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-[11px] font-semibold text-[var(--crm-muted)]">Source<select value={filterSource ?? ''} onChange={(e) => setFilterSource(e.target.value || null)} className="mt-1 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-2 py-2 text-xs text-[var(--crm-text)]"><option value="">All</option>{filterOptions.sources.map((s) => <option key={s} value={s}>{s}</option>)}</select></label>
+                <label className="text-[11px] font-semibold text-[var(--crm-muted)]">Course<select value={filterCourse ?? ''} onChange={(e) => setFilterCourse(e.target.value || null)} className="mt-1 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-2 py-2 text-xs text-[var(--crm-text)]"><option value="">All</option>{filterOptions.courses.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
+                <label className="text-[11px] font-semibold text-[var(--crm-muted)]">Sort by<select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className="mt-1 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-2 py-2 text-xs text-[var(--crm-text)]"><option value="updated">Recently updated</option><option value="name">Lead name</option><option value="follow-up">Next follow-up</option></select></label>
+                <div className="rounded-lg bg-[var(--crm-surface)] px-2 py-2 text-[11px] text-[var(--crm-muted)]"><span className="block font-semibold text-[var(--crm-text)]">Group by</span><span className="mt-1 block">Stage columns</span></div>
+              </div>
+              <p className="mt-3 text-[10px] text-[var(--crm-muted)]">Kanban groups leads by stage, which is the clearest view for moving work through the pipeline.</p>
+            </div>
+          )}
           {(searchQuery || filterSource || filterCourse) && (
             <button
               onClick={() => { setSearchQuery(''); setFilterSource(null); setFilterCourse(null); }}
@@ -471,15 +473,15 @@ export default function KanbanBoard({
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4 kanban-scroll-hidden">
-        <div className="inline-flex gap-4 h-full pb-2">
+      <div className="flex-1 min-h-[calc(100vh-190px)] overflow-x-auto overflow-y-hidden pb-4 kanban-scroll-hidden">
+        <div className="inline-flex h-full gap-4 pb-2">
           {COLUMNS.map((column) => (
             <KanbanColumn
               key={column.id}
               column={column}
               leads={leadsByColumn[column.id] ?? []}
               onLeadClick={handleLeadClick}
-              onCreateLead={column.id === 'enquiry' ? onCreateLead : undefined}
+              onCreateLead={onCreateLead}
               canDrag={canMoveLeadStage}
             />
           ))}
