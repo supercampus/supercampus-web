@@ -49,7 +49,7 @@ async function proxy(request: Request, context: ProxyContext): Promise<Response>
     headers.set("x-forwarded-host", incoming.host);
     headers.set("x-forwarded-proto", incoming.protocol.replace(":", ""));
 
-    const hasBody = request.method !== "GET" && request.method !== "HEAD";
+    const hasBody = request.method !== "GET" && request.method !== "HEAD" && request.body !== null;
     const init: RequestInit & { duplex?: "half" } = {
       method: request.method,
       headers,
