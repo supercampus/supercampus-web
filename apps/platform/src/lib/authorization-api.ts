@@ -1,6 +1,7 @@
 import { apiRequest } from './api';
 
-export type PermissionScope = 'all' | 'assigned' | 'own';
+export type PermissionScope = 'own' | 'assigned' | 'department' | 'institution' | 'all';
+export type PortalFamily = 'student' | 'parent' | 'staff' | 'admin';
 
 export interface AuthorizationPermission {
   key: string;
@@ -26,6 +27,7 @@ export interface AuthorizationRole {
   name: string;
   team: string;
   scope: string;
+  portalFamily: PortalFamily;
   protected: boolean;
   active: boolean;
   permissions: AuthorizationGrant[];
@@ -63,6 +65,7 @@ export function createAuthorizationRole(input: {
   name: string;
   team: string;
   scope: string;
+  portalFamily: PortalFamily;
 }) {
   return apiRequest<{ data: AuthorizationRole }>(`${AUTHORIZATION_ROOT}/roles`, {
     method: 'POST',

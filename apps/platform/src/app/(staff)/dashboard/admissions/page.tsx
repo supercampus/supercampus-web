@@ -59,6 +59,7 @@ import {
   type AuthorizationPermission,
   type AuthorizationRole,
   type PermissionScope,
+  type PortalFamily,
   type TenantUser,
 } from '@/lib/authorization-api';
 import type { LucideIcon } from 'lucide-react';
@@ -68,7 +69,7 @@ type NavSection = StaffNavigationId;
 type ThemeId = 'classic' | 'ocean' | 'emerald' | 'midnight';
 type SettingsSection = StaffSettingsId;
 type PreviewMode = 'desktop' | 'mobile';
-type CollegeRole = { id: string; name: string; team: string; scope: string; moduleIds: string[]; protected?: boolean };
+type CollegeRole = { id: string; name: string; team: string; scope: string; portalFamily: PortalFamily; moduleIds: string[]; protected?: boolean };
 type OperationModule = {
   id: string;
   name: string;
@@ -1435,6 +1436,7 @@ const EMPTY_ROLE: CollegeRole = {
   name: 'No role selected',
   team: '',
   scope: '',
+  portalFamily: 'staff',
   moduleIds: [],
 };
 const EMPTY_MODULE: OperationModule = {
@@ -1639,6 +1641,7 @@ export default function AdmissionsPage() {
   const [expandedUserAccessId, setExpandedUserAccessId] = useState('');
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleTeam, setNewRoleTeam] = useState('');
+  const [newRolePortalFamily, setNewRolePortalFamily] = useState<PortalFamily>('staff');
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
@@ -1853,6 +1856,7 @@ export default function AdmissionsPage() {
         name: role.name,
         team: role.team,
         scope: role.scope,
+        portalFamily: role.portalFamily,
         protected: role.protected,
         moduleIds: Array.from(new Set(role.permissions.map((grant) => permissionModule.get(grant.key)).filter((value): value is string => Boolean(value)))),
       }));
@@ -2464,12 +2468,14 @@ export default function AdmissionsPage() {
         name,
         team: newRoleTeam.trim() || 'Custom',
         scope: 'Custom role managed by tenant admin',
+        portalFamily: newRolePortalFamily,
       });
       const role: CollegeRole = {
         id: response.data.id,
         name: response.data.name,
         team: response.data.team,
         scope: response.data.scope,
+        portalFamily: response.data.portalFamily,
         protected: response.data.protected,
         moduleIds: [],
       };
@@ -2479,6 +2485,7 @@ export default function AdmissionsPage() {
       setSelectedAccessRoleId(role.id);
       setNewRoleName('');
       setNewRoleTeam('');
+      setNewRolePortalFamily('staff');
       showToast(`Role added: ${name}`);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Unable to create role');
@@ -5076,8 +5083,8 @@ export default function AdmissionsPage() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-[var(--tenant-primary)]">Guided access control</p>
-                      <h3 className="mt-1 text-2xl">Role &gt; Module &gt; Feature &gt; CRUD &gt; Users</h3>
-                      <p className="mt-2 max-w-2xl text-xs leading-6 text-[var(--crm-muted)]">Configure access one step at a time. Pick the role, choose the module, decide CRUD for each feature, then assign users to the role.</p>
+                      <h3 className="mt-1 text-2xl">Role &gt; Module &gt; Workflow &gt; Users</h3>
+                      <p className="mt-2 max-w-2xl text-xs leading-6 text-[var(--crm-muted)]">Configure access one step at a time. Pick the role and its portal, choose modules and workflows, then assign users to the role.</p>
                     </div>
                     <div className="rounded-xl bg-[var(--crm-surface)] px-4 py-3 text-right">
                       <p className="text-[10px] uppercase tracking-wider text-[var(--crm-muted)]">Current role</p>
@@ -5090,7 +5097,7 @@ export default function AdmissionsPage() {
                   {[
                     ['1', 'Select role', selectedAccessRole.name, ShieldCheck, () => setAccessModal('role')],
                     ['2', 'Select modules', `${grantedAccessAreaCount} of ${accessAreaCount} access areas`, Layers, () => setAccessModal('module')],
-                    ['3', 'Set feature CRUD', `${selectedAccessModule.name}: ${selectedModuleEnabledCount}/${selectedModuleKeys.length} actions`, ListChecks, () => setAccessModal('crud')],
+                    ['3', 'Set workflows', `${selectedAccessModule.name}: ${selectedModuleEnabledCount}/${selectedModuleKeys.length} permissions`, ListChecks, () => setAccessModal('crud')],
                     ['4', 'Assign users', `${selectedRoleUsers.length} users`, Users, () => setAccessModal('users')],
                   ].map(([step, title, value, Icon, onClick]) => (
                     <button
@@ -5114,7 +5121,7 @@ export default function AdmissionsPage() {
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <h3 className="text-base">Access summary</h3>
-                        <p className="mt-1 text-xs text-[var(--crm-muted)]">The selected role currently has CRUD access across these modules.</p>
+                        <p className="mt-1 text-xs text-[var(--crm-muted)]">The selected role currently has workflow access across these modules.</p>
                       </div>
                       <span className="rounded-full bg-[var(--crm-panel)] px-3 py-1.5 text-[11px] text-[var(--crm-muted)]">{accessCoverage}% coverage</span>
                     </div>
@@ -5150,7 +5157,7 @@ export default function AdmissionsPage() {
                         <p className="mt-1">{selectedAccessModule.name}</p>
                       </div>
                       <div className="rounded-xl bg-[var(--crm-surface)] p-3">
-                        <p className="text-[var(--crm-muted)]">CRUD actions</p>
+                        <p className="text-[var(--crm-muted)]">Workflow permissions</p>
                         <p className="mt-1">{selectedPermissionCount}/{allPermissionKeys.length}</p>
                       </div>
                       <div className="rounded-xl bg-[var(--crm-surface)] p-3">
@@ -6334,7 +6341,7 @@ export default function AdmissionsPage() {
                 <h3 className="mt-1 text-lg">
                   {accessModal === 'role' && 'Step 1: Select role'}
                   {accessModal === 'module' && 'Step 2: Select module'}
-                  {accessModal === 'crud' && 'Step 3: Feature CRUD permissions'}
+                  {accessModal === 'crud' && 'Step 3: Workflow permissions'}
                   {accessModal === 'users' && 'Step 4: Assign users'}
                 </h3>
               </div>
@@ -6355,6 +6362,13 @@ export default function AdmissionsPage() {
                     <p className="text-[10px] uppercase tracking-widest text-[var(--crm-muted)]">Create role</p>
                     <input value={newRoleName} onChange={(event) => setNewRoleName(event.target.value)} placeholder="Role name" className="mt-3 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs outline-none" />
                     <input value={newRoleTeam} onChange={(event) => setNewRoleTeam(event.target.value)} placeholder="Department / team" className="mt-2 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs outline-none" />
+                    <label className="mt-2 block text-[10px] uppercase tracking-widest text-[var(--crm-muted)]" htmlFor="new-role-portal-family">Portal</label>
+                    <select id="new-role-portal-family" value={newRolePortalFamily} onChange={(event) => setNewRolePortalFamily(event.target.value as PortalFamily)} className="mt-1 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs outline-none">
+                      <option value="staff">Staff portal</option>
+                      <option value="student">Student portal</option>
+                      <option value="parent">Parent portal</option>
+                      <option value="admin">Admin portal</option>
+                    </select>
                     <button type="button" onClick={addCollegeRole} disabled={!canCreateRoles} className="mt-3 w-full rounded-lg px-3 py-2 text-xs text-white disabled:cursor-not-allowed disabled:opacity-40" style={{ background: brandGradient }}>Add role</button>
                   </div>
                   <div className="grid gap-2 md:grid-cols-2">
@@ -6373,7 +6387,7 @@ export default function AdmissionsPage() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="truncate text-sm">{role.name}</p>
-                              <p className="mt-1 text-[10px] uppercase text-[var(--crm-muted)]">{role.team}</p>
+                              <p className="mt-1 text-[10px] uppercase text-[var(--crm-muted)]">{role.team} / {role.portalFamily} portal</p>
                             </div>
                             <span className="rounded-lg bg-[var(--crm-card)] px-2 py-1 text-[10px] text-[var(--crm-muted)]">{roleCoverage}%</span>
                           </div>
@@ -6395,7 +6409,7 @@ export default function AdmissionsPage() {
                         {grantedAccessAreaCount} of {accessAreaCount} access areas granted to {selectedAccessRole.name}
                       </p>
                       <p className="mt-1 text-xs text-[var(--crm-muted)]">
-                        Admissions keeps its connected modules together. Expand access precisely, then configure feature CRUD in step 3.
+                        Admissions keeps its connected modules together. Expand access precisely, then configure its workflows in step 3.
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -6552,7 +6566,7 @@ export default function AdmissionsPage() {
                           >
                             <span className="line-clamp-2 text-[11px] text-[var(--crm-muted)]">{module.features.slice(0, 4).join(', ')}</span>
                             <span className="mt-1.5 block text-[10px] font-semibold text-[var(--tenant-primary)]">
-                              {focused ? 'Open in step 3 ->' : 'Set CRUD ->'}
+                              {focused ? 'Open in step 3 ->' : 'Set workflows ->'}
                             </span>
                           </button>
                         </div>
@@ -6571,7 +6585,7 @@ export default function AdmissionsPage() {
                       <p className="text-sm">
                         {crudModules.length} module{crudModules.length === 1 ? '' : 's'} for {selectedAccessRole.name}
                       </p>
-                      <p className="mt-1 text-xs text-[var(--crm-muted)]">Choose API-backed Create, Read, Update, and Delete permissions. N/A means that operation does not exist for the feature.</p>
+                      <p className="mt-1 text-xs text-[var(--crm-muted)]">Choose the real workflows this role can perform. Only operations registered by the API are shown.</p>
                     </div>
                     <label className="flex items-center gap-2 text-xs text-[var(--crm-muted)]">
                       <input
@@ -6623,41 +6637,29 @@ export default function AdmissionsPage() {
                             {open && (
                               <div className="grid gap-3 border-t border-[var(--crm-border)] p-4">
                                 {module.features.map((feature) => {
-                                  const crudKeys = featurePermissionKeys(module, feature);
-                                  const enabledCount = crudKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
+                                  const workflowActions = Object.entries(module.actionCells?.[feature] ?? {});
+                                  const workflowKeys = Array.from(new Set(workflowActions.flatMap(([, keys]) => keys)));
+                                  const enabledCount = workflowKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
                                   return (
                                     <div key={feature} className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4">
                                       <div className="flex flex-wrap items-center justify-between gap-3">
                                         <div>
                                           <p className="text-sm">{feature}</p>
-                                          <p className="mt-1 text-[10px] text-[var(--crm-muted)]">{enabledCount}/{crudKeys.length} permission enabled</p>
+                                          <p className="mt-1 text-[10px] text-[var(--crm-muted)]">{enabledCount}/{workflowKeys.length} workflows enabled</p>
                                         </div>
-                                        <div className="grid grid-cols-4 gap-2">
-                                          {CRUD_ACTIONS.map((action) => {
-                                            const permissionKeys = permissionKeysFor(module, feature, action.id);
-                                            if (!permissionKeys.length) {
-                                              return (
-                                                <span
-                                                  key={action.id}
-                                                  className="grid h-10 w-10 place-items-center rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-surface)] text-[8px] text-[var(--crm-muted)] opacity-60"
-                                                  aria-label={`${action.id} is not applicable for ${feature}`}
-                                                  title={`No ${action.id} operation is registered for ${feature}`}
-                                                >
-                                                  N/A
-                                                </span>
-                                              );
-                                            }
+                                        <div className="flex flex-wrap justify-end gap-2">
+                                          {workflowActions.map(([action, permissionKeys]) => {
                                             const enabled = permissionKeys.every((permissionKey) => selectedRolePermissionSet.has(permissionKey));
                                             return (
                                               <button
-                                                key={action.id}
+                                                key={action}
                                                 type="button"
                                                 onClick={() => toggleRolePermissions(selectedAccessRole.id, permissionKeys)}
-                                                title={`${action.id}: ${permissionKeys.join(', ')}`}
+                                                title={permissionKeys.join(', ')}
                                                 disabled={!canUpdateRoles}
-                                                className={`h-10 w-10 rounded-xl border text-xs disabled:cursor-not-allowed disabled:opacity-40 ${enabled ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)] text-white' : 'border-[var(--crm-border)] bg-[var(--crm-surface)] text-[var(--crm-muted)]'}`}
+                                                className={`rounded-lg border px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-40 ${enabled ? 'border-[var(--tenant-primary)] bg-[var(--tenant-primary)] text-white' : 'border-[var(--crm-border)] bg-[var(--crm-surface)] text-[var(--crm-muted)]'}`}
                                               >
-                                                {action.label}
+                                                {permissionLabel(`${action} ${feature}`)}
                                               </button>
                                             );
                                           })}
