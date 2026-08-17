@@ -2672,7 +2672,7 @@ export default function AdmissionsPage() {
           ? template.description
           : 'Custom role managed by tenant admin',
         portalFamily: newRolePortalFamily,
-        surfaces: [apiSurface(accessSurface)],
+        surfaces: ['website', 'app'],
       });
       const role: CollegeRole = {
         id: response.data.id,
@@ -2681,7 +2681,7 @@ export default function AdmissionsPage() {
         team: response.data.team,
         scope: response.data.scope,
         portalFamily: response.data.portalFamily,
-        surfaces: (response.data.surfaces ?? [apiSurface(accessSurface)]).map(uiSurface),
+        surfaces: (response.data.surfaces ?? ['website', 'app']).map(uiSurface),
         protected: response.data.protected,
         moduleIds: [],
       };
@@ -2695,7 +2695,7 @@ export default function AdmissionsPage() {
       setNewRoleTeam('');
       setNewRolePortalFamily('staff');
       setNewRoleTemplateKey('custom');
-      showToast(`Role "${name}" added to ${accessSurface.toUpperCase()} access`);
+      showToast(`Role "${name}" added to WEB and APP access`);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Unable to create role');
     }
@@ -6609,7 +6609,7 @@ export default function AdmissionsPage() {
                       <option value="parent">Parent portal</option>
                       <option value="admin">Admin portal</option>
                     </select>
-                    <p className="mt-2 text-[10px] text-[var(--crm-muted)]">Creates this role for the currently selected {accessSurface.toUpperCase()} surface.</p>
+                    <p className="mt-2 text-[10px] text-[var(--crm-muted)]">Creates this role for both WEB and APP. Configure each surface's permissions independently.</p>
                     <button type="button" onClick={addCollegeRole} disabled={!canCreateRoles} className="mt-3 w-full rounded-lg px-3 py-2 text-xs text-white disabled:cursor-not-allowed disabled:opacity-40" style={{ background: brandGradient }}>Add role</button>
                   </div>
                   <div className="grid gap-2 md:grid-cols-2">

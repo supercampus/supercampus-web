@@ -16,9 +16,9 @@ test('role creation reports success only after the API response', () => {
   assert.ok(success > request);
 });
 
-test('role creation uses the selected surface independently of portal family', () => {
-  assert.match(pageSource, /portalFamily: newRolePortalFamily,[\s\S]*surfaces: \[apiSurface\(accessSurface\)\]/);
-  assert.match(pageSource, /added to \$\{accessSurface\.toUpperCase\(\)\} access/);
+test('role creation enables both surfaces independently of portal family', () => {
+  assert.match(pageSource, /portalFamily: newRolePortalFamily,[\s\S]*surfaces: \['website', 'app'\]/);
+  assert.match(pageSource, /added to WEB and APP access/);
   assert.doesNotMatch(pageSource, /portalFamily === 'student'/);
 });
 
