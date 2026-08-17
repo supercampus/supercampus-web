@@ -23,10 +23,23 @@ test("API requests use a runtime route instead of a build-time rewrite", () => {
   assert.match(routeSource, /process\.env\.API_PROXY_TARGET/);
   assert.match(routeSource, /Reflect\.get\(globalThis, "process"\)/);
   assert.match(routeSource, /runtimeEnvironment\.NEXT_PUBLIC_API_URL/);
-  assert.match(routeSource, /API_PROXY_TARGET or NEXT_PUBLIC_API_URL is required in production/);
+  assert.match(routeSource, /API_PROXY_TARGET is required in production/);
   assert.match(routeSource, /export const POST = proxy/);
   assert.match(routeSource, /export const dynamic = "force-dynamic"/);
+  assert.doesNotMatch(routeSource, /API_PROXY_ENABLED/);
+  assert.doesNotMatch(routeSource, /same-origin API proxy is disabled/);
   assert.doesNotMatch(configSource, /async rewrites\(\)/);
+});
+
+test("production CSP permits the configured API origin", () => {
+  assert.match(configSource, /process\.env\.NEXT_PUBLIC_API_URL/);
+  assert.match(configSource, /NEXT_PUBLIC_API_URL is required in production/);
+  assert.match(configSource, /apiUrl\.origin/);
+  assert.match(configSource, /connect-src \$\{apiConnectSource\(\)\}/);
+  assert.doesNotMatch(configSource, /connect-src 'self';/);
+  assert.match(dockerSource, /FROM node:22-alpine AS runner[\s\S]*ARG NEXT_PUBLIC_API_URL/);
+  assert.match(dockerSource, /FROM node:22-alpine AS runner[\s\S]*ENV NEXT_PUBLIC_API_URL=\$NEXT_PUBLIC_API_URL/);
+  assert.match(dockerSource, /ARG NEXT_PUBLIC_API_URL=\/api/);
 });
 
 test("runtime proxy preserves streaming requests and upstream responses", () => {

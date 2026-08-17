@@ -31,11 +31,14 @@ ARG NEXT_PUBLIC_API_URL=/api
 ENV NODE_ENV=production
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN case "$NEXT_PUBLIC_API_URL" in /api|https://*) ;; *) echo "NEXT_PUBLIC_API_URL must be /api or an HTTPS production API URL" >&2; exit 1;; esac \
+    && npm run build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
+ARG NEXT_PUBLIC_API_URL=/api
 ENV NODE_ENV=production
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000

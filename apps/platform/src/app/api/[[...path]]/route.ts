@@ -22,12 +22,13 @@ function apiTarget(): URL {
   const runtimeProcess = Reflect.get(globalThis, "process") as NodeJS.Process;
   const runtimeEnvironment = runtimeProcess.env;
   const configured = process.env.API_PROXY_TARGET?.trim()
-    || runtimeEnvironment.NEXT_PUBLIC_API_URL?.trim();
-  if (!configured && process.env.NODE_ENV === "production") {
-    throw new Error("API_PROXY_TARGET or NEXT_PUBLIC_API_URL is required in production");
+    || (process.env.NODE_ENV !== "production"
+      ? runtimeEnvironment.NEXT_PUBLIC_API_URL?.trim()
+      : undefined);
+  if (!configured) {
+    throw new Error("API_PROXY_TARGET is required in production");
   }
-  const value = configured || "http://127.0.0.1:4000/api";
-  const target = new URL(value.endsWith("/") ? value : `${value}/`);
+  const target = new URL(configured.endsWith("/") ? configured : `${configured}/`);
 
   if (target.protocol !== "http:" && target.protocol !== "https:") {
     throw new Error("API_PROXY_TARGET must use http or https");
