@@ -2,6 +2,7 @@ import { apiRequest } from './api';
 
 export type PermissionScope = 'own' | 'assigned' | 'department' | 'institution' | 'all';
 export type PortalFamily = 'student' | 'parent' | 'staff' | 'admin';
+export type AuthorizationSurface = 'app' | 'website';
 
 export interface AuthorizationPermission {
   key: string;
@@ -30,7 +31,9 @@ export interface AuthorizationRole {
   portalFamily: PortalFamily;
   protected: boolean;
   active: boolean;
+  surfaces: AuthorizationSurface[];
   permissions: AuthorizationGrant[];
+  permissionsBySurface: Record<AuthorizationSurface, AuthorizationGrant[]>;
 }
 
 export interface TenantUserRole {
@@ -66,6 +69,7 @@ export function createAuthorizationRole(input: {
   team: string;
   scope: string;
   portalFamily: PortalFamily;
+  surfaces: AuthorizationSurface[];
 }) {
   return apiRequest<{ data: AuthorizationRole }>(`${AUTHORIZATION_ROOT}/roles`, {
     method: 'POST',
@@ -75,13 +79,14 @@ export function createAuthorizationRole(input: {
 
 export function setAuthorizationRolePermissions(
   roleId: string,
+  surface: AuthorizationSurface,
   permissions: AuthorizationGrant[],
 ) {
   return apiRequest<{ data: AuthorizationRole }>(
     `${AUTHORIZATION_ROOT}/roles/${roleId}/permissions`,
     {
       method: 'PUT',
-      body: JSON.stringify({ permissions }),
+      body: JSON.stringify({ surface, permissions }),
     },
   );
 }

@@ -30,6 +30,7 @@ function canRefresh(path: string) {
 async function send(path: string, init?: ApiRequestInit) {
   const { timeoutMs = REQUEST_TIMEOUT_MS, ...requestInit } = init ?? {};
   const headers = new Headers(init?.headers);
+  headers.set('x-client-surface', 'website');
   // Browsers must generate the multipart boundary for FormData. Supplying an
   // application/json header here makes an otherwise valid media upload
   // impossible for the Rust multipart extractor to parse.

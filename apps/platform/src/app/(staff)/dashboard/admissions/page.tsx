@@ -78,7 +78,7 @@ const OPERATIONS_NAV = new Set<StaffNavigationId>(['students', 'academics', 'fee
 type ThemeId = 'classic' | 'ocean' | 'emerald' | 'midnight';
 type SettingsSection = StaffSettingsId;
 type PreviewMode = 'desktop' | 'mobile';
-type CollegeRole = { id: string; key: string; name: string; team: string; scope: string; portalFamily: PortalFamily; moduleIds: string[]; protected?: boolean };
+type CollegeRole = { id: string; key: string; name: string; team: string; scope: string; portalFamily: PortalFamily; surfaces: AccessSurface[]; moduleIds: string[]; protected?: boolean };
 type OperationModule = {
   id: string;
   name: string;
@@ -88,6 +88,9 @@ type OperationModule = {
   actionCells?: Record<string, Record<string, string[]>>;
 };
 type AccessSurface = 'web' | 'app';
+const apiSurface = (surface: AccessSurface) => surface === 'web' ? 'website' as const : 'app' as const;
+const uiSurface = (surface: 'website' | 'app'): AccessSurface => surface === 'website' ? 'web' : 'app';
+const roleSurfaceKey = (roleId: string, surface: AccessSurface) => `${roleId}:${surface}`;
 type StaffUser = { id: string; name: string; email: string; initials: string; role: string; roleId: string; roleIds: string[]; team: string; access: string[] };
 type TenantBrand = {
   collegeName: string;
@@ -1590,6 +1593,7 @@ const EMPTY_ROLE: CollegeRole = {
   team: '',
   scope: '',
   portalFamily: 'staff',
+  surfaces: [],
   moduleIds: [],
 };
 const EMPTY_MODULE: OperationModule = {
@@ -1815,13 +1819,10 @@ export default function AdmissionsPage() {
   const [operationUploadingFields, setOperationUploadingFields] = useState<Set<string>>(new Set());
   const [leadImportFileName, setLeadImportFileName] = useState('');
   useEffect(() => {
-    const compatibleRoles = collegeRoles.filter((role) => accessSurface === 'web'
-      ? role.portalFamily === 'staff' || role.portalFamily === 'admin'
-      : role.portalFamily === 'student' || role.portalFamily === 'parent' || role.portalFamily === 'staff');
-    if (compatibleRoles.length > 0 && !compatibleRoles.some((role) => role.id === selectedAccessRoleId)) {
-      setSelectedAccessRoleId(compatibleRoles[0].id);
+    if (collegeRoles.length > 0 && !collegeRoles.some((role) => role.id === selectedAccessRoleId)) {
+      setSelectedAccessRoleId(collegeRoles[0].id);
     }
-  }, [accessSurface, collegeRoles, selectedAccessRoleId]);
+  }, [collegeRoles, selectedAccessRoleId]);
   const [leadImportHeaders, setLeadImportHeaders] = useState<string[]>([]);
   const [leadImportRows, setLeadImportRows] = useState<string[][]>([]);
   const [leadImportMapping, setLeadImportMapping] = useState<LeadImportMapping>(EMPTY_LEAD_IMPORT_MAPPING);
@@ -1850,12 +1851,12 @@ export default function AdmissionsPage() {
   );
   const userAccess = useMemo(
     () => Object.fromEntries(visibleStaffUsers.map((user) => {
-      const rolePermissions = Array.from(new Set(user.roleIds.flatMap((roleId) => roleAccess[roleId] ?? [])));
+      const rolePermissions = Array.from(new Set(user.roleIds.flatMap((roleId) => roleAccess[roleSurfaceKey(roleId, accessSurface)] ?? [])));
       const denied = new Set(userDeniedAccess[user.id] ?? []);
       const effective = (user.access.length ? user.access : rolePermissions).filter((key) => !denied.has(key));
       return [user.id, effective];
     })),
-    [roleAccess, userDeniedAccess, visibleStaffUsers],
+    [accessSurface, roleAccess, userDeniedAccess, visibleStaffUsers],
   );
   const customModuleCounter = useRef(1);
   useEffect(() => {
@@ -2015,20 +2016,21 @@ export default function AdmissionsPage() {
         team: role.team,
         scope: role.scope,
         portalFamily: role.portalFamily,
+        surfaces: (role.surfaces ?? ['website', 'app']).map(uiSurface),
         protected: role.protected,
-        moduleIds: Array.from(new Set(role.permissions.map((grant) => permissionModule.get(grant.key)).filter((value): value is string => Boolean(value)))),
+        moduleIds: Array.from(new Set(Object.values(role.permissionsBySurface ?? { website: role.permissions, app: role.permissions }).flat().map((grant) => permissionModule.get(grant.key)).filter((value): value is string => Boolean(value)))),
       }));
       setCollegeRoles(roles);
-      const nextRoleAccess = Object.fromEntries(rolesResponse.data.map((role) => [
-        role.id,
-        role.permissions.map((grant) => grant.key),
-      ]));
+      const nextRoleAccess = Object.fromEntries(rolesResponse.data.flatMap((role) => ([
+        [roleSurfaceKey(role.id, 'web'), (role.permissionsBySurface?.website ?? role.permissions).map((grant) => grant.key)],
+        [roleSurfaceKey(role.id, 'app'), (role.permissionsBySurface?.app ?? role.permissions).map((grant) => grant.key)],
+      ])));
       roleAccessRef.current = nextRoleAccess;
       setRoleAccess(nextRoleAccess);
-      setRoleScopes(Object.fromEntries(rolesResponse.data.map((role) => [
-        role.id,
-        Object.fromEntries(role.permissions.map((grant) => [grant.key, grant.scope])),
-      ])));
+      setRoleScopes(Object.fromEntries(rolesResponse.data.flatMap((role) => ([
+        [roleSurfaceKey(role.id, 'web'), Object.fromEntries((role.permissionsBySurface?.website ?? role.permissions).map((grant) => [grant.key, grant.scope]))],
+        [roleSurfaceKey(role.id, 'app'), Object.fromEntries((role.permissionsBySurface?.app ?? role.permissions).map((grant) => [grant.key, grant.scope]))],
+      ]))));
       // Per-user access overrides are only needed by access administration.
       // Loading one request per tenant user on every CRM/Admission Desk mount
       // can exhaust the API database pool and starve the desk `cases` request.
@@ -2517,28 +2519,33 @@ export default function AdmissionsPage() {
     if (!canUpdateRoles) {
       throw new Error('You do not have permission to update roles');
     }
-    const previousSave = rolePermissionQueues.current[roleId] ?? Promise.resolve();
+    const surfaceKey = roleSurfaceKey(roleId, accessSurface);
+    const previousSave = rolePermissionQueues.current[surfaceKey] ?? Promise.resolve();
     const save = previousSave.catch(() => undefined).then(async () => {
-      await setAuthorizationRolePermissions(roleId, keys.map((key) => ({
+      await setAuthorizationRolePermissions(roleId, apiSurface(accessSurface), keys.map((key) => ({
         key,
-        scope: roleScopes[roleId]?.[key] ?? 'all',
+        scope: roleScopes[surfaceKey]?.[key] ?? 'all',
         constraints: {},
       })));
     });
-    rolePermissionQueues.current[roleId] = save;
+    rolePermissionQueues.current[surfaceKey] = save;
     try {
       await save;
     } finally {
-      if (rolePermissionQueues.current[roleId] === save) {
-        delete rolePermissionQueues.current[roleId];
+      if (rolePermissionQueues.current[surfaceKey] === save) {
+        delete rolePermissionQueues.current[surfaceKey];
       }
     }
-  }, [canUpdateRoles, roleScopes]);
+  }, [accessSurface, canUpdateRoles, roleScopes]);
 
   const commitRoleAccess = useCallback((roleId: string, keys: string[]) => {
-    roleAccessRef.current = { ...roleAccessRef.current, [roleId]: keys };
-    setRoleAccess((previous) => ({ ...previous, [roleId]: keys }));
-  }, []);
+    const surfaceKey = roleSurfaceKey(roleId, accessSurface);
+    roleAccessRef.current = { ...roleAccessRef.current, [surfaceKey]: keys };
+    setRoleAccess((previous) => ({ ...previous, [surfaceKey]: keys }));
+    setCollegeRoles((previous) => previous.map((role) => role.id === roleId && !role.surfaces.includes(accessSurface)
+      ? { ...role, surfaces: [...role.surfaces, accessSurface] }
+      : role));
+  }, [accessSurface]);
 
   const toggleRolePermissions = async (roleId: string, permissionKeys: string[]) => {
     if (!permissionKeys.length) return;
@@ -2546,7 +2553,8 @@ export default function AdmissionsPage() {
       showToast('The tenant admin recovery role is protected');
       return;
     }
-    const current = roleAccessRef.current[roleId] ?? roleAccess[roleId] ?? [];
+    const surfaceKey = roleSurfaceKey(roleId, accessSurface);
+    const current = roleAccessRef.current[surfaceKey] ?? roleAccess[surfaceKey] ?? [];
     const allEnabled = permissionKeys.every((permissionKey) => current.includes(permissionKey));
     const next = allEnabled
       ? current.filter((item) => !permissionKeys.includes(item))
@@ -2578,7 +2586,8 @@ export default function AdmissionsPage() {
       return moduleConfig ? modulePermissionKeys(moduleConfig) : [];
     });
     if (affectedKeys.length === 0) return;
-    const current = roleAccessRef.current[roleId] ?? roleAccess[roleId] ?? [];
+    const surfaceKey = roleSurfaceKey(roleId, accessSurface);
+    const current = roleAccessRef.current[surfaceKey] ?? roleAccess[surfaceKey] ?? [];
     const next = enabled
       ? Array.from(new Set([...current, ...affectedKeys]))
       : current.filter((key) => !affectedKeys.includes(key));
@@ -2602,7 +2611,8 @@ export default function AdmissionsPage() {
       return;
     }
     const moduleKeys = modulePermissionKeys(moduleConfig);
-    const current = roleAccessRef.current[roleId] ?? roleAccess[roleId] ?? [];
+    const surfaceKey = roleSurfaceKey(roleId, accessSurface);
+    const current = roleAccessRef.current[surfaceKey] ?? roleAccess[surfaceKey] ?? [];
     const moduleFullyEnabled = moduleKeys.every((key) => current.includes(key));
     const next = moduleFullyEnabled
       ? current.filter((key) => !moduleKeys.includes(key))
@@ -2619,7 +2629,8 @@ export default function AdmissionsPage() {
 
   const toggleRoleFeature = async (roleId: string, module: OperationModule, feature: string) => {
     const featureKeys = featurePermissionKeys(module, feature);
-    const current = roleAccessRef.current[roleId] ?? roleAccess[roleId] ?? [];
+    const surfaceKey = roleSurfaceKey(roleId, accessSurface);
+    const current = roleAccessRef.current[surfaceKey] ?? roleAccess[surfaceKey] ?? [];
     const fullyEnabled = featureKeys.length > 0 && featureKeys.every((key) => current.includes(key));
     const next = fullyEnabled
       ? current.filter((key) => !featureKeys.includes(key))
@@ -2640,18 +2651,28 @@ export default function AdmissionsPage() {
       showToast('You do not have permission to create roles');
       return;
     }
+    const template = newRoleTemplateKey === 'custom'
+      ? undefined
+      : authorityRoleTemplate(newRoleTemplateKey);
+    const roleKey = template?.tenantAssignable
+      ? template.key
+      : slugify(name).replaceAll('-', '_');
+    const existingRole = collegeRoles.find((role) => role.key === roleKey);
+    if (existingRole) {
+      setSelectedAccessRoleId(existingRole.id);
+      showToast(`Role "${existingRole.name}" already exists and is now selected for ${accessSurface.toUpperCase()} access`);
+      return;
+    }
     try {
-      const template = newRoleTemplateKey === 'custom'
-        ? undefined
-        : authorityRoleTemplate(newRoleTemplateKey);
       const response = await createAuthorizationRole({
-        key: template?.tenantAssignable ? template.key : slugify(name).replaceAll('-', '_'),
+        key: roleKey,
         name,
         team: newRoleTeam.trim() || 'Custom',
         scope: template?.tenantAssignable
           ? template.description
           : 'Custom role managed by tenant admin',
         portalFamily: newRolePortalFamily,
+        surfaces: [apiSurface(accessSurface)],
       });
       const role: CollegeRole = {
         id: response.data.id,
@@ -2660,18 +2681,21 @@ export default function AdmissionsPage() {
         team: response.data.team,
         scope: response.data.scope,
         portalFamily: response.data.portalFamily,
+        surfaces: (response.data.surfaces ?? [apiSurface(accessSurface)]).map(uiSurface),
         protected: response.data.protected,
         moduleIds: [],
       };
       setCollegeRoles((previous) => [...previous, role]);
-      setRoleAccess((previous) => ({ ...previous, [role.id]: [] }));
-      setRoleScopes((previous) => ({ ...previous, [role.id]: {} }));
+      const surfaceKey = roleSurfaceKey(role.id, accessSurface);
+      roleAccessRef.current = { ...roleAccessRef.current, [surfaceKey]: [] };
+      setRoleAccess((previous) => ({ ...previous, [surfaceKey]: [] }));
+      setRoleScopes((previous) => ({ ...previous, [surfaceKey]: {} }));
       setSelectedAccessRoleId(role.id);
       setNewRoleName('');
       setNewRoleTeam('');
       setNewRolePortalFamily('staff');
       setNewRoleTemplateKey('custom');
-      showToast(`Role added: ${name}`);
+      showToast(`Role "${name}" added to ${accessSurface.toUpperCase()} access`);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Unable to create role');
     }
@@ -3051,21 +3075,15 @@ export default function AdmissionsPage() {
   };
   const allPermissionKeys = operationModules.flatMap(modulePermissionKeys);
   const selectedAccessRole = collegeRoles.find((role) => role.id === selectedAccessRoleId) ?? collegeRoles[0] ?? EMPTY_ROLE;
-  const selectedRolePermissions = roleAccess[selectedAccessRole.id] ?? EMPTY_PERMISSION_KEYS;
+  const selectedRolePermissions = roleAccess[roleSurfaceKey(selectedAccessRole.id, accessSurface)] ?? EMPTY_PERMISSION_KEYS;
   const selectedRolePermissionSet = useMemo(
     () => new Set(selectedRolePermissions.includes('*') ? [...selectedRolePermissions, ...allPermissionKeys] : selectedRolePermissions),
     [allPermissionKeys, selectedRolePermissions],
   );
   const selectedAccessModule = operationModules.find((module) => module.id === selectedAccessModuleId) ?? operationModules[0] ?? EMPTY_MODULE;
-  const moduleSurface = (module: OperationModule): 'web' | 'app' | 'both' => {
-    if (['student-app', 'parent', 'canteen', 'gatepass', 'library', 'vendor-management', 'tuition-fee'].includes(module.id)) return 'app';
-    if (['attendance', 'timetable', 'academics', 'examinations'].includes(module.id)) return 'both';
-    return 'web';
-  };
-  const surfaceOperationModules = operationModules.filter((module) => {
-    const surface = moduleSurface(module);
-    return surface === 'both' || surface === accessSurface;
-  });
+  // The permission catalog is the source of truth. Modules are never assigned
+  // to a client surface by their names or hardcoded IDs.
+  const surfaceOperationModules = operationModules;
   const selectedModuleKeys = modulePermissionKeys(selectedAccessModule);
   const selectedModuleEnabledCount = selectedModuleKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
   const selectedModuleFullyEnabled = selectedModuleKeys.length > 0 && selectedModuleEnabledCount === selectedModuleKeys.length;
@@ -5274,7 +5292,7 @@ export default function AdmissionsPage() {
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-[var(--tenant-primary)]">Guided access control</p>
                       <h3 className="mt-1 text-2xl">Role &gt; Surface &gt; Module &gt; Workflow &gt; Users</h3>
-                      <p className="mt-2 max-w-2xl text-xs leading-6 text-[var(--crm-muted)]">Configure access one step at a time. Pick the role and its portal, choose modules and workflows, then assign users to the role.</p>
+                      <p className="mt-2 max-w-2xl text-xs leading-6 text-[var(--crm-muted)]">Portal selects the user experience; WEB or APP selects where its permissions apply. Any portal role can use either surface.</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 items-center rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] p-1" aria-label="Access surface">
@@ -5332,7 +5350,7 @@ export default function AdmissionsPage() {
                         return (
                           <div key={module.id} className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-3">
                             <div className="flex items-center justify-between gap-3 text-xs">
-                              <span className="flex items-center gap-2">{module.name}<small className="rounded bg-[var(--crm-card)] px-1.5 py-0.5 text-[8px] uppercase text-[var(--crm-muted)]">{moduleSurface(module)}</small></span>
+                              <span>{module.name}</span>
                               <span className="text-[var(--crm-muted)]">{enabledCount}/{moduleKeys.length}</span>
                             </div>
                             <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--crm-card)]">
@@ -5425,10 +5443,8 @@ export default function AdmissionsPage() {
                   </div>
 
                   <div className="flex-1 overflow-y-auto kanban-scroll-hidden p-3 space-y-2">
-                    {filteredCollegeRoles.filter((role) => accessSurface === 'web'
-                      ? role.portalFamily === 'staff' || role.portalFamily === 'admin'
-                      : role.portalFamily === 'student' || role.portalFamily === 'parent' || role.portalFamily === 'staff').map((role) => {
-                      const rolePermissions = roleAccess[role.id] ?? [];
+                    {filteredCollegeRoles.map((role) => {
+                      const rolePermissions = roleAccess[roleSurfaceKey(role.id, accessSurface)] ?? [];
       const roleUsers = visibleStaffUsers.filter((user) => user.roleIds.includes(role.id));
                       const roleCoverage = rolePermissions.includes('*')
                         ? 100
@@ -6593,13 +6609,12 @@ export default function AdmissionsPage() {
                       <option value="parent">Parent portal</option>
                       <option value="admin">Admin portal</option>
                     </select>
+                    <p className="mt-2 text-[10px] text-[var(--crm-muted)]">Creates this role for the currently selected {accessSurface.toUpperCase()} surface.</p>
                     <button type="button" onClick={addCollegeRole} disabled={!canCreateRoles} className="mt-3 w-full rounded-lg px-3 py-2 text-xs text-white disabled:cursor-not-allowed disabled:opacity-40" style={{ background: brandGradient }}>Add role</button>
                   </div>
                   <div className="grid gap-2 md:grid-cols-2">
-                    {filteredCollegeRoles.filter((role) => accessSurface === 'web'
-                      ? role.portalFamily === 'staff' || role.portalFamily === 'admin'
-                      : role.portalFamily === 'student' || role.portalFamily === 'parent' || role.portalFamily === 'staff').map((role) => {
-                      const rolePermissions = roleAccess[role.id] ?? [];
+                    {filteredCollegeRoles.map((role) => {
+                      const rolePermissions = roleAccess[roleSurfaceKey(role.id, accessSurface)] ?? [];
                       const roleCoverage = rolePermissions.includes('*')
                         ? 100
                         : allPermissionKeys.length ? Math.round((rolePermissions.length / allPermissionKeys.length) * 100) : 0;
@@ -6614,6 +6629,11 @@ export default function AdmissionsPage() {
                             <div className="min-w-0">
                               <p className="truncate text-sm">{role.name}</p>
                               <p className="mt-1 text-[10px] uppercase text-[var(--crm-muted)]">{role.team} / {role.portalFamily} portal</p>
+                              <div className="mt-2 flex gap-1">
+                                {(['web', 'app'] as AccessSurface[]).map((surface) => (
+                                  <span key={surface} className={`rounded px-1.5 py-0.5 text-[9px] uppercase ${role.surfaces.includes(surface) ? 'bg-[var(--tenant-primary)] text-white' : 'bg-[var(--crm-card)] text-[var(--crm-muted)]'}`}>{surface}</span>
+                                ))}
+                              </div>
                             </div>
                             <span className="rounded-lg bg-[var(--crm-card)] px-2 py-1 text-[10px] text-[var(--crm-muted)]">{roleCoverage}%</span>
                           </div>
