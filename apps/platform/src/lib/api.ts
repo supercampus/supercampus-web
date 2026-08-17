@@ -170,6 +170,21 @@ export async function uploadMedia(file: File) {
   );
 }
 
+export async function uploadPublicApplicationMedia(tenant: string, token: string, verificationToken: string, file: File) {
+  const form = new FormData();
+  form.append('file', file);
+  return apiRequest<{ data: { secureUrl: string; publicId: string; resourceType: string; bytes: number } }>(
+    `/media/public-application/${encodeURIComponent(token)}`,
+    {
+      method: 'POST',
+      body: form,
+      timeoutMs: UPLOAD_TIMEOUT_MS,
+      headers: { 'x-tenant-id': tenant, 'x-application-verification': verificationToken },
+    },
+    false,
+  );
+}
+
 export function toPersistedState(state: AppState): PersistedAppState {
   return {
     persona: state.persona,

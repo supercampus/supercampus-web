@@ -43,6 +43,9 @@
     --crm-on-surface-variant: #000000;
     --crm-primary-container: var(--tenant-primary);
     --crm-on-primary-container: #ffffff;
+    --kanban-column-cool: #e7edf4;
+    --kanban-column-sage: #e5efe9;
+    --kanban-column-text: #101418;
   }
 
   [data-theme="dark"] {
@@ -66,6 +69,9 @@
     --text-main: #ffffff;
     --text-muted: #ffffff;
     --text-sub: #ffffff;
+    --kanban-column-cool: #111820;
+    --kanban-column-sage: #101a16;
+    --kanban-column-text: #ffffff;
   }
 
   body {
@@ -152,6 +158,102 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+.crm-live-status {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  border: 1px solid var(--crm-border);
+  border-radius: 999px;
+  background: var(--crm-card);
+  padding: 5px 10px;
+  color: var(--crm-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.crm-live-status::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 28%, rgb(16 185 129 / 0.09) 48%, transparent 68%);
+  content: '';
+  transform: translateX(-130%);
+  animation: crm-live-sweep 3.6s ease-in-out infinite;
+}
+
+.crm-live-status__beacon {
+  position: relative;
+  display: grid;
+  width: 10px;
+  height: 10px;
+  flex: none;
+  place-items: center;
+}
+
+.crm-live-status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgb(16 185 129 / 0.12);
+}
+
+.crm-live-status__ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(16 185 129 / 0.65);
+  border-radius: 999px;
+  animation: crm-live-ring 2.2s ease-out infinite;
+}
+
+.crm-live-status__signal {
+  display: flex;
+  height: 12px;
+  align-items: center;
+  gap: 2px;
+  border-left: 1px solid var(--crm-border);
+  padding-left: 7px;
+}
+
+.crm-live-status__signal i {
+  display: block;
+  width: 2px;
+  height: 4px;
+  border-radius: 2px;
+  background: #10b981;
+  animation: crm-live-signal 1.25s ease-in-out infinite;
+}
+
+.crm-live-status__signal i:nth-child(2) { animation-delay: 140ms; }
+.crm-live-status__signal i:nth-child(3) { animation-delay: 280ms; }
+
+@keyframes crm-live-ring {
+  0%, 35% { opacity: 0.8; transform: scale(0.55); }
+  75%, 100% { opacity: 0; transform: scale(1.7); }
+}
+
+@keyframes crm-live-signal {
+  0%, 100% { height: 4px; opacity: 0.55; }
+  50% { height: 11px; opacity: 1; }
+}
+
+@keyframes crm-live-sweep {
+  0%, 38% { transform: translateX(-130%); }
+  72%, 100% { transform: translateX(130%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-live-status::after,
+  .crm-live-status__ring,
+  .crm-live-status__signal i {
+    animation: none;
   }
 }
 

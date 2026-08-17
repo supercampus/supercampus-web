@@ -7,6 +7,8 @@ import KanbanBoard from '@/components/kanban/KanbanBoard';
 import ActivityFeed from '@/components/kanban/ActivityFeed';
 import { AdmissionsSidebar } from '@/components/modules/AdmissionsSidebar';
 import { ApplicationDeskWorkspace } from '@/components/modules/ApplicationDeskWorkspace';
+import { CampusOperationsWorkspace, type OperationsSection } from '@/components/modules/CampusOperationsWorkspace';
+import { TimetableAllocatorWorkspace } from '@/components/modules/TimetableAllocatorWorkspace';
 import { CloudinaryFileField, isStoredMediaValue, type StoredMediaValue } from '@/components/forms/CloudinaryFileField';
 import {
   availableStaffNavigation,
@@ -62,14 +64,21 @@ import {
   type PortalFamily,
   type TenantUser,
 } from '@/lib/authorization-api';
+import {
+  authorityRoleTemplate,
+  tenantAuthorityRoleTemplates,
+  type AuthorityRoleKey,
+} from '@/lib/authority-model';
+import { canOpenStaffWorkspace } from '@/lib/portal-access';
 import type { LucideIcon } from 'lucide-react';
 import { ArrowUpRight, BarChart3, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, ClipboardList, Clock, Database, FileText, Grip, GripVertical, Info, LayoutDashboard, Layers, ListChecks, LogOut, Mail, MapPin, Monitor, MoreHorizontal, Pencil, PhoneCall, PlusCircle, Save, Search, ShieldCheck, SlidersHorizontal, Smartphone, Sun, Target, TrendingUp, Trash2, UploadCloud, User, UserCog, Users, X } from 'lucide-react';
 
 type NavSection = StaffNavigationId;
+const OPERATIONS_NAV = new Set<StaffNavigationId>(['students', 'academics', 'fees', 'erp', 'reports', 'users']);
 type ThemeId = 'classic' | 'ocean' | 'emerald' | 'midnight';
 type SettingsSection = StaffSettingsId;
 type PreviewMode = 'desktop' | 'mobile';
-type CollegeRole = { id: string; name: string; team: string; scope: string; portalFamily: PortalFamily; moduleIds: string[]; protected?: boolean };
+type CollegeRole = { id: string; key: string; name: string; team: string; scope: string; portalFamily: PortalFamily; moduleIds: string[]; protected?: boolean };
 type OperationModule = {
   id: string;
   name: string;
@@ -78,6 +87,7 @@ type OperationModule = {
   permissionCells?: Record<string, Partial<Record<CrudAction, string[]>>>;
   actionCells?: Record<string, Record<string, string[]>>;
 };
+type AccessSurface = 'web' | 'app';
 type StaffUser = { id: string; name: string; email: string; initials: string; role: string; roleId: string; roleIds: string[]; team: string; access: string[] };
 type TenantBrand = {
   collegeName: string;
@@ -108,14 +118,155 @@ type FormField = {
 const ADMISSION_DOCUMENT_TYPES = [
   { value: 'certificate-10', label: '10th Certificate' },
   { value: 'certificate-12', label: '12th Certificate' },
+  { value: 'diploma-certificate', label: 'Diploma Certificate' },
+  { value: 'semester-marksheets', label: 'Semester Marksheets' },
   { value: 'transfer-certificate', label: 'Transfer Certificate' },
+  { value: 'conduct-certificate', label: 'Conduct Certificate' },
+  { value: 'migration-certificate', label: 'Migration Certificate' },
   { value: 'identity-proof', label: 'Identity Proof' },
   { value: 'address-proof', label: 'Address Proof' },
   { value: 'photo', label: 'Passport Photo' },
   { value: 'admission-proof', label: 'Admission Proof' },
   { value: 'category-certificate', label: 'Category Certificate' },
+  { value: 'income-certificate', label: 'Income Certificate' },
+  { value: 'allotment-order', label: 'Allotment Order' },
 ] as const;
 type FormSchemaSection = { section: string; fields: FormField[] };
+
+const ADMISSION_APPLICATION_TEMPLATE: FormSchemaSection[] = [
+  { section: 'Application and programme', fields: [
+    { key: 'academicYear', label: 'Academic year', type: 'Short text', required: true, placeholder: '2026-27' },
+    { key: 'applicationType', label: 'Entry type', type: 'Dropdown', required: true, options: ['First year', 'Lateral entry', 'Transfer'] },
+    { key: 'programme', label: 'First programme preference', type: 'Dropdown', required: true, options: ['Configure programme options'] },
+    { key: 'programmePreference2', label: 'Second programme preference', type: 'Dropdown', options: ['Configure programme options'] },
+    { key: 'admissionCategory', label: 'Admission route', type: 'Dropdown', required: true, options: ['Government counselling', 'Institutional', 'International / NRI', 'Other'] },
+    { key: 'applicationDate', label: 'Application date', type: 'Date', required: true },
+    { key: 'referralSource', label: 'Referred by or source', type: 'Short text', width: 'full' },
+    { key: 'applicationFeeReference', label: 'Application fee payment reference', type: 'Short text' },
+    { key: 'applicationFeeReceipt', label: 'Application fee receipt', type: 'Upload', width: 'full', documentConfig: { enabled: true, documentType: 'admission-proof', documentLabel: 'Application fee receipt' } },
+    { key: 'applicantRemarks', label: 'Applicant remarks', type: 'Paragraph', width: 'full' },
+  ] },
+  { section: 'Applicant identity', fields: [
+    { key: 'fullName', label: 'Full legal name', type: 'Short text', required: true },
+    { key: 'applicantPhoto', label: 'Applicant photograph', type: 'Image upload', required: true, width: 'full', documentConfig: { enabled: true, documentType: 'photo', documentLabel: 'Applicant photograph', requiredForDesk: true } },
+    { key: 'dateOfBirth', label: 'Date of birth', type: 'Date', required: true },
+    { key: 'gender', label: 'Gender', type: 'Dropdown', required: true, options: ['Female', 'Male', 'Non-binary', 'Prefer not to say'] },
+    { key: 'placeOfBirth', label: 'Place of birth', type: 'Short text' },
+    { key: 'stateOrCountry', label: 'State or country of birth', type: 'Short text' },
+    { key: 'nationality', label: 'Nationality', type: 'Short text', required: true },
+    { key: 'religion', label: 'Religion', type: 'Short text' },
+    { key: 'communityCategory', label: 'Community or category', type: 'Short text' },
+    { key: 'casteOrSocialCategory', label: 'Caste or social category', type: 'Short text' },
+    { key: 'governmentId', label: 'Government identity number', type: 'Short text' },
+  ] },
+  { section: 'Contact and addresses', fields: [
+    { key: 'email', label: 'Email address', type: 'Email', required: true },
+    { key: 'phone', label: 'Mobile number', type: 'Phone', required: true },
+    { key: 'whatsapp', label: 'WhatsApp number', type: 'Phone' },
+    { key: 'communicationAddress', label: 'Address for communication', type: 'Address', required: true, width: 'full' },
+    { key: 'permanentAddress', label: 'Permanent address', type: 'Address', required: true, width: 'full' },
+    { key: 'sameAddress', label: 'Permanent address is the same as communication address', type: 'Checkbox', width: 'full' },
+  ] },
+  { section: 'Parent, guardian and family', fields: [
+    { key: 'fatherName', label: "Father's name", type: 'Short text' },
+    { key: 'fatherOccupation', label: "Father's occupation", type: 'Short text' },
+    { key: 'motherName', label: "Mother's name", type: 'Short text' },
+    { key: 'motherOccupation', label: "Mother's occupation", type: 'Short text' },
+    { key: 'guardianName', label: 'Primary parent or guardian name', type: 'Short text', required: true },
+    { key: 'guardianRelation', label: 'Relationship to applicant', type: 'Short text', required: true },
+    { key: 'guardianPhone', label: 'Parent or guardian mobile', type: 'Phone', required: true },
+    { key: 'guardianEmail', label: 'Parent or guardian email', type: 'Email' },
+    { key: 'annualHouseholdIncome', label: 'Annual household income', type: 'Number' },
+    { key: 'guardianOfficeAddress', label: 'Parent or guardian office address and designation', type: 'Address', width: 'full' },
+    { key: 'localGuardian', label: 'Local guardian name, relationship and contact', type: 'Paragraph', width: 'full' },
+    { key: 'localGuardianAddress', label: 'Local guardian residential address', type: 'Address', width: 'full' },
+  ] },
+  { section: 'Secondary education', fields: [
+    { key: 'class10Board', label: 'Class 10 board', type: 'Short text', required: true },
+    { key: 'class10Institution', label: 'Class 10 institution', type: 'Short text', required: true },
+    { key: 'class10Year', label: 'Class 10 year of passing', type: 'Number', required: true },
+    { key: 'class10Registration', label: 'Class 10 registration number', type: 'Short text' },
+    { key: 'class10Attempts', label: 'Class 10 number of attempts', type: 'Number' },
+    { key: 'class10Aggregate', label: 'Class 10 aggregate percentage', type: 'Number', required: true },
+  ] },
+  { section: 'Higher secondary education', fields: [
+    { key: 'qualifyingExam', label: 'Qualifying examination', type: 'Dropdown', required: true, options: ['Higher secondary', 'Pre-degree', 'Equivalent examination', 'Not applicable - diploma route'] },
+    { key: 'class12Board', label: 'Board or examining body', type: 'Short text' },
+    { key: 'class12Institution', label: 'Institution last attended', type: 'Short text' },
+    { key: 'class12Year', label: 'Year of passing', type: 'Number' },
+    { key: 'class12Attempts', label: 'Number of attempts', type: 'Number' },
+    { key: 'class12Registration', label: 'Registration number', type: 'Short text' },
+    { key: 'languageMark', label: 'Language mark', type: 'Number' },
+    { key: 'englishMark', label: 'English mark', type: 'Number' },
+    { key: 'mathematicsMark', label: 'Mathematics mark', type: 'Number' },
+    { key: 'physicsMark', label: 'Physics mark', type: 'Number' },
+    { key: 'chemistryMark', label: 'Chemistry mark', type: 'Number' },
+    { key: 'optionalSubjectMark', label: 'Biology, computer science or vocational subject mark', type: 'Number' },
+    { key: 'class12Aggregate', label: 'Overall aggregate percentage', type: 'Number' },
+    { key: 'eligibilityAggregate', label: 'Eligibility or cut-off aggregate', type: 'Number' },
+  ] },
+  { section: 'Diploma or lateral entry', fields: [
+    { key: 'diplomaApplicable', label: 'This application uses a diploma or lateral-entry qualification', type: 'Checkbox', width: 'full' },
+    { key: 'diplomaBoard', label: 'Diploma board or technical education body', type: 'Short text' },
+    { key: 'diplomaInstitution', label: 'Diploma institution', type: 'Short text' },
+    { key: 'diplomaBranch', label: 'Diploma branch', type: 'Short text' },
+    { key: 'diplomaYear', label: 'Diploma year of completion', type: 'Number' },
+    { key: 'diplomaAttempts', label: 'Diploma number of attempts', type: 'Number' },
+    { key: 'diplomaSemester3', label: 'Semester III percentage', type: 'Number' },
+    { key: 'diplomaSemester4', label: 'Semester IV percentage', type: 'Number' },
+    { key: 'diplomaSemester5', label: 'Semester V percentage', type: 'Number' },
+    { key: 'diplomaSemester6', label: 'Semester VI percentage', type: 'Number' },
+    { key: 'diplomaAggregate', label: 'Diploma aggregate percentage', type: 'Number' },
+  ] },
+  { section: 'Campus services', fields: [
+    { key: 'hostelRequired', label: 'Hostel accommodation required', type: 'Checkbox' },
+    { key: 'transportRequired', label: 'Institution transport required', type: 'Checkbox' },
+    { key: 'transportBoardingPoint', label: 'Preferred transport boarding point', type: 'Short text' },
+    { key: 'medicalOrAccessibilityNeeds', label: 'Medical, dietary or accessibility information the institution should know', type: 'Paragraph', width: 'full' },
+    { key: 'emergencyContactName', label: 'Emergency contact name', type: 'Short text', required: true },
+    { key: 'emergencyContactRelation', label: 'Emergency contact relationship', type: 'Short text', required: true },
+    { key: 'emergencyContactPhone', label: 'Emergency contact number', type: 'Phone', required: true },
+  ] },
+  { section: 'Documents and certificates', fields: [
+    { key: 'class10Certificate', label: 'Class 10 marksheet or certificate', type: 'Upload', required: true, width: 'full', documentConfig: { enabled: true, documentType: 'certificate-10', documentLabel: 'Class 10 certificate', requiredForDesk: true } },
+    { key: 'qualifyingMarksheet', label: 'Class 12 or diploma qualifying marksheet', type: 'Upload', required: true, width: 'full', documentConfig: { enabled: true, documentType: 'certificate-12', documentLabel: 'Qualifying examination marksheet', requiredForDesk: true } },
+    { key: 'diplomaCertificate', label: 'Diploma provisional or completion certificate', type: 'Upload', width: 'full', documentConfig: { enabled: true, documentType: 'diploma-certificate', documentLabel: 'Diploma certificate' } },
+    { key: 'diplomaMarksheets', label: 'Diploma semester marksheets', type: 'Upload', width: 'full', documentConfig: { enabled: true, documentType: 'semester-marksheets', documentLabel: 'Diploma semester marksheets' } },
+    { key: 'transferCertificate', label: 'Transfer certificate', type: 'Upload', width: 'full', documentConfig: { enabled: true, documentType: 'transfer-certificate', documentLabel: 'Transfer certificate' } },
+    { key: 'conductCertificate', label: 'Conduct certificate', type: 'Upload', width: 'full', documentConfig: { enabled: true, documentType: 'conduct-certificate', documentLabel: 'Conduct certificate' } },
+    { key: 'migrationCertificate', label: 'Migration certificate, where applicable', type: 'Upload', width: 'full', documentConfig: { enabled: true, documentType: 'migration-certificate', documentLabel: 'Migration certificate' } },
+    { key: 'identityProof', label: 'Government identity proof', type: 'Upload', required: true, width: 'full', documentConfig: { enabled: true, documentType: 'identity-proof', documentLabel: 'Identity proof', requiredForDesk: true } },
+    { key: 'categoryCertificate', label: 'Community or category certificate', type: 'Upload', width: 'full', documentConfig: { enabled: true, documentType: 'category-certificate', documentLabel: 'Category certificate' } },
+    { key: 'incomeCertificate', label: 'Income certificate', type: 'Upload', width: 'full', documentConfig: { enabled: true, documentType: 'income-certificate', documentLabel: 'Income certificate' } },
+    { key: 'allotmentOrder', label: 'Counselling or allotment order', type: 'Upload', width: 'full', documentConfig: { enabled: true, documentType: 'allotment-order', documentLabel: 'Allotment order' } },
+    { key: 'additionalDocuments', label: 'Additional supporting document', type: 'Upload', width: 'full' },
+  ] },
+  { section: 'Declarations and consent', fields: [
+    { key: 'informationDeclaration', label: 'We confirm that the information and documents provided are complete and accurate.', type: 'Consent', required: true, width: 'full' },
+    { key: 'rulesDeclaration', label: 'We agree to follow the institution rules, academic requirements and code of conduct.', type: 'Consent', required: true, width: 'full' },
+    { key: 'attendanceDeclaration', label: 'We acknowledge the institution attendance, assessment and academic progression requirements.', type: 'Consent', required: true, width: 'full' },
+    { key: 'curriculumDeclaration', label: 'We accept that curriculum and institutional regulations may be updated during the programme.', type: 'Consent', required: true, width: 'full' },
+    { key: 'antiRaggingDeclaration', label: 'We acknowledge and accept the institution anti-ragging policy and undertaking.', type: 'Consent', required: true, width: 'full' },
+    { key: 'hostelTransportDeclaration', label: 'Where selected, we agree to the applicable hostel or transport rules.', type: 'Consent', width: 'full' },
+    { key: 'feeDeclaration', label: 'We acknowledge the published fee, payment and refund conditions applicable to this admission.', type: 'Consent', required: true, width: 'full' },
+    { key: 'communicationConsent', label: 'We consent to receive admission updates through phone, SMS, email or WhatsApp.', type: 'Consent', required: true, width: 'full' },
+    { key: 'declarationPlace', label: 'Place of declaration', type: 'Short text', required: true },
+    { key: 'declarationDate', label: 'Date of declaration', type: 'Date', required: true },
+    { key: 'applicantSignature', label: 'Applicant signature', type: 'Image upload', required: true, width: 'full' },
+    { key: 'guardianSignature', label: 'Parent or guardian signature', type: 'Image upload', required: true, width: 'full' },
+  ] },
+];
+
+function cloneAdmissionApplicationTemplate(): FormSchemaSection[] {
+  return ADMISSION_APPLICATION_TEMPLATE.map((section) => ({
+    ...section,
+    fields: section.fields.map((field) => ({
+      ...field,
+      options: field.options ? [...field.options] : undefined,
+      documentConfig: field.documentConfig ? { ...field.documentConfig } : undefined,
+    })),
+  }));
+}
 type FormDraft = Pick<FormBuilder, 'id' | 'name' | 'module' | 'formType' | 'status' | 'owner' | 'usage'>;
 type LeadImportField = 'name' | 'email' | 'phone' | 'whatsapp' | 'program' | 'source' | 'priority' | 'parentName' | 'parentPhone';
 type LeadImportMapping = Record<LeadImportField, string>;
@@ -513,10 +664,10 @@ function toKanbanLead(lead: CrmLead, currentUserId?: string, currentUserName?: s
     initials: name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'UL',
     phone: lead.phone ?? '',
     email: lead.email ?? '',
-    course: course ?? 'Not provided',
-    intake: intake ?? 'Not provided',
+    course: course ?? '',
+    intake: intake ?? '',
     source: lead.source,
-    city: city ?? 'Not provided',
+    city: city ?? '',
     assignedTo: {
       id: lead.assignedTo ?? undefined,
       name: lead.assignedTo && lead.assignedTo === currentUserId
@@ -530,6 +681,7 @@ function toKanbanLead(lead: CrmLead, currentUserId?: string, currentUserName?: s
     duplicateOf: lead.duplicateOf,
     documents: { uploaded: lead.documentsVerified ? 1 : 0, required: 1 },
     communicationCount: 0,
+    priority: lead.priority,
     nextFollowUp: lead.followUpAt,
     lastContact: new Date(lead.updatedAt).toLocaleString(),
     parent: { name: lead.parentName ?? 'Not provided', phone: lead.parentPhone ?? '', relation: 'Parent' },
@@ -1433,6 +1585,7 @@ function formBuilderFromApi(form: CrmForm): FormBuilder {
 
 const EMPTY_ROLE: CollegeRole = {
   id: '',
+  key: '',
   name: 'No role selected',
   team: '',
   scope: '',
@@ -1540,20 +1693,12 @@ export default function AdmissionsPage() {
   // grants reveal. Local derivation is kept only as a fallback for an unreachable API.
   const { navigation: serverNavigation } = useNavigation(authStatus === 'authenticated');
   const allowedNavigation = useMemo(() => {
+    const permissionNavigation = availableStaffNavigation(permissions);
     const resolved = serverNavigation
       ? toStaffNavigationIds(serverNavigation.workspace, NAVIGATION_ORDER)
-      : availableStaffNavigation(permissions);
-    if (
-      serverNavigation
-      && !resolved.includes('application-desk')
-      && canOpenStaffNavigation(permissions, 'application-desk')
-    ) {
-      // Compatibility for navigation documents created before Admission Desk was
-      // introduced. Preserve the canonical order while the backend migration catches up.
-      return NAVIGATION_ORDER.filter((section) =>
-        resolved.includes(section) || section === 'application-desk');
-    }
-    return resolved;
+      : permissionNavigation;
+    return NAVIGATION_ORDER.filter((section) =>
+      resolved.includes(section) || permissionNavigation.includes(section));
   }, [serverNavigation, permissions]);
   const allowedSettings = useMemo(
     () => (serverNavigation
@@ -1601,6 +1746,8 @@ export default function AdmissionsPage() {
   const canMoveLeadBackward = isCrmAdministrator
     && hasPermission(permissions, 'crm.leads.stage.backward');
   const canHoldLeads = hasPermission(permissions, 'crm.leads.hold');
+  const canDeleteLeads = isCrmAdministrator
+    && hasPermission(permissions, 'crm.leads.delete');
   const canSendCrmCommunications = hasPermission(permissions, 'crm.communications.send');
   const canUpdateTenantBranding = hasPermission(permissions, 'platform.configuration.update');
   const canReadCrmConfiguration = hasPermission(permissions, 'crm.configuration.read');
@@ -1632,6 +1779,7 @@ export default function AdmissionsPage() {
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [selectedAccessRoleId, setSelectedAccessRoleId] = useState('');
   const [selectedAccessModuleId, setSelectedAccessModuleId] = useState('');
+  const [accessSurface, setAccessSurface] = useState<AccessSurface>('web');
   const [roleSearch, setRoleSearch] = useState('');
   const [roleAccess, setRoleAccess] = useState<Record<string, string[]>>({});
   const roleAccessRef = useRef<Record<string, string[]>>({});
@@ -1642,6 +1790,7 @@ export default function AdmissionsPage() {
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleTeam, setNewRoleTeam] = useState('');
   const [newRolePortalFamily, setNewRolePortalFamily] = useState<PortalFamily>('staff');
+  const [newRoleTemplateKey, setNewRoleTemplateKey] = useState<AuthorityRoleKey | 'custom'>('custom');
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
@@ -1665,6 +1814,14 @@ export default function AdmissionsPage() {
   const [operationValues, setOperationValues] = useState<Record<string, string | StoredMediaValue | null>>({});
   const [operationUploadingFields, setOperationUploadingFields] = useState<Set<string>>(new Set());
   const [leadImportFileName, setLeadImportFileName] = useState('');
+  useEffect(() => {
+    const compatibleRoles = collegeRoles.filter((role) => accessSurface === 'web'
+      ? role.portalFamily === 'staff' || role.portalFamily === 'admin'
+      : role.portalFamily === 'student' || role.portalFamily === 'parent' || role.portalFamily === 'staff');
+    if (compatibleRoles.length > 0 && !compatibleRoles.some((role) => role.id === selectedAccessRoleId)) {
+      setSelectedAccessRoleId(compatibleRoles[0].id);
+    }
+  }, [accessSurface, collegeRoles, selectedAccessRoleId]);
   const [leadImportHeaders, setLeadImportHeaders] = useState<string[]>([]);
   const [leadImportRows, setLeadImportRows] = useState<string[][]>([]);
   const [leadImportMapping, setLeadImportMapping] = useState<LeadImportMapping>(EMPTY_LEAD_IMPORT_MAPPING);
@@ -1853,6 +2010,7 @@ export default function AdmissionsPage() {
       const permissionModule = new Map(permissionsResponse.data.map((permission) => [permission.key, permission.moduleKey]));
       const roles = rolesResponse.data.map((role: AuthorizationRole): CollegeRole => ({
         id: role.id,
+        key: role.key,
         name: role.name,
         team: role.team,
         scope: role.scope,
@@ -1920,12 +2078,16 @@ export default function AdmissionsPage() {
   useEffect(() => {
     if (authStatus === 'unauthenticated') window.location.assign('/');
     if (authStatus !== 'authenticated') return;
+    if (student && !canOpenStaffWorkspace(student)) {
+      window.location.assign('/');
+      return;
+    }
     const frame = window.requestAnimationFrame(() => {
       void refreshCrmBoard();
       void refreshTenantConfiguration();
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [authStatus, refreshCrmBoard, refreshTenantConfiguration]);
+  }, [authStatus, refreshCrmBoard, refreshTenantConfiguration, student]);
 
   const saveTenantBrand = useCallback(async (brand: TenantBrand) => {
     const previousBrand = tenantBrand;
@@ -2008,6 +2170,22 @@ export default function AdmissionsPage() {
       status: 'Draft',
       owner: 'Tenant Admin',
       usage: 'CRM lead capture',
+    });
+  }, []);
+
+  const openCreateAdmissionApplication = useCallback(() => {
+    const id = `admission-application-${Date.now()}`;
+    setSelectedFormId(id);
+    setSelectedFieldKey(null);
+    setFormSchemas((current) => ({ ...current, [id]: cloneAdmissionApplicationTemplate() }));
+    setFormDraft({
+      id,
+      name: 'Admission Application',
+      module: 'Admissions',
+      formType: 'application',
+      status: 'Draft',
+      owner: 'Admissions Office',
+      usage: 'Applicant submission and verification',
     });
   }, []);
 
@@ -2463,15 +2641,21 @@ export default function AdmissionsPage() {
       return;
     }
     try {
+      const template = newRoleTemplateKey === 'custom'
+        ? undefined
+        : authorityRoleTemplate(newRoleTemplateKey);
       const response = await createAuthorizationRole({
-        key: slugify(name).replaceAll('-', '_'),
+        key: template?.tenantAssignable ? template.key : slugify(name).replaceAll('-', '_'),
         name,
         team: newRoleTeam.trim() || 'Custom',
-        scope: 'Custom role managed by tenant admin',
+        scope: template?.tenantAssignable
+          ? template.description
+          : 'Custom role managed by tenant admin',
         portalFamily: newRolePortalFamily,
       });
       const role: CollegeRole = {
         id: response.data.id,
+        key: response.data.key,
         name: response.data.name,
         team: response.data.team,
         scope: response.data.scope,
@@ -2486,10 +2670,21 @@ export default function AdmissionsPage() {
       setNewRoleName('');
       setNewRoleTeam('');
       setNewRolePortalFamily('staff');
+      setNewRoleTemplateKey('custom');
       showToast(`Role added: ${name}`);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Unable to create role');
     }
+  };
+
+  const selectRoleTemplate = (key: AuthorityRoleKey | 'custom') => {
+    setNewRoleTemplateKey(key);
+    if (key === 'custom') return;
+    const template = authorityRoleTemplate(key);
+    if (!template?.tenantAssignable || template.portalFamily === 'platform-control') return;
+    setNewRoleName(template.name);
+    setNewRoleTeam(template.team);
+    setNewRolePortalFamily(template.portalFamily);
   };
 
   const addUserUnderRole = async () => {
@@ -2693,6 +2888,9 @@ export default function AdmissionsPage() {
   ].filter((tab) => allowedSettings.includes(tab.id));
   const selectedForm = formBuilders.find((form) => form.id === selectedFormId) ?? formBuilders[0] ?? EMPTY_FORM;
   const selectedFormSchema = formSchemas[selectedForm.id] ?? [];
+  const applicationDomainKey = (student?.tenant.code || student?.tenantId || 'tenant')
+    .toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/(^-|-$)/g, '');
+  const applicationDomain = `https://application.${applicationDomainKey}.supercampus.ai`;
   const formDraftSchema = formDraft ? (formSchemas[formDraft.id] ?? []) : [];
   const publishedLeadFields = useMemo(() => (
     publishedLeadForm
@@ -2859,6 +3057,15 @@ export default function AdmissionsPage() {
     [allPermissionKeys, selectedRolePermissions],
   );
   const selectedAccessModule = operationModules.find((module) => module.id === selectedAccessModuleId) ?? operationModules[0] ?? EMPTY_MODULE;
+  const moduleSurface = (module: OperationModule): 'web' | 'app' | 'both' => {
+    if (['student-app', 'parent', 'canteen', 'gatepass', 'library', 'vendor-management', 'tuition-fee'].includes(module.id)) return 'app';
+    if (['attendance', 'timetable', 'academics', 'examinations'].includes(module.id)) return 'both';
+    return 'web';
+  };
+  const surfaceOperationModules = operationModules.filter((module) => {
+    const surface = moduleSurface(module);
+    return surface === 'both' || surface === accessSurface;
+  });
   const selectedModuleKeys = modulePermissionKeys(selectedAccessModule);
   const selectedModuleEnabledCount = selectedModuleKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
   const selectedModuleFullyEnabled = selectedModuleKeys.length > 0 && selectedModuleEnabledCount === selectedModuleKeys.length;
@@ -2867,9 +3074,9 @@ export default function AdmissionsPage() {
   // step 2 reports the full set rather than whichever card is currently focused.
   const grantedModules = operationModules.filter((module) =>
     modulePermissionKeys(module).some((key) => selectedRolePermissionSet.has(key)));
-  const admissionsWorkspaceModules = operationModules.filter((module) =>
+  const admissionsWorkspaceModules = surfaceOperationModules.filter((module) =>
     ADMISSIONS_WORKSPACE_MODULE_IDS.has(module.id));
-  const standaloneOperationModules = operationModules.filter((module) =>
+  const standaloneOperationModules = surfaceOperationModules.filter((module) =>
     !ADMISSIONS_WORKSPACE_MODULE_IDS.has(module.id));
   const admissionsWorkspaceKeys = Array.from(new Set(admissionsWorkspaceModules.flatMap(modulePermissionKeys)));
   const admissionsWorkspaceEnabledCount = admissionsWorkspaceKeys.filter((key) =>
@@ -2888,8 +3095,8 @@ export default function AdmissionsPage() {
   // Step 3 lists every granted module. The module carried in from step 2 is always
   // included so it can be configured before it has any permissions.
   const crudModules = showAllCrudModules
-    ? operationModules
-    : operationModules.filter((module) =>
+    ? surfaceOperationModules
+    : surfaceOperationModules.filter((module) =>
       grantedModules.some((granted) => granted.id === module.id)
       || module.id === selectedAccessModuleId);
   const selectedRoleUsers = visibleStaffUsers.filter((user) => user.roleIds.includes(selectedAccessRole.id));
@@ -2915,6 +3122,8 @@ export default function AdmissionsPage() {
     role.team.toLowerCase().includes(roleSearchValue) ||
     role.scope.toLowerCase().includes(roleSearchValue)
   );
+  const availableRoleTemplates = tenantAuthorityRoleTemplates().filter((template) =>
+    !collegeRoles.some((role) => role.key === template.key));
   const accessCoverage = selectedRolePermissions.includes('*')
     ? 100
     : allPermissionKeys.length ? Math.round((selectedRolePermissions.length / allPermissionKeys.length) * 100) : 0;
@@ -3371,7 +3580,7 @@ export default function AdmissionsPage() {
 
       <main className="campus-admin-main flex-1 min-w-0 flex flex-col overflow-hidden">
         {activeNav === 'pipeline' && (
-          <section className="campus-admin-pipeline flex-1 overflow-hidden p-5 flex flex-col bg-[var(--crm-panel)]">
+          <section className="campus-admin-pipeline flex-1 overflow-hidden p-5 pb-0 flex flex-col bg-[var(--crm-panel)]">
             {crmError && <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">{crmError}</div>}
             {crmLoading && leads.length === 0 ? (
               <div className="flex flex-1 items-center justify-center text-sm text-[var(--crm-muted)]">Loading live pipeline…</div>
@@ -3388,6 +3597,7 @@ export default function AdmissionsPage() {
                 canLogCalls={canSendCrmCommunications}
                 canMoveLeadBackward={canMoveLeadBackward}
                 canTriggerErpHandoff={canTriggerErpHandoff}
+                canDeleteLeads={canDeleteLeads}
                 onCreateLead={canCreateLeads ? openStageLeadCreation : undefined}
                 onShowToast={showToast}
                 onRefresh={() => void refreshCrmBoard()}
@@ -3435,18 +3645,22 @@ export default function AdmissionsPage() {
         {activeNav === 'dashboard' && isCrmAdministrator && (
           <section className="campus-dashboard flex-1 overflow-y-auto kanban-scroll-hidden bg-[#fafafa] dark:bg-[var(--crm-bg)] p-6 space-y-6">
             {/* Header Title Section */}
-            <div className="flex flex-wrap items-center justify-between gap-3 animate-fade-in-up">
+            <div className="relative z-[100] flex flex-wrap items-center justify-between gap-3 animate-fade-in-up">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-[var(--crm-text)]">Admissions CRM</h1>
                 <p className="text-xs text-[var(--crm-muted)] mt-0.5">Manage your student admissions pipeline, counselor workload, and enrollment targets.</p>
               </div>
-              <div className="flex items-center gap-2" aria-label="Dashboard capabilities">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-1 text-xs text-[var(--crm-muted)] font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Operational
+              <div className="flex items-center gap-2" aria-label="Dashboard status and notifications">
+                <span className="crm-live-status" aria-label="System is live and operational">
+                  <span className="crm-live-status__beacon" aria-hidden="true">
+                    <span className="crm-live-status__ring" />
+                    <span className="crm-live-status__dot" />
+                  </span>
+                  <span>Live Operational</span>
+                  <span className="crm-live-status__signal" aria-hidden="true">
+                    <i /><i /><i />
+                  </span>
                 </span>
-                {dashboardAccess.leads && <span className="rounded-full bg-[var(--tenant-surface)] px-3 py-1 text-xs font-semibold text-[var(--tenant-primary)]">Leads Pipeline</span>}
-                {dashboardAccess.team && <span className="rounded-full bg-[var(--tenant-surface)] px-3 py-1 text-xs font-semibold text-[var(--tenant-primary)]">Counselor SLA</span>}
                 <ActivityFeed leads={leads} />
               </div>
             </div>
@@ -3810,7 +4024,25 @@ export default function AdmissionsPage() {
           </section>
         )}
 
-        {requirementPage && (
+        {OPERATIONS_NAV.has(activeNav) && (
+          <CampusOperationsWorkspace
+            key={activeNav}
+            section={activeNav as OperationsSection}
+            users={visibleStaffUsers.map((user) => ({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              initials: user.initials,
+              role: user.role,
+              team: user.team,
+              access: userAccess[user.id] ?? user.access,
+            }))}
+            canCreateUsers={canCreateUsers}
+            onAddUser={() => setAccessModal('users')}
+          />
+        )}
+
+        {requirementPage && !OPERATIONS_NAV.has(activeNav) && (
           <section className={`campus-admin-module campus-admin-module-${activeNav} flex-1 overflow-y-auto kanban-scroll-hidden p-6`}>
             <div className="campus-module-header mb-5 flex flex-wrap items-end justify-between gap-4">
               <div>
@@ -4357,67 +4589,7 @@ export default function AdmissionsPage() {
             )}
 
             {activeNav === 'academics' && (
-              <div className="mt-4 space-y-4">
-                <div className="campus-card-grid grid grid-cols-5 gap-3">
-                  {[
-                    ['Programs', '24 courses', Database],
-                    ['Timetable', '6 conflicts', CalendarDays],
-                    ['Faculty', '96 profiles', Users],
-                    ['Exams', '3 active', ClipboardList],
-                    ['Calendar', '182 days', Clock],
-                  ].map(([label, meta, Icon], index) => (
-                    <button key={label as string} type="button" onClick={() => openOperation(label as string, 'Academics', ['Academic year', 'Department', 'Owner', 'Notes'], 'Open')} className={`rounded-2xl border p-4 text-left shadow-sm ${index === 1 ? 'border-transparent text-white' : 'border-[var(--crm-border)] bg-[var(--crm-card)]'}`} style={index === 1 ? { background: brandGradient } : undefined}>
-                      {React.createElement(Icon as LucideIcon, { size: 17 })}
-                      <p className="mt-4 text-sm">{label as string}</p>
-                      <p className={`mt-1 text-xs ${index === 1 ? 'text-white/70' : 'text-[var(--crm-muted)]'}`}>{meta as string}</p>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="campus-module-layout grid grid-cols-[minmax(0,1fr)_320px] gap-4">
-                  <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-base">Timetable Command Board</h3>
-                      <button type="button" onClick={() => openOperation('Publish timetable', 'Timetable Command Board', ['Academic year', 'Effective date', 'Notify students', 'Publish note'], 'Publish')} className="rounded-xl px-3 py-2 text-xs text-white" style={{ background: brandGradient }}>Publish timetable</button>
-                    </div>
-                    <div className="campus-academic-board mt-5 grid grid-cols-6 gap-3">
-                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, dayIndex) => (
-                        <div key={day} className="min-h-[340px] rounded-2xl bg-[var(--crm-surface)] p-3">
-                          <p className="text-xs text-[var(--crm-muted)]">{day}</p>
-                          {['CSE Sem 3', 'ECE Lab', 'MBA Finance'].slice(0, dayIndex % 3 + 1).map((item, itemIndex) => (
-                            <div key={`${day}-${item}`} className={`mt-3 rounded-xl p-3 text-xs shadow-sm ${itemIndex === 0 && dayIndex === 2 ? 'bg-red-50 text-red-600' : 'bg-[var(--crm-card)]'}`}>
-                              <p>{item}</p>
-                              <p className="mt-1 text-[10px] text-[var(--crm-muted)]">Room {dayIndex + 201} / P{itemIndex + 1}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
-                      <h3 className="text-base">Academic Setup</h3>
-                      <div className="mt-4 grid grid-cols-2 gap-2">
-                        {['Departments', 'Batches', 'Subjects', 'Faculty'].map((item, index) => (
-                          <div key={item} className="rounded-xl bg-[var(--crm-surface)] p-3">
-                            <p className="text-xl">{[8, 42, 180, 96][index]}</p>
-                            <p className="mt-1 text-[10px] text-[var(--crm-muted)]">{item}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
-                      <h3 className="text-base">Conflict Alerts</h3>
-                      <div className="mt-4 space-y-2 text-xs">
-                        <p className="rounded-xl bg-red-50 p-3 text-red-600">Prof. Sharma double-booked</p>
-                        <p className="rounded-xl bg-amber-50 p-3 text-amber-700">Room 301 capacity warning</p>
-                        <p className="rounded-xl bg-[var(--crm-surface)] p-3 text-[var(--crm-muted)]">4 attendance corrections</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <TimetableAllocatorWorkspace />
             )}
 
             {activeNav === 'fees' && (
@@ -4535,7 +4707,7 @@ export default function AdmissionsPage() {
           </section>
         )}
 
-        {activeNav === 'users' && (
+        {false && activeNav === 'users' && (
           <section className="campus-admin-module campus-admin-users flex-1 overflow-y-auto kanban-scroll-hidden p-6">
             <div className="campus-module-header mb-5 flex flex-wrap items-end justify-between gap-4">
               <div>
@@ -4685,15 +4857,25 @@ export default function AdmissionsPage() {
                   </button>
                 )}
                 {settingsSection === 'forms' && canCreateForms && (
-                  <button
-                    type="button"
-                    onClick={openCreateForm}
-                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs text-white shadow-sm transition-transform hover:-translate-y-0.5"
-                    style={{ background: brandGradient }}
-                  >
-                    <PlusCircle size={15} />
-                    New builder
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={openCreateAdmissionApplication}
+                      className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] px-4 py-2.5 text-xs font-extrabold text-[var(--crm-text)] shadow-sm hover:bg-[var(--crm-panel)]"
+                    >
+                      <FileText size={15} />
+                      Admission application
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openCreateForm}
+                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs text-white shadow-sm transition-transform hover:-translate-y-0.5"
+                      style={{ background: brandGradient }}
+                    >
+                      <PlusCircle size={15} />
+                      New builder
+                    </button>
+                  </div>
                 )}
                 <button
                   type="button"
@@ -4884,7 +5066,9 @@ export default function AdmissionsPage() {
                               style={{ background: brandGradient }}
                             >
                               <CheckCircle2 size={14} />
-                              {selectedForm.status === 'Live' ? 'Unpublish' : 'Publish'}
+                              {selectedForm.formType.replace('-', '_') === 'application'
+                                ? selectedForm.status === 'Live' ? 'Unpublish from domain' : 'Publish on domain'
+                                : selectedForm.status === 'Live' ? 'Unpublish' : 'Publish'}
                             </button>
                           )}
                         </>
@@ -4892,7 +5076,13 @@ export default function AdmissionsPage() {
                     </div>
                   </div>
 
-                  {selectedForm.id && selectedForm.status === 'Live' && selectedForm.formType.replace('-', '_') !== 'lead_capture' && (
+                  {selectedForm.id && selectedForm.status === 'Live' && selectedForm.formType.replace('-', '_') === 'application' && (
+                    <div className="flex items-center justify-between gap-4 border-b border-emerald-200 bg-emerald-50 px-4 py-3 text-[11px] text-emerald-900">
+                      <span>Applicant form is live on <strong>{applicationDomain}</strong>. Qualified leads receive a private OTP link.</span>
+                      <a href={applicationDomain} target="_blank" rel="noreferrer" className="shrink-0 font-extrabold underline">Open domain</a>
+                    </div>
+                  )}
+                  {selectedForm.id && selectedForm.status === 'Live' && !['lead_capture', 'application'].includes(selectedForm.formType.replace('-', '_')) && (
                     <div className="flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-4 py-3 text-[11px] text-amber-800">
                       <span>
                         This form is live for <strong>{selectedForm.module} → {formTypeLabel(selectedForm.module, selectedForm.formType)}</strong>. It will not appear in CRM Create Lead.
@@ -5083,12 +5273,21 @@ export default function AdmissionsPage() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-[var(--tenant-primary)]">Guided access control</p>
-                      <h3 className="mt-1 text-2xl">Role &gt; Module &gt; Workflow &gt; Users</h3>
+                      <h3 className="mt-1 text-2xl">Role &gt; Surface &gt; Module &gt; Workflow &gt; Users</h3>
                       <p className="mt-2 max-w-2xl text-xs leading-6 text-[var(--crm-muted)]">Configure access one step at a time. Pick the role and its portal, choose modules and workflows, then assign users to the role.</p>
                     </div>
-                    <div className="rounded-xl bg-[var(--crm-surface)] px-4 py-3 text-right">
-                      <p className="text-[10px] uppercase tracking-wider text-[var(--crm-muted)]">Current role</p>
-                      <p className="mt-1 text-sm">{selectedAccessRole.name}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 items-center rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] p-1" aria-label="Access surface">
+                        {(['web', 'app'] as AccessSurface[]).map((surface) => (
+                          <button key={surface} type="button" onClick={() => setAccessSurface(surface)} className={`h-8 px-4 text-xs uppercase ${accessSurface === surface ? 'rounded-md bg-[var(--tenant-primary)] text-white' : 'text-[var(--crm-muted)]'}`}>
+                            {surface === 'web' ? <Monitor className="mr-1.5 inline" size={14} /> : <Smartphone className="mr-1.5 inline" size={14} />}{surface}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="rounded-lg bg-[var(--crm-surface)] px-4 py-2 text-right">
+                        <p className="text-[10px] uppercase tracking-wider text-[var(--crm-muted)]">Current role</p>
+                        <p className="mt-1 text-sm">{selectedAccessRole.name}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -5126,14 +5325,14 @@ export default function AdmissionsPage() {
                       <span className="rounded-full bg-[var(--crm-panel)] px-3 py-1.5 text-[11px] text-[var(--crm-muted)]">{accessCoverage}% coverage</span>
                     </div>
                     <div className="mt-5 grid gap-3">
-                      {operationModules.map((module) => {
+                      {surfaceOperationModules.map((module) => {
                         const moduleKeys = modulePermissionKeys(module);
                         const enabledCount = moduleKeys.filter((key) => selectedRolePermissionSet.has(key)).length;
                         const progress = moduleKeys.length ? Math.round((enabledCount / moduleKeys.length) * 100) : 0;
                         return (
                           <div key={module.id} className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-3">
                             <div className="flex items-center justify-between gap-3 text-xs">
-                              <span>{module.name}</span>
+                              <span className="flex items-center gap-2">{module.name}<small className="rounded bg-[var(--crm-card)] px-1.5 py-0.5 text-[8px] uppercase text-[var(--crm-muted)]">{moduleSurface(module)}</small></span>
                               <span className="text-[var(--crm-muted)]">{enabledCount}/{moduleKeys.length}</span>
                             </div>
                             <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--crm-card)]">
@@ -5195,6 +5394,17 @@ export default function AdmissionsPage() {
                   <div className="p-4 border-b border-[var(--crm-border)] bg-[var(--crm-surface)]">
                     <p className="text-[10px] font-extrabold uppercase text-[var(--crm-muted)] mb-2">New role</p>
                     <div className="grid gap-2">
+                      <select
+                        aria-label="Role template"
+                        value={newRoleTemplateKey}
+                        onChange={(event) => selectRoleTemplate(event.target.value as AuthorityRoleKey | 'custom')}
+                        className="w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs outline-none"
+                      >
+                        <option value="custom">Custom role</option>
+                        {availableRoleTemplates.map((template) => (
+                          <option key={template.key} value={template.key}>{template.name}</option>
+                        ))}
+                      </select>
                       <input
                         value={newRoleName}
                         onChange={(event) => setNewRoleName(event.target.value)}
@@ -5215,7 +5425,9 @@ export default function AdmissionsPage() {
                   </div>
 
                   <div className="flex-1 overflow-y-auto kanban-scroll-hidden p-3 space-y-2">
-                    {filteredCollegeRoles.map((role) => {
+                    {filteredCollegeRoles.filter((role) => accessSurface === 'web'
+                      ? role.portalFamily === 'staff' || role.portalFamily === 'admin'
+                      : role.portalFamily === 'student' || role.portalFamily === 'parent' || role.portalFamily === 'staff').map((role) => {
                       const rolePermissions = roleAccess[role.id] ?? [];
       const roleUsers = visibleStaffUsers.filter((user) => user.roleIds.includes(role.id));
                       const roleCoverage = rolePermissions.includes('*')
@@ -6360,6 +6572,18 @@ export default function AdmissionsPage() {
                 <div className="grid gap-4 md:grid-cols-[260px_1fr]">
                   <div className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4">
                     <p className="text-[10px] uppercase tracking-widest text-[var(--crm-muted)]">Create role</p>
+                    <label className="mt-3 block text-[10px] uppercase tracking-widest text-[var(--crm-muted)]" htmlFor="new-role-template">Template</label>
+                    <select
+                      id="new-role-template"
+                      value={newRoleTemplateKey}
+                      onChange={(event) => selectRoleTemplate(event.target.value as AuthorityRoleKey | 'custom')}
+                      className="mt-1 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs outline-none"
+                    >
+                      <option value="custom">Custom role</option>
+                      {availableRoleTemplates.map((template) => (
+                        <option key={template.key} value={template.key}>{template.name}</option>
+                      ))}
+                    </select>
                     <input value={newRoleName} onChange={(event) => setNewRoleName(event.target.value)} placeholder="Role name" className="mt-3 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs outline-none" />
                     <input value={newRoleTeam} onChange={(event) => setNewRoleTeam(event.target.value)} placeholder="Department / team" className="mt-2 h-10 w-full rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 text-xs outline-none" />
                     <label className="mt-2 block text-[10px] uppercase tracking-widest text-[var(--crm-muted)]" htmlFor="new-role-portal-family">Portal</label>
@@ -6372,7 +6596,9 @@ export default function AdmissionsPage() {
                     <button type="button" onClick={addCollegeRole} disabled={!canCreateRoles} className="mt-3 w-full rounded-lg px-3 py-2 text-xs text-white disabled:cursor-not-allowed disabled:opacity-40" style={{ background: brandGradient }}>Add role</button>
                   </div>
                   <div className="grid gap-2 md:grid-cols-2">
-                    {filteredCollegeRoles.map((role) => {
+                    {filteredCollegeRoles.filter((role) => accessSurface === 'web'
+                      ? role.portalFamily === 'staff' || role.portalFamily === 'admin'
+                      : role.portalFamily === 'student' || role.portalFamily === 'parent' || role.portalFamily === 'staff').map((role) => {
                       const rolePermissions = roleAccess[role.id] ?? [];
                       const roleCoverage = rolePermissions.includes('*')
                         ? 100
@@ -6415,8 +6641,8 @@ export default function AdmissionsPage() {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        disabled={!canUpdateRoles || grantedModules.length === operationModules.length}
-                        onClick={() => void setRoleModules(selectedAccessRole.id, operationModules.map((m) => m.id), true)}
+                        disabled={!canUpdateRoles || surfaceOperationModules.every((module) => grantedModules.some((granted) => granted.id === module.id))}
+                        onClick={() => void setRoleModules(selectedAccessRole.id, surfaceOperationModules.map((m) => m.id), true)}
                         className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-xs text-[var(--crm-muted)] disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Select all
@@ -6424,7 +6650,7 @@ export default function AdmissionsPage() {
                       <button
                         type="button"
                         disabled={!canUpdateRoles || grantedModules.length === 0}
-                        onClick={() => void setRoleModules(selectedAccessRole.id, operationModules.map((m) => m.id), false)}
+                        onClick={() => void setRoleModules(selectedAccessRole.id, surfaceOperationModules.map((m) => m.id), false)}
                         className="rounded-xl border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2 text-xs text-[var(--crm-muted)] disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Clear all
@@ -6926,7 +7152,7 @@ export default function AdmissionsPage() {
                     </div>
                     {countSchemaFields(formDraftSchema) === 0 && (
                       <div className="mt-5 rounded-xl border border-dashed border-[var(--crm-border)] bg-[var(--crm-card)] px-4 py-8 text-xs text-[var(--crm-muted)]">
-                        No fields yet.
+                        <p>No fields yet.</p>
                       </div>
                     )}
                   </div>
@@ -6942,9 +7168,11 @@ export default function AdmissionsPage() {
                       : 'border-amber-200 bg-amber-50 text-amber-800'
                   }`}>
                     Destination: <strong>{formDraft.module} → {formTypeLabel(formDraft.module, formDraft.formType)}</strong>.
-                    {formDraft.module === 'CRM' && formDraft.formType.replace('-', '_') === 'lead_capture'
-                      ? ' Publishing makes this form available in CRM Create Lead.'
-                      : ' Publishing sends it to this workflow, not CRM Create Lead.'}
+                    {formDraft.formType.replace('-', '_') === 'application'
+                      ? ` Publishing makes the form available through ${applicationDomain} with private applicant links.`
+                      : formDraft.module === 'CRM' && formDraft.formType.replace('-', '_') === 'lead_capture'
+                        ? ' Publishing makes this form available in CRM Create Lead.'
+                        : ' Publishing sends it to this workflow, not CRM Create Lead.'}
                   </div>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <label className="text-[10px] text-[var(--crm-muted)]">
@@ -7002,6 +7230,20 @@ export default function AdmissionsPage() {
                       />
                     </label>
                   </div>
+                  {formDraft.formType.replace('-', '_') === 'application' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (countSchemaFields(formDraftSchema) > 0 && !window.confirm('Replace the current application fields with the complete admission template?')) return;
+                        setFormSchemas((current) => ({ ...current, [formDraft.id]: cloneAdmissionApplicationTemplate() }));
+                        setSelectedFieldKey(null);
+                      }}
+                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 py-2.5 text-xs font-bold text-[var(--crm-text)] hover:bg-[var(--crm-panel)]"
+                    >
+                      <FileText size={14} />
+                      Load complete admission template
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -7038,7 +7280,9 @@ export default function AdmissionsPage() {
               {canSaveOpenForm && canPublishForms && (
                 <button type="button" onClick={() => saveFormDraft(true)} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs text-white shadow-sm" style={{ background: brandGradient }}>
                   <CheckCircle2 size={14} />
-                  {formDraft.status === 'Live' ? 'Save & republish' : 'Publish'}
+                  {formDraft.formType.replace('-', '_') === 'application'
+                    ? formDraft.status === 'Live' ? 'Save & republish on domain' : 'Publish on domain'
+                    : formDraft.status === 'Live' ? 'Save & republish' : 'Publish'}
                 </button>
               )}
             </div>

@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Info,
   Loader2,
+  MessageSquarePlus,
   PauseCircle,
   PlayCircle,
   RefreshCw,
@@ -390,23 +391,6 @@ function workTabForStage(stage: OnboardingCase['stage']): Tab {
   }
 }
 
-function stageTask(stage: OnboardingCase['stage']): { title: string; description: string } {
-  switch (stage) {
-    case 'DATA_REVIEW': return { title: 'Review the application', description: 'Check the applicant form and submit any missing required information.' };
-    case 'IDENTITY_VERIFICATION': return { title: 'Complete identity verification', description: 'Record the result of the duplicate and identity search.' };
-    case 'DOCUMENT_VERIFICATION': return { title: 'Verify required documents', description: 'Review each uploaded document and verify, waive, or reject it.' };
-    case 'ACADEMIC_MAPPING': return { title: 'Map academic details', description: 'Assign the programme, department, academic year, and batch.' };
-    case 'SECTION_ALLOCATION': return { title: 'Allocate a section', description: 'Assign the applicant to the appropriate class section.' };
-    case 'FINANCE_VERIFICATION': return { title: 'Verify finance status', description: 'Record the latest status reported by the Finance team.' };
-    case 'APPROVAL': return { title: 'Complete approvals', description: 'Review and approve each step in the configured approval chain.' };
-    case 'STUDENT_CREATION': return { title: 'Create the student record', description: 'The system will create the student master record after approval.' };
-    case 'ACCOUNT_PROVISIONING': return { title: 'Create the user account', description: 'The system will provision the student account.' };
-    case 'ACCESS_PROVISIONING': return { title: 'Provision module access', description: 'The system will apply the student’s configured access.' };
-    case 'ACTIVATION': return { title: 'Activate the student', description: 'Complete the final activation step.' };
-    default: return { title: 'Review case status', description: 'Review the case details and history.' };
-  }
-}
-
 /**
  * Dev-only escape hatch. There is no backend in local development, so no staff
  * session can exist and the desk would be permanently unreachable. When Ã¢â‚¬â€ and
@@ -680,7 +664,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   if (authStatus === 'checking' || (mayLoad && !snapshot && !loadError)) {
     return (
       <DeskShell embedded={embedded}>
-        <p className="grid min-h-[40vh] place-items-center text-sm text-[var(--crm-muted)]">Loading the deskÃ¢â‚¬Â¦</p>
+        <p className="grid min-h-[40vh] place-items-center text-sm text-[var(--crm-muted)]">Loading admission desk...</p>
       </DeskShell>
     );
   }
@@ -720,33 +704,33 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
   return (
     <DeskShell embedded={embedded}>
       <div className="mx-auto max-w-[1600px] space-y-5">
-        <header className="flex items-start gap-3">
-          <div>
+        <header>
+          <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight text-[var(--crm-text)]">Admission Desk</h1>
-            <p className="mt-1 text-xs text-[var(--crm-muted)]">Accepted offers awaiting completion before Student Master activation.</p>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Admission Desk instructions"
+                aria-expanded={instructionsOpen}
+                onClick={() => setInstructionsOpen((open) => !open)}
+                className="grid size-8 place-items-center rounded-full border border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-muted)] shadow-sm transition hover:border-[var(--tenant-primary)]/40 hover:text-[var(--tenant-primary)]"
+              >
+                <Info size={16} />
+              </button>
+              {instructionsOpen && (
+                <div className="absolute left-0 top-10 z-20 w-[min(360px,calc(100vw-48px))] rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4 text-sm leading-6 text-[var(--crm-muted)] shadow-xl">
+                  <p className="font-semibold text-[var(--crm-text)]">How to use Admission Desk</p>
+                  <ol className="mt-2 list-decimal space-y-1 pl-4">
+                    <li>Select an applicant from the live queue.</li>
+                    <li>Review application, documents, identity, academic mapping and fee readiness.</li>
+                    <li>Clear each checkpoint using the available stage action.</li>
+                    <li>Approve activation only after all required checks are complete.</li>
+                  </ol>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="relative">
-            <button
-              type="button"
-              aria-label="Admission Desk instructions"
-              aria-expanded={instructionsOpen}
-              onClick={() => setInstructionsOpen((open) => !open)}
-              className="grid size-9 place-items-center rounded-full border border-[var(--crm-border)] bg-[var(--crm-card)] text-[var(--crm-muted)] shadow-sm transition hover:border-[var(--tenant-primary)]/40 hover:text-[var(--tenant-primary)]"
-            >
-              <Info size={17} />
-            </button>
-            {instructionsOpen && (
-              <div className="absolute left-0 top-11 z-20 w-[min(360px,calc(100vw-48px))] rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4 text-sm leading-6 text-[var(--crm-muted)] shadow-xl">
-                <p className="font-semibold text-[var(--crm-text)]">How to use Admission Desk</p>
-                <ol className="mt-2 list-decimal space-y-1 pl-4">
-                  <li>Select an applicant from the live queue.</li>
-                  <li>Review application, documents, identity, academic mapping and fee readiness.</li>
-                  <li>Clear each checkpoint using the available stage action.</li>
-                  <li>Approve activation only after all required checks are complete.</li>
-                </ol>
-              </div>
-            )}
-          </div>
+          <p className="mt-1 text-xs text-[var(--crm-muted)]">Accepted offers awaiting completion before Student Master activation.</p>
         </header>
 
         {demoAccess && (
@@ -772,14 +756,14 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
         </section>
 
         <div>
-          <section className="overflow-hidden rounded-3xl border border-[var(--crm-border)] bg-[var(--crm-card)] shadow-[0_10px_30px_rgba(15,23,42,0.045)]">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--crm-border)] px-4 py-4 sm:px-5">
-              <div>
-                <p className="text-sm font-semibold text-[var(--crm-text)]">Application queue</p>
-                <p className="mt-0.5 text-[10px] text-[var(--crm-muted)]">Prioritized cases waiting for an officer action</p>
-              </div>
-              <span className="rounded-full bg-[var(--tenant-primary)]/10 px-3 py-1 text-[10px] font-bold text-[var(--tenant-primary)]">{visible.length} visible</span>
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-3 px-1">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--crm-text)]">Application queue</h2>
+              <p className="mt-0.5 text-xs text-[var(--crm-muted)]">Prioritized cases waiting for an officer action</p>
             </div>
+            <span className="text-xs font-medium text-[var(--crm-muted)]">{visible.length} visible</span>
+          </div>
+          <section className="overflow-hidden rounded-3xl border border-[var(--crm-border)] bg-[var(--crm-card)] shadow-[0_10px_30px_rgba(15,23,42,0.045)]">
             {/* Lifecycle views Ã¢â‚¬â€ what is on the desk right now. */}
             <div className="flex items-end gap-1 overflow-x-auto border-b border-[var(--crm-border)] px-4">
               {VIEWS.map((entry) => (
@@ -981,14 +965,13 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
               })}
             </div>
 
-            {visible.length > 0 && (
-              <div className="border-t border-[var(--crm-border)] bg-[var(--crm-surface)] px-4 py-2 text-[10px] text-[var(--crm-muted)]">
-                <span>
-                  {visible.length} of {cases.length} cases
-                </span>
-              </div>
-            )}
           </section>
+
+          {visible.length > 0 && (
+            <p className="py-2 text-center text-[10px] text-[var(--crm-muted)]">
+              {visible.length} of {cases.length} cases
+            </p>
+          )}
 
           {selected && snapshot && (
             <div
@@ -1058,33 +1041,6 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                   </div>
                 )}
 
-                {/* Current task ------------------------------------------ */}
-                {(() => {
-                  const task = stageTask(selected.stage);
-                  const taskTab = workTabForStage(selected.stage);
-                  return (
-                    <section className="border-b border-[var(--crm-border)] bg-[var(--tenant-primary)]/[0.04] px-5 py-3.5 sm:px-6" aria-label="Current task">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--tenant-primary)]">Current task</p>
-                          <h3 className="mt-1 text-sm font-semibold text-[var(--crm-text)]">{task.title}</h3>
-                          <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--crm-muted)]">{task.description}</p>
-                        </div>
-                        {tab !== taskTab && (
-                          <button type="button" onClick={() => setTab(taskTab)} className="shrink-0 rounded-lg border border-[var(--tenant-primary)]/30 bg-[var(--crm-card)] px-2.5 py-1.5 text-[10px] font-semibold text-[var(--tenant-primary)] transition hover:bg-[var(--tenant-primary)]/10">
-                            Open task
-                          </button>
-                        )}
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[var(--crm-muted)]">
-                        <span>Programme: <strong className="font-medium text-[var(--crm-text)]">{selected.academic.programId ?? 'Not mapped'}</strong></span>
-                        <span>Documents: <strong className="font-medium text-[var(--crm-text)]">{selected.documents.filter((doc) => doc.state === 'VERIFIED' || doc.state === 'WAIVED').length}/{selected.documents.length}</strong></span>
-                        <span>Finance: <strong className="font-medium text-[var(--crm-text)]">{humanize(selected.finance)}</strong></span>
-                      </div>
-                    </section>
-                  );
-                })()}
-
                 {/* Detail tabs --------------------------------------------- */}
                 <nav className="flex gap-1 overflow-x-auto border-b border-[var(--crm-border)] bg-[var(--crm-surface)]/45 px-3 pt-2">
                   {TABS.map((entry) => (
@@ -1105,37 +1061,13 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 text-xs sm:px-6">
                   {tab === 'application' && (
-                    (snapshot.applicationForm || applicationRecord(selected)) ? (
-                      <ApplicationFormPanel
-                        key={`${selected.id}-${applicationRecord(selected)?.revision ?? 0}`}
-                        form={snapshot.applicationForm ?? {
-                          id: applicationRecord(selected)!.formId,
-                          name: 'Submitted Application',
-                          formType: 'application',
-                          version: applicationRecord(selected)!.formVersion,
-                          schema: applicationRecord(selected)!.schema,
-                        }}
-                        onboarding={selected}
-                        record={applicationRecord(selected)}
-                        disabled={busy || !open || !mayRun('record_application') || !snapshot.applicationForm}
-                        onSave={(status, data) => void act(
-                          'record_application',
-                          status === 'submitted' ? 'Application form submitted' : 'Application draft saved',
-                          {
-                            applicationForm: {
-                              formId: snapshot.applicationForm!.id,
-                              formVersion: snapshot.applicationForm!.version,
-                              status,
-                              data,
-                            },
-                          },
-                        )}
-                      />
+                    applicationRecord(selected)?.status === 'submitted' ? (
+                      <ApplicationSubmissionReview record={applicationRecord(selected)} />
                     ) : (
                       <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-800">
-                        <p className="font-medium">No published Application form</p>
+                        <p className="font-medium">Submitted application unavailable</p>
                         <p className="mt-1 text-[11px] leading-relaxed">
-                          Publish an Admissions Ã¢â€ â€™ Application form in Settings Ã¢â€ â€™ Form Builders. It will appear here automatically without storing a duplicate application in CRM.
+                          This onboarding case does not have a completed applicant submission attached to it.
                         </p>
                       </div>
                     )
@@ -1531,7 +1463,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
 
                 {/* Actions ------------------------------------------------- */}
                 <div className="sticky bottom-0 z-10 shrink-0 space-y-2.5 border-t border-[var(--crm-border)] bg-[var(--crm-card)]/95 p-4 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur sm:px-6">
-                  {blockedReason && selected.status === 'ACTIVE' && (
+                  {blockedReason && selected.status === 'ACTIVE' && selected.stage !== 'DATA_REVIEW' && (
                     <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
                       <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-amber-800">
                         Required before advancing
@@ -1540,31 +1472,21 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
 
                       {selected.stage === 'IDENTITY_VERIFICATION' && mayRun('record_identity') && (
                         <div className="mt-2 grid grid-cols-2 gap-1.5">
-                            {IDENTITY_RESULTS.map((match) => (
-                              <Chip
-                                key={match}
-                                label={humanize(match)}
-                                active={selected.identityMatch === match}
-                                disabled={busy}
-                                tone={match === 'DUPLICATE' ? 'danger' : undefined}
-                                onClick={() =>
-                                  void act('record_identity', `Identity recorded as ${match}`, {
-                                    identityMatch: match,
-                                  })
-                                }
-                              />
-                            ))}
+                          {IDENTITY_RESULTS.map((match) => (
+                            <Chip
+                              key={match}
+                              label={humanize(match)}
+                              active={selected.identityMatch === match}
+                              disabled={busy}
+                              tone={match === 'DUPLICATE' ? 'danger' : undefined}
+                              onClick={() =>
+                                void act('record_identity', `Identity recorded as ${match}`, {
+                                  identityMatch: match,
+                                })
+                              }
+                            />
+                          ))}
                         </div>
-                      )}
-
-                      {selected.stage === 'DATA_REVIEW' && snapshot.applicationForm && (
-                        <button
-                          type="button"
-                          onClick={() => setTab('application')}
-                          className="mt-2 text-[11px] font-medium text-[var(--tenant-primary)] hover:underline"
-                        >
-                          Complete application form
-                        </button>
                       )}
 
                       {selected.stage === 'DOCUMENT_VERIFICATION' && (
@@ -1605,7 +1527,7 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       )}
                     </section>
                   )}
-                  {noteOpen ? (
+                  {noteOpen && (
                     <label className="block">
                       <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--crm-muted)]">
                         Action note or reason
@@ -1621,24 +1543,29 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                         <button type="button" onClick={() => { setNoteOpen(false); setActionReason(''); }} className="text-xs font-semibold text-[var(--crm-muted)] hover:text-[var(--crm-text)]">Cancel</button>
                       </div>
                     </label>
-                  ) : (
-                    <button type="button" onClick={() => setNoteOpen(true)} className="text-xs font-semibold text-[var(--crm-muted)] underline decoration-dotted underline-offset-4 hover:text-[var(--tenant-primary)]">
-                      + Add note (optional)
-                    </button>
                   )}
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    {!noteOpen && (
+                      <Action
+                        label="Add note"
+                        icon={MessageSquarePlus}
+                        iconOnly
+                        disabled={busy}
+                        onClick={() => setNoteOpen(true)}
+                      />
+                    )}
                     <Action
                       label="Hold"
                       icon={PauseCircle}
-                      compact
+                      iconOnly
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.hold}
                       onClick={() => void act('hold', actionReason.trim() || undefined)}
                     />
                     <Action
                       label="Return"
                       icon={Undo2}
-                      compact
+                      iconOnly
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.verify}
                       onClick={() => void act('return', actionReason.trim() || undefined)}
                     />
@@ -1646,46 +1573,52 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
                       label="Reject"
                       icon={XCircle}
                       tone="danger"
-                      compact
+                      iconOnly
                       disabled={busy || selected.status !== 'ACTIVE' || !desk.reject}
                       onClick={() => void act('reject', actionReason.trim() || undefined)}
                     />
+                    {open && desk.reject && (
+                      <>
+                        <Action
+                          label="Cancel case"
+                          icon={Ban}
+                          iconOnly
+                          disabled={busy}
+                          onClick={() => void act('cancel', actionReason.trim() || undefined)}
+                        />
+                        <Action
+                          label="Applicant withdrew"
+                          icon={UserMinus}
+                          iconOnly
+                          disabled={busy}
+                          onClick={() => void act('withdraw', actionReason.trim() || undefined)}
+                        />
+                      </>
+                    )}
                   </div>
-                  <div className="min-w-52 flex-1 sm:max-w-xs">
                     <Action
                       label={
                         blockedReason
-                          ? 'Complete required checks'
+                          ? 'Checks required'
+                          : nextRailStage
+                            ? 'Advance'
+                            : 'Complete'
+                      }
+                      tooltip={
+                        blockedReason
+                          ? blockedReason
                           : nextRailStage
                             ? `Advance to ${nextRailStage.short}`
                             : 'Complete onboarding'
                       }
                       icon={busy ? Loader2 : ChevronRight}
                       tone="primary"
+                      compact
                       spin={busy}
                       disabled={busy || selected.status !== 'ACTIVE' || !mayAdvance || !!blockedReason}
                       onClick={() => void act('advance', actionReason.trim() || undefined)}
                     />
                   </div>
-                  </div>
-                  {open && desk.reject && (
-                    <div className="flex flex-wrap gap-2">
-                      <Action
-                        label="Cancel case"
-                        icon={Ban}
-                        compact
-                        disabled={busy}
-                        onClick={() => void act('cancel', actionReason.trim() || undefined)}
-                      />
-                      <Action
-                        label="Applicant withdrew"
-                        icon={UserMinus}
-                        compact
-                        disabled={busy}
-                        onClick={() => void act('withdraw', actionReason.trim() || undefined)}
-                      />
-                    </div>
-                  )}
                   {(selected.status === 'ON_HOLD' || selected.status === 'RETURNED') && (
                     <Action
                       label={`Resume at ${STAGE_RAIL.find((s) => s.id === (selected.resumeStage ?? selected.stage))?.short ?? 'last stage'}`}
@@ -1895,7 +1828,6 @@ function queueMatches(onboarding: OnboardingCase, queue: QueueKey): boolean {
  */
 function StageProgress({ stage }: { stage: OnboardingCase['stage'] }) {
   const current = stageIndex(stage);
-  const next = STAGE_RAIL[current + 1];
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
@@ -1919,9 +1851,6 @@ function StageProgress({ stage }: { stage: OnboardingCase['stage'] }) {
           />
         ))}
       </div>
-      <p className="mt-2 text-[10px] text-[var(--crm-muted)]">
-        {next ? `Next Ã‚Â· ${next.short}` : 'Final stage'}
-      </p>
     </div>
   );
 }
@@ -2214,6 +2143,8 @@ function Action({
   tone,
   spin,
   compact,
+  iconOnly,
+  tooltip,
 }: {
   label: string;
   icon: typeof Clock;
@@ -2222,6 +2153,8 @@ function Action({
   tone?: 'primary' | 'danger';
   spin?: boolean;
   compact?: boolean;
+  iconOnly?: boolean;
+  tooltip?: string;
 }) {
   const palette =
     tone === 'primary'
@@ -2234,10 +2167,12 @@ function Action({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={label}
-      className={`flex min-h-10 items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${compact ? 'w-auto px-3 py-2 shadow-none hover:bg-[var(--crm-surface)]' : 'w-full px-4 py-2.5 shadow-sm hover:-translate-y-px hover:shadow-md disabled:hover:translate-y-0'} ${palette}`}
+      title={tooltip ?? label}
+      aria-label={tooltip ?? label}
+      className={`flex items-center justify-center text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${iconOnly ? 'h-9 w-9 shrink-0 rounded-lg p-0 shadow-none hover:bg-[var(--crm-surface)]' : compact ? 'min-h-9 w-auto gap-1.5 rounded-lg px-3 py-1.5 shadow-none hover:bg-[var(--crm-surface)]' : 'min-h-10 w-full gap-1.5 rounded-xl px-4 py-2.5 shadow-sm hover:-translate-y-px hover:shadow-md disabled:hover:translate-y-0'} ${palette}`}
     >
-      <Icon size={14} className={spin ? 'animate-spin' : undefined} /> {label}
+      <Icon size={iconOnly ? 16 : 14} className={spin ? 'animate-spin' : undefined} />
+      {iconOnly ? <span className="sr-only">{label}</span> : label}
     </button>
   );
 }

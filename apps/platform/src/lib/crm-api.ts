@@ -386,6 +386,68 @@ export function submitCrmForm(
   });
 }
 
+export interface ApplicationInvitation {
+  id: string;
+  token: string;
+  applicationUrl: string;
+  channel: 'whatsapp' | 'sms';
+  contact: string;
+  status: string;
+  expiresAt: string;
+}
+
+export interface PublicApplicationInvitation {
+  id: string;
+  status: string;
+  expiresAt: string;
+  channel: 'whatsapp' | 'sms';
+  maskedContact: string;
+  verified: boolean;
+  applicantName: string;
+  tenantName: string;
+  form: { id: string; name: string; version: number; schema: unknown };
+}
+
+export function createApplicationInvitation(leadId: string, channel: 'whatsapp' | 'sms' = 'whatsapp') {
+  return apiRequest<{ data: ApplicationInvitation }>(`${CRM_ROOT}/leads/${leadId}/application-invitations`, {
+    method: 'POST',
+    body: JSON.stringify({ channel }),
+  });
+}
+
+export function getPublicApplicationInvitation(tenant: string, token: string) {
+  return apiRequest<{ data: PublicApplicationInvitation }>(
+    `${CRM_ROOT}/public/applications/${encodeURIComponent(token)}`,
+    { headers: { 'x-tenant-id': tenant } },
+    false,
+  );
+}
+
+export function verifyPublicApplicationOtp(tenant: string, token: string, otp: string) {
+  return apiRequest<{ data: { verificationToken: string } }>(
+    `${CRM_ROOT}/public/applications/${encodeURIComponent(token)}/verify`,
+    { method: 'POST', headers: { 'x-tenant-id': tenant }, body: JSON.stringify({ otp }) },
+    false,
+  );
+}
+
+export function submitPublicApplication(
+  tenant: string,
+  token: string,
+  verificationToken: string,
+  data: Record<string, unknown>,
+) {
+  return apiRequest<{ data: Record<string, unknown> }>(
+    `${CRM_ROOT}/public/applications/${encodeURIComponent(token)}/submit`,
+    {
+      method: 'POST',
+      headers: { 'x-tenant-id': tenant },
+      body: JSON.stringify({ verificationToken, data }),
+    },
+    false,
+  );
+}
+
 /* ------------------------------------------------------------------------- *
  * Remaining CRM operations.
  *
@@ -400,9 +462,12 @@ export function getCrmLead(id: string) {
   return apiRequest<{ data: CrmLead }>(`${CRM_ROOT}/leads/${id}`);
 }
 
-/** Soft-deletes a lead. Responds 204 with no body. */
-export function deleteCrmLead(id: string) {
-  return apiRequest<void>(`${CRM_ROOT}/leads/${id}`, { method: 'DELETE' });
+/** Removes a lead from active CRM views while retaining its audit record. */
+export function deleteCrmLead(id: string, reason: string) {
+  return apiRequest<void>(`${CRM_ROOT}/leads/${id}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ reason }),
+  });
 }
 
 /** Stage, assignment and communication history for a lead. */

@@ -3,19 +3,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import {
-  AlertTriangle, Archive, ArrowRightLeft, CalendarClock, Check, CheckCircle2, ClipboardCheck, FileText, LoaderCircle,
-  MessageSquare, PauseCircle, Pencil, Phone, Plus, Save, UserRound, X,
+  AlertTriangle, Archive, ArrowLeft, ArrowRight, ArrowRightLeft, CalendarClock, Check, CheckCircle2, ChevronDown, ClipboardCheck, FileCheck2, FileText, LoaderCircle,
+  MessageSquare, PauseCircle, Pencil, Phone, Plus, Save, Send, Trash2, UserRound, X,
 } from 'lucide-react';
 import type { Lead } from '@/lib/kanban/kanban-data';
 import { COLUMNS } from '@/lib/kanban/kanban-data';
 import type { CrmForm, CrmLeadTask, CrmLeadTimeline } from '@/lib/crm-api';
-import { addCrmLeadNote, addCrmLeadTask, getCrmLeadTimeline, logCrmCall } from '@/lib/crm-api';
+import { addCrmLeadNote, addCrmLeadTask, getCrmFormSubmissions, getCrmLeadTimeline, logCrmCall } from '@/lib/crm-api';
 import { LEAD_SOURCES, pipelineValueLabel } from '@/lib/crm-catalog';
+import PublishedApplicationForm, { applicationValuePresent } from '@/components/forms/PublishedApplicationForm';
 
 interface LeadDetailSidebarProps {
   lead: Lead;
   onClose: () => void;
   onApplicationDecision: (lead: Lead, decision: 'accept' | 'deny' | 'hold') => Promise<void>;
+  onCompleteApplicationReview: (lead: Lead) => Promise<void>;
   onUpdate: (leadId: string, updates: Partial<Lead>) => void;
   onShowToast: (message: string) => void;
   canUpdateLead: boolean;
@@ -23,16 +25,35 @@ interface LeadDetailSidebarProps {
   canHoldLead: boolean;
   canTransferLead: boolean;
   canLogCall: boolean;
+  canDeleteLead: boolean;
+  onDeleteLead: (lead: Lead, reason: string) => Promise<void>;
   onTransferLead: (lead: Lead) => void;
   stageSubstates: string[];
   allStageSubstates: string[];
   onChangeSubstate: (lead: Lead, substate: string) => Promise<void>;
   leadForm?: CrmForm | null;
+  applicationForm?: CrmForm | null;
+  onSendApplication: (channel: 'whatsapp' | 'sms') => Promise<string>;
+  onSubmitOfflineApplication: (data: Record<string, unknown>) => Promise<void>;
+  onUploadApplicationFile: (file: File) => Promise<unknown>;
 }
 
-type WorkspaceTab = 'activity' | 'notes' | 'tasks';
+type WorkspaceTab = 'application' | 'activity' | 'notes' | 'tasks';
 type PublishedField = { key?: string; label: string; type: string; required?: boolean; options?: string[] };
 type PublishedSection = { section: string; fields: PublishedField[] };
+
+function LeadDetailsDisclosure({ collapsible, children }: { collapsible: boolean; children: React.ReactNode }) {
+  if (!collapsible) return <>{children}</>;
+  return (
+    <details className="group">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold text-[var(--crm-text)] marker:content-none">
+        <span>Application details</span>
+        <ChevronDown size={17} className="text-[var(--crm-muted)] transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="border-t border-[var(--crm-border)] p-5">{children}</div>
+    </details>
+  );
+}
 
 const stageLabel = (value: string | null | undefined) =>
   COLUMNS.find((column) => column.id === value?.replaceAll('_', '-'))?.title
@@ -72,6 +93,14 @@ function recordValue(record: Record<string, unknown> | undefined, key: string) {
   return '';
 }
 
+function rawPublishedValue(lead: Lead, field: PublishedField): unknown {
+  const key = fieldKey(field);
+  const customValues = lead.customFields?.values && typeof lead.customFields.values === 'object'
+    ? lead.customFields.values as Record<string, unknown>
+    : undefined;
+  return customValues?.[key] ?? lead.customFields?.[key] ?? lead.interest?.[key] ?? lead.academic?.[key] ?? publishedValue(lead, field);
+}
+
 function publishedValue(lead: Lead, field: PublishedField) {
   const key = fieldKey(field);
   const customValues = lead.customFields?.values && typeof lead.customFields.values === 'object'
@@ -100,19 +129,27 @@ function publishedValue(lead: Lead, field: PublishedField) {
 }
 
 export default function LeadDetailSidebar({
-  lead, onClose, onApplicationDecision, onUpdate, onShowToast,
-  canUpdateLead, canMoveLeadStage, canHoldLead, canTransferLead, canLogCall, onTransferLead,
+  lead, onClose, onApplicationDecision, onCompleteApplicationReview, onUpdate, onShowToast,
+  canUpdateLead, canMoveLeadStage, canHoldLead, canTransferLead, canLogCall, canDeleteLead,
+  onTransferLead, onDeleteLead,
   stageSubstates, allStageSubstates, onChangeSubstate, leadForm,
+  applicationForm, onSendApplication, onSubmitOfflineApplication, onUploadApplicationFile,
 }: LeadDetailSidebarProps) {
   const [visible, setVisible] = useState(false);
-  const [tab, setTab] = useState<WorkspaceTab>('activity');
+  const [tab, setTab] = useState<WorkspaceTab>(lead.status === 'application' ? 'application' : 'activity');
   const [editing, setEditing] = useState(false);
   const [composer, setComposer] = useState<'note' | 'task' | 'call' | null>(null);
   const [timeline, setTimeline] = useState<CrmLeadTimeline | null>(null);
+  const [receivedSubmission, setReceivedSubmission] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [decisionBusy, setDecisionBusy] = useState<'accept' | 'deny' | 'hold' | null>(null);
   const [substateBusy, setSubstateBusy] = useState(false);
+  const [applicationAction, setApplicationAction] = useState<'send' | 'offline' | null>(null);
+  const [applicationBusy, setApplicationBusy] = useState<'whatsapp' | 'sms' | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [note, setNote] = useState('');
   const [callOutcome, setCallOutcome] = useState('connected');
   const [callNotes, setCallNotes] = useState('');
@@ -129,7 +166,40 @@ export default function LeadDetailSidebar({
   const formValues = useMemo(() => Object.fromEntries(
     formFields.map((field) => [fieldKey(field), publishedValue(lead, field)]),
   ), [formFields, lead]);
+  const receivedApplicationSections = useMemo(() => {
+    const snapshotSchema = receivedSubmission?.formSchema;
+    return snapshotSchema ? publishedSections({ schema: snapshotSchema } as CrmForm) : publishedSections(applicationForm);
+  }, [applicationForm, receivedSubmission]);
+  const receivedApplicationValues = useMemo(() => {
+    const submissionData = receivedSubmission?.data && typeof receivedSubmission.data === 'object'
+      ? receivedSubmission.data as Record<string, unknown>
+      : {};
+    const submittedValues = submissionData.values && typeof submissionData.values === 'object'
+      ? submissionData.values as Record<string, unknown>
+      : submissionData;
+    return Object.fromEntries(receivedApplicationSections.flatMap((section) => section.fields.map((field) => {
+      const key = fieldKey(field);
+      return [key, submittedValues[key] ?? rawPublishedValue(lead, field)];
+    })));
+  }, [lead, receivedApplicationSections, receivedSubmission]);
+  const missingRequiredApplicationFields = useMemo(() => receivedApplicationSections
+    .flatMap((section) => section.fields)
+    .filter((field) => field.required && !applicationValuePresent(receivedApplicationValues[fieldKey(field)])),
+  [receivedApplicationSections, receivedApplicationValues]);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
+
+  const sendApplication = async (channel: 'whatsapp' | 'sms') => {
+    setApplicationBusy(channel);
+    try {
+      const url = await onSendApplication(channel);
+      await navigator.clipboard?.writeText(url).catch(() => undefined);
+      setApplicationAction(null);
+    } catch (reason) {
+      onShowToast(reason instanceof Error ? reason.message : 'Unable to send application');
+    } finally {
+      setApplicationBusy(null);
+    }
+  };
 
   const requestClose = useCallback(() => {
     if (saving || closeTimer.current !== null) return;
@@ -161,6 +231,23 @@ export default function LeadDetailSidebar({
     const timer = window.setTimeout(() => void loadTimeline(), 0);
     return () => window.clearTimeout(timer);
   }, [loadTimeline]);
+
+  useEffect(() => {
+    if (lead.status !== 'application' || !applicationForm?.id) {
+      return;
+    }
+    let cancelled = false;
+    void getCrmFormSubmissions(applicationForm.id)
+      .then((response) => {
+        if (cancelled) return;
+        const match = response.data.find((submission) => String(submission.leadId ?? '') === lead.id) ?? null;
+        setReceivedSubmission(match);
+      })
+      .catch((reason) => {
+        if (!cancelled) onShowToast(reason instanceof Error ? reason.message : 'Unable to load the submitted application');
+      });
+    return () => { cancelled = true; };
+  }, [applicationForm?.id, lead.id, lead.status, onShowToast]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -309,7 +396,7 @@ export default function LeadDetailSidebar({
   return (
     <div className="fixed inset-0 z-[120]">
       <button type="button" aria-label="Close lead details" onClick={requestClose} className={`absolute inset-0 bg-slate-950/40 backdrop-blur-[1px] transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`} />
-      <section role="dialog" aria-modal="true" aria-label={`${lead.name} details`} className={`absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden border-l border-[var(--crm-border)] bg-[var(--crm-surface)] shadow-2xl transition-transform duration-300 ease-out lg:w-1/2 ${visible ? 'translate-x-0' : 'translate-x-full'}`}>
+      <section role="dialog" aria-modal="true" aria-label={`${lead.name} details`} className={`absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden border-l border-[var(--crm-border)] bg-[var(--crm-surface)] shadow-2xl transition-transform duration-300 ease-out ${lead.status === 'application' ? 'lg:w-3/4' : 'lg:w-1/2'} ${visible ? 'translate-x-0' : 'translate-x-full'}`}>
         <header className="flex shrink-0 items-center justify-between border-b border-[var(--crm-border)] bg-[var(--crm-card)] px-6 py-4">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--tenant-primary)] font-bold text-white">{lead.initials}</div>
@@ -318,8 +405,9 @@ export default function LeadDetailSidebar({
           <button type="button" onClick={requestClose} aria-label="Close lead details" className="rounded-xl p-2 text-[var(--crm-muted)] hover:bg-[var(--crm-panel)]"><X size={21} /></button>
         </header>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto bg-[var(--crm-panel)] p-4 xl:grid-cols-[minmax(250px,0.42fr)_minmax(300px,0.58fr)] xl:overflow-hidden">
-          <aside className="overflow-y-auto rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 kanban-scroll-hidden">
+        <div className={`grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto bg-[var(--crm-panel)] p-4 ${lead.status === 'application' ? 'xl:grid-cols-1 xl:overflow-y-auto' : 'xl:grid-cols-[minmax(250px,0.42fr)_minmax(300px,0.58fr)] xl:overflow-hidden'}`}>
+          <aside className={`rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] kanban-scroll-hidden ${lead.status === 'application' ? 'overflow-visible p-0' : 'overflow-y-auto p-5'}`}>
+            <LeadDetailsDisclosure collapsible={lead.status === 'application'}>
             <div className="mb-5 flex items-start justify-between gap-3">
               <div><p className="text-[11px] font-bold uppercase tracking-wider text-[var(--crm-muted)]">Pipeline stage</p><div className="mt-2 flex flex-wrap gap-2"><span className="inline-flex rounded-full bg-[var(--tenant-surface)] px-3 py-1 text-xs font-bold text-[var(--tenant-primary)]">{currentStage}</span>{lead.globalStatus === 'on_hold' && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700"><PauseCircle size={12} />On hold</span>}</div></div>
               <span className="rounded-lg border border-[var(--crm-border)] px-2 py-1 text-[10px] font-semibold text-[var(--crm-muted)]">{lead.assignedTo.name === 'Unassigned' ? 'Unassigned' : 'Owned'}</span>
@@ -344,6 +432,7 @@ export default function LeadDetailSidebar({
               <p className="mt-1.5 flex items-center gap-2 break-all text-xs font-semibold text-[var(--crm-text)]"><UserRound size={14} className="shrink-0" />{lead.assignedTo.name}</p>
             </div>
 
+            {lead.status !== 'application' && (
             <label className="mb-5 block">
               <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[var(--crm-muted)]">Current substage</span>
               <select
@@ -370,10 +459,16 @@ export default function LeadDetailSidebar({
                 </span>
               )}
             </label>
+            )}
 
-            {formSections.length ? (
+            {lead.status === 'application' ? (
+              <div className="grid grid-cols-2 gap-3 border-t border-[var(--crm-border)] pt-4">
+                <Detail label="Received" value={lead.createdAt ? activityDate(lead.createdAt) : 'Not available'} />
+                <Detail label="Last updated" value={lead.lastContact} />
+              </div>
+            ) : formSections.length ? (
               <div className="space-y-5">
-                <div><p className="text-[10px] font-bold uppercase tracking-wider text-[var(--tenant-primary)]">Published form</p><p className="mt-1 truncate text-sm font-bold text-[var(--crm-text)]">{leadForm?.name}</p></div>
+                {lead.status !== 'application' && <div><p className="text-[10px] font-bold uppercase tracking-wider text-[var(--tenant-primary)]">Published form</p><p className="mt-1 truncate text-sm font-bold text-[var(--crm-text)]">{leadForm?.name}</p></div>}
                 {formSections.map((section) => (
                   <section key={section.section} className="space-y-3 border-t border-[var(--crm-border)] pt-4 first:border-0 first:pt-0">
                     <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--crm-muted)]">{section.section}</h3>
@@ -392,11 +487,13 @@ export default function LeadDetailSidebar({
                 No published CRM lead capture form is available. Publish a form to define the fields shown on every lead card.
               </div>
             )}
+            </LeadDetailsDisclosure>
           </aside>
 
           <main className="flex min-h-[520px] flex-col overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)]">
             <nav className="flex shrink-0 gap-1 border-b border-[var(--crm-border)] px-4 pt-3">
               {([
+                ...(lead.status === 'application' ? [['application', 'Application received', FileCheck2, receivedApplicationSections.length] as const] : []),
                 ['activity', 'Activity', CalendarClock, activity.length],
                 ['notes', 'Notes', FileText, notes.length],
                 ['tasks', 'Tasks', ClipboardCheck, tasks.length],
@@ -406,7 +503,9 @@ export default function LeadDetailSidebar({
             </nav>
 
             <div className="flex-1 overflow-y-auto p-6 kanban-scroll-hidden">
-              {loading ? <Empty kind="loading" text="Loading lead history…" /> : tab === 'activity' ? (
+              {tab === 'application' ? (
+                <ReceivedApplicationReview sections={receivedApplicationSections} values={receivedApplicationValues} />
+              ) : loading ? <Empty kind="loading" text="Loading lead history…" /> : tab === 'activity' ? (
                 activity.length ? <div className="space-y-1">{activity.map((item) => <TimelineRow key={item.id} title={item.title} detail={item.detail} at={item.at} kind={item.icon} />)}</div> : <Empty kind="activity" text="No activity has been recorded for this lead yet." />
               ) : tab === 'notes' ? (
                 notes.length ? <div className="space-y-3">{notes.map((item) => <article key={item.id} className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-surface)] p-4"><p className="text-sm leading-6 text-[var(--crm-text)]">{noteText(item.content)}</p><p className="mt-2 text-[11px] text-[var(--crm-muted)]">{activityDate(item.createdAt)}</p></article>)}</div> : <Empty kind="notes" text="No notes yet. Add context the next person can act on." />
@@ -470,19 +569,45 @@ export default function LeadDetailSidebar({
           </ComposerDialog>
         )}
 
+        {applicationAction === 'send' && (
+          <ComposerDialog
+            title="Send application"
+            description="Send the published form and a one-time verification code to this applicant."
+            icon={<Send size={18} />}
+            onCancel={() => setApplicationAction(null)}
+            onSave={() => void sendApplication('whatsapp')}
+            saving={applicationBusy !== null}
+            saveDisabled={!applicationForm}
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button type="button" disabled={applicationBusy !== null || !applicationForm} onClick={() => void sendApplication('whatsapp')} className="rounded-lg border border-[var(--crm-border)] p-4 text-left hover:bg-[var(--crm-panel)] disabled:opacity-40"><span className="block text-sm font-bold">WhatsApp</span><span className="mt-1 block text-xs text-[var(--crm-muted)]">{lead.whatsapp || lead.phone || 'No number available'}</span></button>
+              <button type="button" disabled={applicationBusy !== null || !applicationForm} onClick={() => void sendApplication('sms')} className="rounded-lg border border-[var(--crm-border)] p-4 text-left hover:bg-[var(--crm-panel)] disabled:opacity-40"><span className="block text-sm font-bold">SMS</span><span className="mt-1 block text-xs text-[var(--crm-muted)]">{lead.phone || 'No number available'}</span></button>
+            </div>
+          </ComposerDialog>
+        )}
+
+        {applicationAction === 'offline' && applicationForm && (
+          <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Fill application for applicant">
+            <section className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg bg-white text-black shadow-2xl">
+              <header className="flex items-center justify-between border-b border-neutral-200 px-5 py-4"><div><h2 className="font-bold">{applicationForm.name}</h2><p className="text-xs text-neutral-500">Offline entry for {lead.name}</p></div><button type="button" onClick={() => setApplicationAction(null)} className="p-2" aria-label="Close"><X size={19} /></button></header>
+              <div className="overflow-y-auto p-5"><PublishedApplicationForm schema={applicationForm.schema} initialValues={{ name: lead.name, email: lead.email, phone: lead.phone, whatsapp: lead.whatsapp }} submitLabel="Submit application" onUpload={onUploadApplicationFile} onSubmit={onSubmitOfflineApplication} /></div>
+            </section>
+          </div>
+        )}
+
         {lead.status === 'application-status' && !editing && (
           <section aria-label="Application decision" className="shrink-0 border-t border-[var(--crm-border)] bg-[var(--crm-card)] px-6 py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-[var(--crm-text)]">Application decision</p>
-                <p className="mt-1 text-xs text-[var(--crm-muted)]">Accept advances to Offer / Status, Deny archives the lead, and Hold keeps it here.</p>
+                <p className="text-sm font-bold text-[var(--crm-text)]">Management decision</p>
+                <p className="mt-1 text-xs text-[var(--crm-muted)]">Approve starts Admission Desk onboarding. Rejected and held applications remain available in the outcome register.</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button type="button" disabled={!canMoveLeadStage || decisionBusy !== null} onClick={() => void decideApplication('accept')} className="inline-flex min-w-24 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
-                  {decisionBusy === 'accept' ? <LoaderCircle size={15} className="animate-spin" /> : <Check size={16} />}Accept
+                  {decisionBusy === 'accept' ? <LoaderCircle size={15} className="animate-spin" /> : <Check size={16} />}Approve
                 </button>
                 <button type="button" disabled={!canMoveLeadStage || decisionBusy !== null} onClick={() => void decideApplication('deny')} className="inline-flex min-w-24 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-40">
-                  {decisionBusy === 'deny' ? <LoaderCircle size={15} className="animate-spin" /> : <Archive size={16} />}Deny
+                  {decisionBusy === 'deny' ? <LoaderCircle size={15} className="animate-spin" /> : <Archive size={16} />}Reject
                 </button>
                 <button type="button" disabled={!canHoldLead || decisionBusy !== null || lead.globalStatus === 'on_hold'} onClick={() => void decideApplication('hold')} className="inline-flex min-w-24 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40">
                   {decisionBusy === 'hold' ? <LoaderCircle size={15} className="animate-spin" /> : <PauseCircle size={16} />}{lead.globalStatus === 'on_hold' ? 'On hold' : 'Hold'}
@@ -493,14 +618,110 @@ export default function LeadDetailSidebar({
         )}
 
         <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-[var(--crm-border)] bg-[var(--crm-card)] px-6 py-4">
-          {editing ? <button type="button" onClick={saveEdits} className="inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white"><Save size={15} />Save changes</button> : <button type="button" disabled={!canUpdateLead || !formSections.length} onClick={() => { setEditValues(formValues); setEditing(true); }} className="inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"><Pencil size={15} />Edit</button>}
-          <button type="button" disabled={!canUpdateLead} onClick={() => { setComposer('note'); setTab('notes'); }} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><MessageSquare size={15} />Add note</button>
-          <button type="button" disabled={!canLogCall} onClick={() => { setComposer('call'); setTab('activity'); }} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><Phone size={15} />Log call</button>
-          <button type="button" disabled={!canUpdateLead} onClick={() => { setComposer('task'); setTab('tasks'); }} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><Plus size={15} />Add task</button>
-          <button type="button" disabled={!canTransferLead} onClick={() => onTransferLead(lead)} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><ArrowRightLeft size={15} />Transfer card</button>
+          {lead.status === 'qualified' && <><button type="button" disabled={!applicationForm} onClick={() => setApplicationAction('send')} className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"><Send size={15} />Send application</button><button type="button" disabled={!applicationForm} onClick={() => setApplicationAction('offline')} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><FileText size={15} />Fill offline</button></>}
+          {lead.status !== 'application' && (editing ? <button type="button" onClick={saveEdits} className="inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white"><Save size={15} />Save changes</button> : <button type="button" disabled={!canUpdateLead || !formSections.length} onClick={() => { setEditValues(formValues); setEditing(true); }} className="inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"><Pencil size={15} />Edit</button>)}
+          {lead.status === 'application' && (
+            <button
+              type="button"
+              disabled={!canMoveLeadStage || missingRequiredApplicationFields.length > 0}
+              onClick={() => void onCompleteApplicationReview(lead)}
+              aria-label="Complete review"
+              title={missingRequiredApplicationFields.length ? `${missingRequiredApplicationFields.length} required field(s) are missing` : 'Complete review'}
+              className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <FileCheck2 size={18} />
+            </button>
+          )}
+          <button type="button" disabled={!canUpdateLead} onClick={() => { setComposer('note'); setTab('notes'); }} aria-label="Add note" title="Add note" className="grid h-11 w-11 place-items-center rounded-xl border border-[var(--crm-border)] hover:bg-[var(--crm-panel)] disabled:opacity-40"><MessageSquare size={18} /></button>
+          <button type="button" disabled={!canLogCall} onClick={() => { setComposer('call'); setTab('activity'); }} aria-label="Log call" title="Log call" className="grid h-11 w-11 place-items-center rounded-xl border border-[var(--crm-border)] hover:bg-[var(--crm-panel)] disabled:opacity-40"><Phone size={18} /></button>
+          <button type="button" disabled={!canUpdateLead} onClick={() => { setComposer('task'); setTab('tasks'); }} aria-label="Add task" title="Add task" className="grid h-11 w-11 place-items-center rounded-xl border border-[var(--crm-border)] hover:bg-[var(--crm-panel)] disabled:opacity-40"><Plus size={18} /></button>
+          <button type="button" disabled={!canTransferLead} onClick={() => onTransferLead(lead)} aria-label="Transfer card" title="Transfer card" className="grid h-11 w-11 place-items-center rounded-xl border border-[var(--crm-border)] hover:bg-[var(--crm-panel)] disabled:opacity-40"><ArrowRightLeft size={18} /></button>
+          {canDeleteLead && <button type="button" onClick={() => setDeleteOpen(true)} aria-label="Delete lead" title="Delete lead" className="grid h-11 w-11 place-items-center rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50"><Trash2 size={18} /></button>}
           <button type="button" onClick={requestClose} className="ml-auto rounded-xl border border-[var(--crm-border)] px-5 py-2.5 text-sm font-semibold hover:bg-[var(--crm-panel)]">Close</button>
         </footer>
+
+        {deleteOpen && (
+          <div className="fixed inset-0 z-[180] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label={`Delete ${lead.name}`}>
+            <section className="w-full max-w-md overflow-hidden rounded-xl bg-white text-black shadow-2xl">
+              <header className="flex items-start gap-3 border-b border-neutral-200 px-5 py-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600"><Trash2 size={19} /></span>
+                <div><h2 className="font-bold">Delete {lead.name}?</h2><p className="mt-1 text-xs leading-5 text-neutral-500">The lead will leave the pipeline. The actor, reason, timestamp, and lead snapshot remain in the audit log.</p></div>
+              </header>
+              <div className="p-5">
+                <label className="block text-xs font-semibold text-neutral-700">Deletion reason<textarea autoFocus rows={3} maxLength={500} value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} placeholder="Why is this lead being deleted?" className="mt-2 w-full resize-none rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-rose-500" /></label>
+              </div>
+              <footer className="flex justify-end gap-2 border-t border-neutral-200 bg-neutral-50 px-5 py-4">
+                <button type="button" disabled={deleteBusy} onClick={() => { setDeleteOpen(false); setDeleteReason(''); }} className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold">Cancel</button>
+                <button type="button" disabled={deleteBusy || deleteReason.trim().length < 3} onClick={async () => { setDeleteBusy(true); try { await onDeleteLead(lead, deleteReason.trim()); } finally { setDeleteBusy(false); } }} className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40">{deleteBusy ? <LoaderCircle size={15} className="animate-spin" /> : <Trash2 size={15} />}Delete lead</button>
+              </footer>
+            </section>
+          </div>
+        )}
       </section>
+    </div>
+  );
+}
+
+function reviewValue(value: unknown) {
+  if (Array.isArray(value)) return value.map(String).join(', ');
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return String(record.originalFilename ?? record.fileName ?? record.name ?? record.secureUrl ?? record.url ?? 'Uploaded document');
+  }
+  return String(value ?? '').trim();
+}
+
+function reviewFileUrl(value: unknown) {
+  if (typeof value === 'string' && /^https?:\/\//.test(value)) return value;
+  if (!value || typeof value !== 'object') return '';
+  const record = value as Record<string, unknown>;
+  const url = record.secureUrl ?? record.secure_url ?? record.url;
+  return typeof url === 'string' ? url : '';
+}
+
+function ReceivedApplicationReview({ sections, values }: { sections: PublishedSection[]; values: Record<string, unknown> }) {
+  const [activeSection, setActiveSection] = useState(0);
+  const section = sections[activeSection];
+  const allFields = sections.flatMap((item) => item.fields);
+  const requiredFields = allFields.filter((field) => field.required);
+  const suppliedRequired = requiredFields.filter((field) => applicationValuePresent(values[fieldKey(field)])).length;
+
+  if (!sections.length) return (
+    <div className="flex min-h-80 flex-col items-center justify-center text-center">
+      <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-700"><FileCheck2 size={21} /></span>
+      <h3 className="font-bold text-[var(--crm-text)]">Application schema unavailable</h3>
+      <p className="mt-2 max-w-md text-sm leading-6 text-[var(--crm-muted)]">The submission was received, but its published application form is not available for structured review.</p>
+    </div>
+  );
+
+  return (
+    <div className="min-h-full">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--crm-border)] pb-5">
+        <div><p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Received application</p><h3 className="mt-1 text-lg font-bold text-[var(--crm-text)]">Review submitted information</h3><p className="mt-1 text-xs text-[var(--crm-muted)]">Check each section and supporting document before moving the application forward.</p></div>
+        <div className="text-right"><p className="text-sm font-bold text-[var(--crm-text)]">{suppliedRequired}/{requiredFields.length}</p><p className="text-[10px] uppercase tracking-wide text-[var(--crm-muted)]">required fields received</p></div>
+      </header>
+
+      <div className="grid gap-6 py-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <nav aria-label="Submitted application sections" className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
+          {sections.map((item, index) => {
+            const required = item.fields.filter((field) => field.required);
+            const complete = required.filter((field) => applicationValuePresent(values[fieldKey(field)])).length;
+            return <button key={`${item.section}-${index}`} type="button" onClick={() => setActiveSection(index)} className={`flex min-w-48 items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors lg:min-w-0 ${activeSection === index ? 'bg-[var(--tenant-primary)] text-white' : 'bg-[var(--crm-panel)] text-[var(--crm-text)] hover:bg-[var(--tenant-surface)]'}`}><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${activeSection === index ? 'bg-white/15' : 'bg-[var(--crm-card)]'}`}>{index + 1}</span><span className="min-w-0 flex-1"><strong className="block truncate text-xs">{item.section}</strong><span className={`mt-0.5 block text-[10px] ${activeSection === index ? 'text-white/70' : 'text-[var(--crm-muted)]'}`}>{required.length ? `${complete}/${required.length} required` : `${item.fields.length} fields`}</span></span></button>;
+          })}
+        </nav>
+
+        <section className="min-w-0">
+          <div className="flex items-center justify-between gap-3 border-b border-[var(--crm-border)] pb-3"><div><p className="text-[10px] font-bold uppercase tracking-widest text-[var(--crm-muted)]">Section {activeSection + 1} of {sections.length}</p><h4 className="mt-1 font-bold text-[var(--crm-text)]">{section.section}</h4></div><FileCheck2 size={20} className="text-[var(--tenant-primary)]" /></div>
+          <dl className="grid gap-x-8 sm:grid-cols-2">
+            {section.fields.map((field) => {
+              const key = fieldKey(field); const value = values[key]; const shown = reviewValue(value); const fileUrl = reviewFileUrl(value); const missing = !applicationValuePresent(value);
+              return <div key={key} className={`border-b border-[var(--crm-border)] py-4 ${field.type.toLowerCase().includes('address') || field.type.toLowerCase().includes('paragraph') ? 'sm:col-span-2' : ''}`}><dt className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[var(--crm-muted)]">{field.label}{field.required && <span className="text-rose-500">*</span>}</dt><dd className={`mt-1.5 break-words text-sm font-medium leading-6 ${missing ? 'text-amber-700' : 'text-[var(--crm-text)]'}`}>{fileUrl ? <a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 font-semibold text-[var(--tenant-primary)] hover:underline"><FileText size={15} />{shown}</a> : shown || 'Not provided'}</dd></div>;
+            })}
+          </dl>
+          <footer className="mt-5 flex items-center justify-between gap-3"><button type="button" disabled={activeSection === 0} onClick={() => setActiveSection((current) => Math.max(0, current - 1))} className="inline-flex items-center gap-2 rounded-lg border border-[var(--crm-border)] px-3 py-2 text-xs font-semibold disabled:opacity-35"><ArrowLeft size={14} />Previous</button><button type="button" disabled={activeSection === sections.length - 1} onClick={() => setActiveSection((current) => Math.min(sections.length - 1, current + 1))} className="inline-flex items-center gap-2 rounded-lg bg-[var(--tenant-primary)] px-3 py-2 text-xs font-bold text-white disabled:opacity-35">Next section<ArrowRight size={14} /></button></footer>
+        </section>
+      </div>
     </div>
   );
 }

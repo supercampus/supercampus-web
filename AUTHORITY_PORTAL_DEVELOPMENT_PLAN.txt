@@ -1,0 +1,255 @@
+SUPERCAMPUS AUTHORITY AND PORTAL DEVELOPMENT PLAN
+=================================================
+
+Decision
+--------
+A portal is a stable experience for a category of user. A role is a configurable
+authority bundle inside that portal. Do not create a separate frontend application
+for every college job title.
+
+The canonical portal families are:
+
+1. Student Portal
+   Personal academics and campus services. Scope is always own data.
+
+2. Parent Portal
+   Linked-student summaries, notices, payments and approvals. Scope is limited to
+   explicitly linked students.
+
+3. Staff Operations Portal
+   One permission-driven workspace shared by Principal, HOD, Accountant,
+   Admissions Officer, Faculty, Verifier, Librarian, Warden and similar roles.
+   Navigation, dashboards, actions and data are derived from effective permissions.
+
+4. Tenant Admin Portal
+   College-level configuration for users, roles, branding, forms, workflows,
+   integrations and audit. Tenant Admin is not a platform operator.
+
+5. Platform Control Portal
+   A separate internal SuperCampus application for Platform SuperAdmins only.
+   It operates across tenants and must never be assignable by a college administrator.
+
+Authority Model
+---------------
+Platform SuperAdmin  -> Platform Control Portal -> cross-tenant scope
+Tenant Admin         -> Tenant Admin Portal      -> one institution
+Principal            -> Staff Operations Portal -> institution scope
+Management           -> Staff Operations Portal -> sensitive management approvals
+Academic Administrator -> Staff Operations Portal -> institution academic configuration
+HOD                  -> Staff Operations Portal -> department scope
+Accountant           -> Staff Operations Portal -> finance permissions, institution scope
+Admissions Officer   -> Staff Operations Portal -> assigned records or admissions team
+Faculty              -> Staff Operations Portal -> assigned classes and subjects
+Student              -> Student Portal          -> own data
+Parent/Guardian      -> Parent Portal           -> linked students only
+
+Confirmed Governance Decisions (17 August 2026)
+------------------------------------------------
+- Principal approves fee decisions (excluding refunds), result publication and
+  student suspension. Principal does not approve admissions.
+- Accountant prepares finance operations and refund requests but cannot approve
+  or issue refunds. Final refund approval belongs only to Management.
+- HOD sees the assigned department plus cross-department subjects taught by staff
+  belonging to that department.
+- Principal or Academic Administrator assigns departments to HODs and classes or
+  subjects to Faculty. Principal is the usual operational owner.
+- Sensitive authority checks require both an explicit permission and the allowed
+  governance role. Tenant configuration cannot bypass separation of duties.
+
+The Principal, HOD and Accountant may receive different landing dashboards, but
+they use the same Staff Operations application and component library. A dashboard
+is a role-aware arrangement of permitted widgets, not a separate portal.
+
+Access Evaluation
+-----------------
+Effective access is evaluated in this order:
+
+1. Account must be active and belong to the tenant.
+2. Portal family must match the route being opened.
+3. Role grants provide module, feature and action permissions.
+4. Direct user grants may add or deny exceptional access.
+5. Scope limits every query: own, assigned, department, institution or all.
+6. Backend authorization is authoritative; hiding UI is not security.
+7. Sensitive writes create immutable audit events.
+
+Avoid role-name checks such as "if principal" in domain features. Check explicit
+permissions and scope. Role templates are defaults that tenant admins may copy and
+adjust without changing portal code.
+
+Development Phases
+------------------
+PHASE 0 - Preserve and Stabilize
+- Keep current CRM, Application Desk, forms, branding and mobile sync contracts.
+- Add contract tests before changing shared navigation, authentication or RBAC.
+- Remove preview data from live operational paths.
+- Standardize loading, empty, denied, timeout and retry states.
+
+PHASE 1 - Authority Foundation
+- Publish canonical role templates in Access Control.
+- Add department and assigned-record constraints to grants.
+- Resolve landing dashboard from portal family and effective permissions.
+- Add access-preview tooling: "View portal as this role" without impersonation.
+- Add permission-change and role-assignment audit events.
+
+PHASE 2 - Student 360 Master
+- Make Student Master the canonical tenant student record.
+- Add profile sections: identity, contacts, guardians, academics, documents,
+  welfare, accommodation and campus services.
+- Add completeness rules and a readiness score based on tenant-required fields.
+- Add configurable lifecycle statuses with reasons and full history.
+- Link admission onboarding idempotently to exactly one Student Master record.
+
+PHASE 3 - Academic Operations
+- Programme, department, batch, section, subject and curriculum configuration.
+- Timetable allocation linking student, staff, room and subject.
+- Student schedule and staff teaching schedule from the same allocation records.
+- Attendance exceptions, leave workflow, marks, results and backlog processing.
+- Department-scoped HOD dashboards and assigned-class Faculty dashboards.
+
+PHASE 4 - Finance Operations
+- Fee structures, student ledgers, invoices, collections and receipts.
+- Payment allocation, bank/payment-mode reconciliation and unadjusted balances.
+- Scholarships, concessions, refunds and approval rules.
+- Outstanding-fee lists with controlled reminder delivery.
+- Accountant dashboard with finance-only permissions and audit trails.
+
+PHASE 5 - Reports and Operational Intelligence
+- Permission-gated report catalogue and saved report filters.
+- Institution, department and assigned scopes applied by the backend.
+- Principal dashboard for institution health and approvals.
+- HOD dashboard for department academics, attendance and student risk.
+- Accountant dashboard for collections, ageing and reconciliation.
+- Drill-down from every metric to the underlying authorised records.
+
+PHASE 6 - Platform Control Portal
+- Tenant provisioning, suspension and domain management.
+- Subscription and usage controls.
+- Platform health, migration status and integration health.
+- Support tooling with explicit, time-limited audited tenant access.
+- Global security and audit review.
+- No college operational data access by default.
+
+Cross-Cutting Capabilities
+--------------------------
+- Reusable bulk import: template, validate, preview, commit, row errors and audit.
+- Reusable document/media service with tenant ownership and malware validation.
+- Notifications with in-app, email, SMS and WhatsApp channels.
+- Idempotency for imports, payments, onboarding and external callbacks.
+- Immutable audit log for deletion, access, finance, results and status changes.
+- Export controls and masking for sensitive personal information.
+
+First Deliverable Order
+-----------------------
+1. Complete permission catalog and scoped query enforcement.
+2. Role templates and role-aware dashboard composition.
+3. Student 360 data model and read-only profile.
+4. Student lifecycle status and completeness engine.
+5. Academic structures and timetable allocator.
+6. Finance ledger and reconciliation foundation.
+7. Reports catalogue and audit explorer.
+8. Platform Control Portal.
+
+Current Foundation Status (17 August 2026)
+------------------------------------------
+Completed:
+- Canonical tenant role templates for Tenant Admin, Principal, HOD, Accountant,
+  Admissions Officer, Faculty, Student and Parent/Guardian.
+- Platform SuperAdmin is explicitly excluded from tenant role creation.
+- Role templates prefill portal, team and default scope but never auto-grant
+  module or action permissions.
+- Effective portal-family routing for student, staff and tenant-admin sessions,
+  with a compatibility fallback for legacy identities.
+- Full scope contract support for own, assigned, department, institution and all.
+- Confirmed governance policy for Principal, Management, Accountant, HOD and
+  Academic Administrator, with additive permission catalog definitions and no
+  automatic grants.
+- Canonical tenant-isolated subjects and section-level subject offerings linked
+  to the existing academic year, term, department, programme, batch and section
+  records.
+- Governed HOD-to-department and Faculty-to-subject-offering assignments with
+  removal history in the academic assignment audit log.
+- One scoped academic context API: Students resolve offerings from active
+  section enrolment, Faculty from teaching assignments, HODs from their assigned
+  departments plus cross-department subjects taught by their staff, and
+  institution authorities from their explicit institution/all grant.
+- Typed admin-web API contract for subject, offering, HOD and Faculty assignment
+  operations. Write access requires both the permission and the Principal or
+  Academic Administrator governance role.
+- Tenant-configured timetable calendars, working days, instructional periods,
+  lunch and break slots. The initial Anna University 2025 policy preset uses a
+  configurable Faculty daily load of 6 and a configurable consecutive-period
+  limit of 3; these are tenant policy values, not hard-coded regulations.
+- Tenant room and space inventory with department ownership, room type,
+  capacity, features and active status for allocator conflict checks.
+- Cross-section elective groups with explicit section and Student membership,
+  so a shared elective remains traceable and appears in every affected schedule.
+- Draft, published, superseded and archived timetable versions, with scheduled
+  entries linked to subject offerings, Faculty assignments, rooms and optional
+  elective groups.
+- Publication validation for Faculty, section, room, capacity, daily workload
+  and consecutive-period conflicts before a version can become authoritative.
+- One scoped timetable context API: Students receive their active section and
+  elective schedule; Faculty receive assigned and approved-substitution classes;
+  HODs receive their department plus cross-department teaching by their Faculty;
+  institution authorities receive institution scope only when explicitly granted.
+- Digital Faculty substitution requests with original-Faculty and replacement-
+  Faculty acknowledgements, Principal-only approval or rejection, and a complete
+  immutable event trail corresponding to the existing signed paper process.
+- Monotonic timetable revision events and a changes endpoint for live polling;
+  web and mobile clients can refresh only when a newer revision is available.
+- Typed admin-web API contract for configurations, slots, rooms, elective groups,
+  timetable versions, entries, publication, scoped context and substitutions.
+
+MEC timetable baseline extracted from Odd Sem Time Table 2026-27
+----------------------------------------------------------------
+- Scope: II year / semester III; Monday-Friday; 7 instructional periods per
+  day and 35 periods per section per week.
+- Periods: 08:30-09:20, 09:20-10:10, break 10:10-10:30,
+  10:30-11:20, 11:20-12:10, lunch 12:10-13:00, 13:00-13:50,
+  13:50-14:40 and 14:40-15:30.
+- Sections represented: CSE, CSE Cyber Security, AI & ML, AI & DS, IT and
+  CSBS. Faculty are shared across departments, so their conflicts and total
+  load must be calculated institution-wide.
+- CSE and CSE Cyber Security weekly workload: DM 5, OS 6, OOSE 4, DS 7,
+  JP 7, EC-II 3, Skill Development / Club Activity 2 and Library 1.
+- AI & ML weekly workload: DM 5, OOSE 4, DS 7, JP 7, OS 6, EC-II 3,
+  Skill Development 2 and Library 1.
+- AI & DS weekly workload: DM 5, DS 7, JP 7, EDA 5, OS 5, EC-II 3,
+  Skill Development / Club Activity 2 and Library 1.
+- IT weekly workload: DM 5, COA 4, DS 7, OOP 7, WT 6, EC-II 3,
+  Skill Development 2 and Library 1.
+- CSBS weekly workload: DM 6, EA&BS 6, DS 8, JP 8, EC-II 3,
+  Skill Development / Club Activity 2 and Library 2.
+- Laboratory sessions use explicit 2- or 3-period consecutive blocks. The DOCX
+  confirms 4 theory + 3 lab for seven-period integrated subjects; 4 + 2 for
+  six-period OS/WT; 3 + 2 for the five-period AI&DS EDA/OS offerings; and
+  5 + 3 for the eight-period CSBS DS/JP offerings.
+- Initial MEC space inventory: 6 department classrooms owned respectively by
+  AIDS, CSBS, CSE, AIML, CYBER and IT; 2 tutorial rooms,
+  2 computer labs, 1 chemistry lab, 1 physics lab, 1 workspace/workshop lab,
+  1 library, 2 staff rooms and 2 seminar halls (18 spaces total). The workshop
+  belongs to Mechanical. Capacities and campus ownership remain required tenant
+  data before the inventory can be imported.
+- Publication must reject incorrect weekly offering totals, incomplete or
+  non-consecutive blocks, wrong room types, room/section/Faculty collisions,
+  room-capacity failures, Faculty daily limits and Faculty consecutive limits.
+
+Next implementation slice:
+- Timetable allocator workspace for configuration, room matrix, draft generation,
+  conflict resolution, manual adjustment, preview and publication.
+- Student daily schedule and Faculty teaching schedule UI projections from the
+  same published timetable records.
+- Substitution request, dual acknowledgement and Principal decision interfaces.
+- Background revision polling in the web and mobile clients, with an upgrade path
+  to server-sent events when deployment scale requires persistent connections.
+
+Definition of Done for Every Module
+-----------------------------------
+- Backend permission and scope are enforced.
+- Tenant isolation has an automated test.
+- Loading, empty, denied and error states are implemented.
+- Bulk operations are idempotent where relevant.
+- Sensitive actions create audit records.
+- Navigation appears only with effective read permission.
+- Existing CRM, Application Desk and mobile contracts continue to pass.
+- Desktop and mobile layouts are visually verified.

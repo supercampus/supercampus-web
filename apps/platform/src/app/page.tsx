@@ -19,11 +19,14 @@ import DocumentsPage from '@/components/modules/DocumentsPage';
 import ProfilePage from '@/components/modules/ProfilePage';
 import QRPage from '@/components/modules/QRPage';
 import LoginPage from '@/components/auth/LoginPage';
+import { portalDestination } from '@/lib/portal-access';
 
 function DashboardContent() {
   const { state, authStatus, student } = useApp();
-  const studentRoles = new Set(['student', 'prospective_student']);
-  const shouldOpenStaffWorkspace = authStatus === 'authenticated' && Boolean(student?.role) && !studentRoles.has(student!.role.toLowerCase());
+  const destination = authStatus === 'authenticated' && student
+    ? portalDestination(student)
+    : null;
+  const shouldOpenStaffWorkspace = destination === 'staff';
 
   useEffect(() => {
     if (shouldOpenStaffWorkspace) {
@@ -37,6 +40,9 @@ function DashboardContent() {
   if (authStatus === 'unauthenticated') return <LoginPage />;
   if (shouldOpenStaffWorkspace) {
     return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">SC</div><span>Opening your staff workspace...</span></div>;
+  }
+  if (destination && destination !== 'student') {
+    return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">SC</div><span>This portal is not available in this app yet.</span></div>;
   }
 
   const renderActiveModule = () => {

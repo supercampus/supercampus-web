@@ -62,6 +62,7 @@ export interface Lead {
   offerDecision?: OfferDecision;
   documents: { uploaded: number; required: number; items?: LeadDocument[] };
   communicationCount: number;
+  priority?: 'low' | 'medium' | 'high' | 'urgent' | string;
   nextFollowUp: string | null;
   lastContact: string;
   parent: { name: string; phone: string; relation: string };

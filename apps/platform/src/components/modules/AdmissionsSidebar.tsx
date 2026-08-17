@@ -98,14 +98,12 @@ export function AdmissionsSidebar({
     : null;
   const permissionNavigation = availableStaffNavigation(permissions);
   const allowedNavigation = configuredSections
-    ? [
-        ...configuredSections.keys(),
-        // Compatibility for tenants whose server-driven navigation rows predate
-        // Admission Desk. The API still authorizes every operation independently.
-        ...(permissionNavigation.includes('application-desk') && !configuredSections.has('application-desk')
-          ? ['application-desk' as const]
-          : []),
-      ] as StaffNavigationId[]
+    ? Array.from(new Set<StaffNavigationId>([
+        ...(Array.from(configuredSections.keys()) as StaffNavigationId[]),
+        // Permission-derived workspaces remain reachable when an older tenant
+        // navigation document has not yet registered a newly shipped module.
+        ...permissionNavigation,
+      ]))
     : permissionNavigation;
 
   /** Keep a group whose header is permitted, or that still has a usable child. */

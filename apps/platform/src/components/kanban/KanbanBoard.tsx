@@ -19,13 +19,16 @@ import type { Column, Lead } from '@/lib/kanban/kanban-data';
 import { COLUMNS, COLUMN_IDS } from '@/lib/kanban/kanban-data';
 import { getColumnTitle } from '@/lib/kanban/kanban-actions';
 import type { CrmForm, CrmPipelineTransferCandidate, CrmStageCatalog } from '@/lib/crm-api';
-import { getCrmPipelineTransferCandidates, getCrmStages, getPublishedCrmLeadCaptureForm, holdCrmLead, moveCrmLead, transferCrmLead, updateCrmLead } from '@/lib/crm-api';
+import { createApplicationInvitation, deleteCrmLead, getCrmPipelineTransferCandidates, getCrmStages, getPublishedCrmFormByType, getPublishedCrmLeadCaptureForm, holdCrmLead, moveCrmLead, submitCrmForm, transferCrmLead, updateCrmLead } from '@/lib/crm-api';
 import KanbanColumn from './KanbanColumn';
+import OutcomeRegisterColumn from './OutcomeRegisterColumn';
 import LeadCard from './LeadCard';
 import LeadDetailSidebar from './LeadDetailSidebar';
 import MoveLogModal from './MoveLogModal';
+import ActivityFeed from './ActivityFeed';
 import { ArrowRightLeft, ChevronDown, Filter, LoaderCircle, Search, X } from 'lucide-react';
 import { availableCurrentStageSubstates } from '@/lib/crm-catalog';
+import { uploadMedia } from '@/lib/api';
 
 interface KanbanBoardProps {
   leads: Lead[];
@@ -39,6 +42,7 @@ interface KanbanBoardProps {
   canLogCalls: boolean;
   canMoveLeadBackward: boolean;
   canTriggerErpHandoff: boolean;
+  canDeleteLeads: boolean;
   onCreateLead?: (column: Column) => void;
   onShowToast: (msg: string) => void;
   onRefresh: () => void;
@@ -56,6 +60,7 @@ export default function KanbanBoard({
   canLogCalls,
   canMoveLeadBackward,
   canTriggerErpHandoff,
+  canDeleteLeads,
   onCreateLead,
   onShowToast,
   onRefresh,
@@ -78,6 +83,7 @@ export default function KanbanBoard({
   // The lead editor is built from whatever the administrator published, so it is
   // fetched once here and handed to the detail sidebar.
   const [leadForm, setLeadForm] = useState<CrmForm | null>(null);
+  const [applicationForm, setApplicationForm] = useState<CrmForm | null>(null);
   const [stageCatalog, setStageCatalog] = useState<CrmStageCatalog[]>([]);
 
   // Realtime events replace the authoritative card in `leads`. Render the open
@@ -91,12 +97,14 @@ export default function KanbanBoard({
     let cancelled = false;
     (async () => {
       try {
-        const [formResponse, stagesResponse] = await Promise.all([
+        const [formResponse, applicationResponse, stagesResponse] = await Promise.all([
           getPublishedCrmLeadCaptureForm().catch(() => null),
+          getPublishedCrmFormByType('application').catch(() => null),
           getCrmStages(),
         ]);
         if (!cancelled) {
           setLeadForm(formResponse?.data ?? null);
+          setApplicationForm(applicationResponse?.data ?? null);
           setStageCatalog(stagesResponse.data);
         }
       } catch {
@@ -124,13 +132,9 @@ export default function KanbanBoard({
     }),
   };
 
-  // Group leads by column
-  const leadsByColumn = useMemo(() => {
-    const grouped: Record<string, Lead[]> = {};
-    COLUMN_IDS.forEach((id) => { grouped[id] = []; });
-
+  const visibleLeads = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    leads.forEach((lead) => {
+    const filtered = leads.filter((lead) => {
       if (searchQuery) {
         const matches =
           lead.name.toLowerCase().includes(query) ||
@@ -138,22 +142,30 @@ export default function KanbanBoard({
           lead.phone.includes(query) ||
           lead.course.toLowerCase().includes(query) ||
           lead.city.toLowerCase().includes(query);
-        if (!matches) return;
+        if (!matches) return false;
       }
-      if (filterSource && lead.source !== filterSource) return;
-      if (filterCourse && lead.course !== filterCourse) return;
-
-      if (grouped[lead.status]) grouped[lead.status].push(lead);
+      if (filterSource && lead.source !== filterSource) return false;
+      if (filterCourse && lead.course !== filterCourse) return false;
+      return true;
     });
-
-    Object.values(grouped).forEach((items) => items.sort((a, b) => {
+    return filtered.sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (sortBy === 'follow-up') return String(a.nextFollowUp ?? '9999').localeCompare(String(b.nextFollowUp ?? '9999'));
       return new Date(b.updatedAt ?? b.createdAt ?? 0).getTime() - new Date(a.updatedAt ?? a.createdAt ?? 0).getTime();
-    }));
+    });
+  }, [leads, searchQuery, filterSource, filterCourse, sortBy]);
+
+  // Final decisions are rendered in the outcome register rather than as draggable cards.
+  const leadsByColumn = useMemo(() => {
+    const grouped: Record<string, Lead[]> = {};
+    COLUMN_IDS.forEach((id) => { grouped[id] = []; });
+    visibleLeads.forEach((lead) => {
+      if (lead.status === 'offer-status' || lead.status === 'archived' || lead.globalStatus === 'on_hold') return;
+      if (grouped[lead.status]) grouped[lead.status].push(lead);
+    });
 
     return grouped;
-  }, [leads, searchQuery, filterSource, filterCourse, sortBy]);
+  }, [visibleLeads]);
 
   const filterOptions = useMemo(() => {
     const sources = new Set<string>();
@@ -266,6 +278,10 @@ export default function KanbanBoard({
 
     const fromColumn = lead.status;
     if (fromColumn === toColumn) return;
+    if (fromColumn === 'qualified' && toColumn === 'application') {
+      onShowToast('Application cards are created automatically after the application form is submitted.');
+      return;
+    }
     const fromIndex = COLUMN_IDS.indexOf(fromColumn);
     const toIndex = COLUMN_IDS.indexOf(toColumn);
     if (toIndex < fromIndex && !canMoveLeadBackward) {
@@ -379,11 +395,12 @@ export default function KanbanBoard({
       onShowToast('You do not have permission to decide applications');
       return;
     }
-    const target = decision === 'accept' ? 'offer-status' : 'archived';
+    const target = 'offer-status';
+    const targetSubstate = decision === 'accept' ? 'accepted' : 'rejected';
     const reason = decision === 'accept'
-      ? 'Application accepted and moved to Offer / Status'
-      : 'Application denied and moved to Archived';
-    await persistMove(lead, target, reason);
+      ? 'Application approved by management'
+      : 'Application rejected by management';
+    await persistMove(lead, target, reason, targetSubstate);
   }, [canHoldLeads, canMoveLeadStage, onShowToast, persistMove, setLeads]);
 
   function handleLeadClick(lead: Lead) {
@@ -422,6 +439,19 @@ export default function KanbanBoard({
     if (outcome === 'moved') onShowToast(`${lead.name} updated`);
   }, [canTriggerErpHandoff, onShowToast, persistMove]);
 
+  const deleteLead = useCallback(async (lead: Lead, reason: string) => {
+    try {
+      await deleteCrmLead(lead.id, reason);
+      setLeads((current) => current.filter((item) => item.id !== lead.id));
+      setSidebarOpen(false);
+      setSelectedLead(null);
+      onShowToast(`${lead.name} deleted. The action is available in Activity.`);
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : 'Unable to delete lead');
+      throw error;
+    }
+  }, [onShowToast, setLeads]);
+
   return (
     <DndContext
       sensors={sensors}
@@ -444,6 +474,7 @@ export default function KanbanBoard({
         </div>
 
         <div className="campus-kanban-filters relative ml-auto flex items-center gap-2">
+          {canDeleteLeads && <ActivityFeed leads={leads} />}
           <button type="button" onClick={() => setFilterOpen((open) => !open)} className="inline-flex items-center gap-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] px-3 py-2 text-xs font-semibold text-[var(--crm-text)] hover:bg-[var(--crm-panel)]" aria-expanded={filterOpen}>
             <Filter size={14} />
             Filter
@@ -473,9 +504,9 @@ export default function KanbanBoard({
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 min-h-[calc(100vh-190px)] overflow-x-auto overflow-y-hidden pb-4 kanban-scroll-hidden">
-        <div className="inline-flex h-full gap-4 pb-2">
-          {COLUMNS.map((column) => (
+      <div className="flex-1 min-h-[calc(100vh-190px)] overflow-x-auto overflow-y-hidden kanban-scroll-hidden">
+        <div className="inline-flex h-full gap-4">
+          {COLUMNS.filter((column) => !['offer-status', 'archived'].includes(column.id)).map((column) => (
             <KanbanColumn
               key={column.id}
               column={column}
@@ -485,6 +516,7 @@ export default function KanbanBoard({
               canDrag={canMoveLeadStage}
             />
           ))}
+          <OutcomeRegisterColumn leads={visibleLeads} onLeadClick={handleLeadClick} />
         </div>
       </div>
 
@@ -494,14 +526,48 @@ export default function KanbanBoard({
           key={visibleSelectedLead.id}
           lead={visibleSelectedLead}
           leadForm={leadForm}
+          applicationForm={applicationForm}
+          onSendApplication={async (channel) => {
+            const response = await createApplicationInvitation(visibleSelectedLead.id, channel);
+            onShowToast(`Application link queued via ${channel === 'sms' ? 'SMS' : 'WhatsApp'}`);
+            return response.data.applicationUrl;
+          }}
+          onSubmitOfflineApplication={async (data) => {
+            if (!applicationForm) throw new Error('Publish an application form before accepting offline applications');
+            await submitCrmForm(applicationForm.id, { values: data }, visibleSelectedLead.id, {
+              idempotencyKey: `offline-${visibleSelectedLead.id}-${applicationForm.id}`,
+            });
+            onShowToast('Application submitted and moved to Application');
+            setSidebarOpen(false);
+            setSelectedLead(null);
+            onRefresh();
+          }}
+          onUploadApplicationFile={async (file) => {
+            const uploaded = (await uploadMedia(file)).data;
+            return { storage: 'cloudinary', fileName: file.name, secureUrl: uploaded.secureUrl, publicId: uploaded.publicId, resourceType: uploaded.resourceType, bytes: uploaded.bytes };
+          }}
           onClose={() => { setSidebarOpen(false); setSelectedLead(null); }}
           onApplicationDecision={decideApplication}
+          onCompleteApplicationReview={async (lead) => {
+            const outcome = await persistMove(
+              lead,
+              'application-status',
+              'Application verified and sent for management decision',
+              'awaiting_decision',
+            );
+            if (outcome === 'moved') {
+              setSidebarOpen(false);
+              setSelectedLead(null);
+            }
+          }}
           onUpdate={updateLead}
           onShowToast={onShowToast}
           canUpdateLead={canUpdateLeads}
           canMoveLeadStage={canMoveLeadStage}
           canHoldLead={canHoldLeads}
           canLogCall={canLogCalls}
+          canDeleteLead={canDeleteLeads}
+          onDeleteLead={deleteLead}
           canTransferLead={(visibleSelectedLead.assignedTo.id ?? visibleSelectedLead.assignedTo.name) === currentUserId && visibleSelectedLead.status !== 'enquiry'}
           onTransferLead={(lead) => void openTransfer(lead)}
           stageSubstates={availableCurrentStageSubstates(

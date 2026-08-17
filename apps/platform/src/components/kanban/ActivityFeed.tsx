@@ -3,7 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import type { Lead } from '@/lib/kanban/kanban-data';
 import { getCrmActivity, type CrmActivity } from '@/lib/crm-api';
-import { Bell, X, ArrowRight, MessageSquare, Phone } from 'lucide-react';
+import { Bell, X, ArrowRight, MessageSquare, Phone, Trash2 } from 'lucide-react';
 
 interface ActivityFeedProps {
   leads: Lead[];
@@ -13,7 +13,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activity, setActivity] = useState<CrmActivity[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<'All' | 'Moves' | 'Calls' | 'Notes'>('All');
+  const [filter, setFilter] = useState<'All' | 'Moves' | 'Calls' | 'Notes' | 'Deleted'>('All');
 
   const toggle = useCallback(async () => {
     const opening = !isOpen;
@@ -45,6 +45,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
   const activityKind = (entry: CrmActivity) => {
     const event = entry.eventType.toLowerCase();
     const channel = String(entry.payload.channel ?? '').toLowerCase();
+    if (event === 'lead.deleted') return 'Deleted';
     if (event.includes('stage') || event.includes('move') || event.includes('claim')) return 'Moves';
     if (channel === 'call' || event.includes('call')) return 'Calls';
     if (channel === 'note' || event.includes('note')) return 'Notes';
@@ -55,7 +56,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
     : activity.filter((entry) => activityKind(entry) === filter);
 
   return (
-    <div className="relative">
+    <div className="relative z-[110]">
       <button
         onClick={() => void toggle()}
         aria-label="Open activity"
@@ -67,9 +68,9 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="fixed inset-0 z-[110]" onClick={() => setIsOpen(false)} />
           <div
-            className="absolute right-0 top-full mt-2 w-[380px] bg-[var(--crm-card)] border border-[var(--crm-border)] rounded-2xl shadow-xl z-50 overflow-hidden"
+            className="absolute right-0 top-full z-[120] mt-2 w-[380px] max-w-[calc(100vw-32px)] overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] shadow-2xl"
             style={{ animation: 'dropIn 0.15s ease-out' }}
           >
             {/* Header */}
@@ -82,7 +83,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
 
             {/* Filters */}
             <div className="flex gap-1 px-4 py-2 border-b border-[var(--crm-border)] overflow-x-auto kanban-scroll-hidden">
-              {(['All', 'Moves', 'Calls', 'Notes'] as const).map((f) => (
+              {(['All', 'Moves', 'Calls', 'Notes', 'Deleted'] as const).map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -102,16 +103,20 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
               ) : filteredActivity.length > 0 ? (
                 filteredActivity.map((entry) => {
                   const actor = String(entry.payload.byUser ?? entry.payload.claimedBy ?? entry.payload.actorId ?? 'System');
-                  const action = entry.eventType.replaceAll('.', ' ').replaceAll('_', ' ');
+                  const deleted = entry.eventType === 'lead.deleted';
+                  const action = deleted ? 'deleted lead' : entry.eventType.replaceAll('.', ' ').replaceAll('_', ' ');
                   const kind = activityKind(entry);
-                  const Icon = kind === 'Calls' ? Phone : kind === 'Notes' ? MessageSquare : ArrowRight;
+                  const Icon = kind === 'Calls' ? Phone : kind === 'Notes' ? MessageSquare : kind === 'Deleted' ? Trash2 : ArrowRight;
+                  const leadName = entry.leadName ?? String(entry.payload.leadName ?? '');
+                  const reason = deleted ? String(entry.payload.reason ?? '') : '';
                   return (
                     <div key={entry.cursor} className="flex items-start gap-3 px-4 py-3 hover:bg-[var(--crm-panel)] transition-colors border-b border-[var(--crm-border)] last:border-0">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-[var(--tenant-surface)]">
                         <Icon size={13} className="text-[var(--tenant-primary)]" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-[var(--crm-text)]"><span className="font-semibold">{actor}</span> {action} {entry.leadName ?? ''}</p>
+                        <p className="text-xs font-medium text-[var(--crm-text)]"><span className="font-semibold">{actor}</span> {action} {leadName}</p>
+                        {reason && <p className="mt-0.5 text-[11px] text-[var(--crm-muted)]">Reason: {reason}</p>}
                         <p className="text-[10px] text-[var(--crm-muted)] mt-0.5 font-medium">{new Date(entry.createdAt).toLocaleString('en-IN')}</p>
                       </div>
                     </div>

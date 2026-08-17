@@ -45,6 +45,7 @@ export interface BootstrapDocument {
   tenantId: string;
   userId: string;
   roles: string[];
+  portalFamilies: Array<'student' | 'parent' | 'staff' | 'admin'>;
   permissions: string[];
   permissionScopes: Record<string, string>;
   workflows: Array<{
