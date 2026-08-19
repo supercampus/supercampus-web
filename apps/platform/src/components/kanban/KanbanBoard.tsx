@@ -19,7 +19,7 @@ import type { Column, Lead } from '@/lib/kanban/kanban-data';
 import { COLUMNS, COLUMN_IDS } from '@/lib/kanban/kanban-data';
 import { getColumnTitle } from '@/lib/kanban/kanban-actions';
 import type { CrmForm, CrmPipelineTransferCandidate, CrmStageCatalog } from '@/lib/crm-api';
-import { createApplicationInvitation, deleteCrmLead, getCrmPipelineTransferCandidates, getCrmStages, getPublishedCrmFormByType, getPublishedCrmLeadCaptureForm, holdCrmLead, moveCrmLead, submitCrmForm, transferCrmLead, updateCrmLead } from '@/lib/crm-api';
+import { archiveCrmLead, createApplicationInvitation, deleteCrmLead, getCrmPipelineTransferCandidates, getCrmStages, getPublishedCrmFormByType, getPublishedCrmLeadCaptureForm, holdCrmLead, moveCrmLead, submitCrmForm, transferCrmLead, unarchiveCrmLead, updateCrmLead } from '@/lib/crm-api';
 import KanbanColumn from './KanbanColumn';
 import OutcomeRegisterColumn from './OutcomeRegisterColumn';
 import LeadCard from './LeadCard';
@@ -218,7 +218,11 @@ export default function KanbanBoard({
       setSelectedLead((current) => current?.id === lead.id
         ? { ...current, status: nextStatus, substate: response.data.substateKey, assignedTo, lastContact: 'just now' }
         : current);
-      onShowToast(`Moved ${lead.name} to ${getColumnTitle(nextStatus)}`);
+      onShowToast(
+        lead.status === 'qualified' && nextStatus === 'application'
+          ? `Moved ${lead.name} to Application. The application link was queued via WhatsApp.`
+          : `Moved ${lead.name} to ${getColumnTitle(nextStatus)}`,
+      );
       return 'moved' as const;
     } catch (error) {
       // Roll the card back to where it came from so the board never shows a move
@@ -278,10 +282,6 @@ export default function KanbanBoard({
 
     const fromColumn = lead.status;
     if (fromColumn === toColumn) return;
-    if (fromColumn === 'qualified' && toColumn === 'application') {
-      onShowToast('Application cards are created automatically after the application form is submitted.');
-      return;
-    }
     const fromIndex = COLUMN_IDS.indexOf(fromColumn);
     const toIndex = COLUMN_IDS.indexOf(toColumn);
     if (toIndex < fromIndex && !canMoveLeadBackward) {
@@ -452,6 +452,34 @@ export default function KanbanBoard({
     }
   }, [onShowToast, setLeads]);
 
+  const rejectLead = useCallback(async (lead: Lead, reason: string) => {
+    try {
+      await archiveCrmLead(lead.id, reason);
+      setLeads((current) => current.filter((item) => item.id !== lead.id));
+      setSidebarOpen(false);
+      setSelectedLead(null);
+      onShowToast(`${lead.name} rejected: ${reason}`);
+      onRefresh();
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : 'Unable to reject lead');
+      throw error;
+    }
+  }, [onRefresh, onShowToast, setLeads]);
+
+  const restoreLead = useCallback(async (lead: Lead, stage: string, reason: string) => {
+    try {
+      await unarchiveCrmLead(lead.id, stage, reason);
+      setLeads((current) => current.filter((item) => item.id !== lead.id));
+      setSidebarOpen(false);
+      setSelectedLead(null);
+      onShowToast(`${lead.name} restored to ${getColumnTitle(stage.replaceAll('_', '-'))}`);
+      onRefresh();
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : 'Unable to restore lead');
+      throw error;
+    }
+  }, [onRefresh, onShowToast, setLeads]);
+
   return (
     <DndContext
       sensors={sensors}
@@ -568,6 +596,8 @@ export default function KanbanBoard({
           canLogCall={canLogCalls}
           canDeleteLead={canDeleteLeads}
           onDeleteLead={deleteLead}
+          onRejectLead={rejectLead}
+          onRestoreLead={restoreLead}
           canTransferLead={(visibleSelectedLead.assignedTo.id ?? visibleSelectedLead.assignedTo.name) === currentUserId && visibleSelectedLead.status !== 'enquiry'}
           onTransferLead={(lead) => void openTransfer(lead)}
           stageSubstates={availableCurrentStageSubstates(

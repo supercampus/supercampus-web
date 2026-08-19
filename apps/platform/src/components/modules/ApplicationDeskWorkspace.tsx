@@ -9,7 +9,6 @@ import {
   Clock,
   FileText,
   ExternalLink,
-  GraduationCap,
   Info,
   Loader2,
   MessageSquarePlus,
@@ -361,23 +360,6 @@ function stageIndex(stage: OnboardingCase['stage']) {
   return index < 0 ? 0 : index;
 }
 
-function Metric({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Clock }) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.07)]">
-      <span className="absolute inset-y-0 left-0 w-1 bg-[var(--tenant-primary)] opacity-70" />
-      <div className="flex items-center justify-between gap-3">
-        <span className="min-w-0">
-          <span className="block text-2xl font-semibold leading-none tracking-tight text-[var(--crm-text)]">{value}</span>
-          <span className="mt-2 block truncate text-[11px] font-medium text-[var(--crm-muted)]">{label}</span>
-        </span>
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--tenant-primary)]/10 text-[var(--tenant-primary)] transition group-hover:scale-105">
-          <Icon size={17} />
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function workTabForStage(stage: OnboardingCase['stage']): Tab {
   switch (stage) {
     case 'DATA_REVIEW': return 'application';
@@ -699,8 +681,6 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
     );
   }
 
-  const activated = cases.filter((entry) => entry.status === 'COMPLETED').length;
-
   return (
     <DeskShell embedded={embedded}>
       <div className="mx-auto max-w-[1600px] space-y-5">
@@ -747,13 +727,6 @@ export function ApplicationDeskWorkspace({ embedded = false }: { embedded?: bool
         {loadError && (
           <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-600">{loadError}</p>
         )}
-
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric label="Awaiting onboarding" value={cases.filter((c) => c.status === 'ACTIVE').length} icon={Clock} />
-          <Metric label="Documents pending" value={snapshot?.queues.documentsPending ?? 0} icon={FileText} />
-          <Metric label="Approvals pending" value={snapshot?.queues.approvalPending ?? 0} icon={ShieldCheck} />
-          <Metric label="Students activated" value={activated} icon={GraduationCap} />
-        </section>
 
         <div>
           <div className="mb-3 flex flex-wrap items-end justify-between gap-3 px-1">

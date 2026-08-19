@@ -13,7 +13,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activity, setActivity] = useState<CrmActivity[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<'All' | 'Moves' | 'Calls' | 'Notes' | 'Deleted'>('All');
+  const [filter, setFilter] = useState<'All' | 'Moves' | 'Calls' | 'Requests' | 'Deleted'>('All');
 
   const toggle = useCallback(async () => {
     const opening = !isOpen;
@@ -48,7 +48,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
     if (event === 'lead.deleted') return 'Deleted';
     if (event.includes('stage') || event.includes('move') || event.includes('claim')) return 'Moves';
     if (channel === 'call' || event.includes('call')) return 'Calls';
-    if (channel === 'note' || event.includes('note')) return 'Notes';
+    if (event.includes('request')) return 'Requests';
     return 'All';
   };
   const filteredActivity = filter === 'All'
@@ -83,7 +83,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
 
             {/* Filters */}
             <div className="flex gap-1 px-4 py-2 border-b border-[var(--crm-border)] overflow-x-auto kanban-scroll-hidden">
-              {(['All', 'Moves', 'Calls', 'Notes', 'Deleted'] as const).map((f) => (
+              {(['All', 'Moves', 'Calls', 'Requests', 'Deleted'] as const).map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -106,7 +106,7 @@ export default function ActivityFeed({ leads }: ActivityFeedProps) {
                   const deleted = entry.eventType === 'lead.deleted';
                   const action = deleted ? 'deleted lead' : entry.eventType.replaceAll('.', ' ').replaceAll('_', ' ');
                   const kind = activityKind(entry);
-                  const Icon = kind === 'Calls' ? Phone : kind === 'Notes' ? MessageSquare : kind === 'Deleted' ? Trash2 : ArrowRight;
+                  const Icon = kind === 'Calls' ? Phone : kind === 'Requests' ? MessageSquare : kind === 'Deleted' ? Trash2 : ArrowRight;
                   const leadName = entry.leadName ?? String(entry.payload.leadName ?? '');
                   const reason = deleted ? String(entry.payload.reason ?? '') : '';
                   return (

@@ -1,0 +1,12 @@
+
+> supercampus-web@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.11 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://172.168.14.241:3000
+✓ Ready in 1931ms
+
+○ Compiling / ...
+ GET / 200 in 4.5s (next.js: 4.4s, application-code: 133ms)
+ GET / 200 in 93ms (next.js: 13ms, application-code: 80ms)

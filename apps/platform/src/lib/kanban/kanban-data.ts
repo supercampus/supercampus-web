@@ -97,7 +97,7 @@ export const COLUMNS: Column[] = [
   { id: 'enquiry', title: 'Enquiry', accent: '#6d5dfc' },
   { id: 'contact-attempted', title: 'Contact Attempted', accent: '#d946ef' },
   { id: 'contacted', title: 'Contacted', accent: '#f59e0b' },
-  { id: 'nurture', title: 'Nurtured', accent: '#10b981' },
+  { id: 'nurture', title: 'Nurture', accent: '#10b981' },
   { id: 'qualified', title: 'Qualified', accent: '#06b6d4' },
   { id: 'application', title: 'Application', accent: '#3b82f6' },
   { id: 'application-status', title: 'Application Status', accent: '#8b5cf6' },

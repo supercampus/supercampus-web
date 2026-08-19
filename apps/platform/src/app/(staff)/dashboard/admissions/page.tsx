@@ -2945,6 +2945,7 @@ export default function AdmissionsPage() {
     let control: React.ReactNode;
 
     if (isSourceField) {
+      const sourceOptions = field.options?.filter((option) => option.trim()) ?? LEAD_SOURCES;
       control = (
         <select
           required={field.required}
@@ -2953,7 +2954,7 @@ export default function AdmissionsPage() {
           className={controlClass}
         >
           <option value="">Select lead source</option>
-          {LEAD_SOURCES.map((source) => <option key={source} value={source}>{source}</option>)}
+          {sourceOptions.map((source) => <option key={source} value={source}>{source}</option>)}
         </select>
       );
     } else if (field.type === 'Dropdown') {

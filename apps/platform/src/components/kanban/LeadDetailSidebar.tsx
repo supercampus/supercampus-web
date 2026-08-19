@@ -27,6 +27,8 @@ interface LeadDetailSidebarProps {
   canLogCall: boolean;
   canDeleteLead: boolean;
   onDeleteLead: (lead: Lead, reason: string) => Promise<void>;
+  onRejectLead: (lead: Lead, reason: string) => Promise<void>;
+  onRestoreLead: (lead: Lead, stage: string, reason: string) => Promise<void>;
   onTransferLead: (lead: Lead) => void;
   stageSubstates: string[];
   allStageSubstates: string[];
@@ -41,6 +43,10 @@ interface LeadDetailSidebarProps {
 type WorkspaceTab = 'application' | 'activity' | 'notes' | 'tasks';
 type PublishedField = { key?: string; label: string; type: string; required?: boolean; options?: string[] };
 type PublishedSection = { section: string; fields: PublishedField[] };
+
+const REJECTION_REASONS = [
+  'Academic Ineligibility', 'Age Criteria Not Met', 'Calls Not Answered', 'Duplicate Lead', 'Education Gap', 'Education Loan Rejected', 'Fake Documents', 'Financial Ineligibility', 'Full Scholarship Required', 'Health Issues', 'Insufficient Documents', 'Intake Deadline Passed', 'Interview No Show', 'Invalid Number', 'Lost to Competitor', 'Low Score', 'No Offer', 'No Offer from Preferred Choice', 'No Revenue Potential', 'Not Happy with Service', 'Not Interested in Engineering', 'Not Reachable', 'Not Satisfied with Offering', 'Offer Expired', 'Others', 'Program Full/Closed', 'Program Not Available', 'Program Not Offered', 'Refund Initiated', 'Spam', 'Student Opted Out',
+] as const;
 
 function LeadDetailsDisclosure({ collapsible, children }: { collapsible: boolean; children: React.ReactNode }) {
   if (!collapsible) return <>{children}</>;
@@ -131,7 +137,7 @@ function publishedValue(lead: Lead, field: PublishedField) {
 export default function LeadDetailSidebar({
   lead, onClose, onApplicationDecision, onCompleteApplicationReview, onUpdate, onShowToast,
   canUpdateLead, canMoveLeadStage, canHoldLead, canTransferLead, canLogCall, canDeleteLead,
-  onTransferLead, onDeleteLead,
+  onTransferLead, onDeleteLead, onRejectLead, onRestoreLead,
   stageSubstates, allStageSubstates, onChangeSubstate, leadForm,
   applicationForm, onSendApplication, onSubmitOfflineApplication, onUploadApplicationFile,
 }: LeadDetailSidebarProps) {
@@ -150,6 +156,13 @@ export default function LeadDetailSidebar({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState('');
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectBusy, setRejectBusy] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoreStage, setRestoreStage] = useState('enquiry');
+  const [restoreReason, setRestoreReason] = useState('');
+  const [restoreBusy, setRestoreBusy] = useState(false);
   const [note, setNote] = useState('');
   const [callOutcome, setCallOutcome] = useState('connected');
   const [callNotes, setCallNotes] = useState('');
@@ -432,8 +445,7 @@ export default function LeadDetailSidebar({
               <p className="mt-1.5 flex items-center gap-2 break-all text-xs font-semibold text-[var(--crm-text)]"><UserRound size={14} className="shrink-0" />{lead.assignedTo.name}</p>
             </div>
 
-            {lead.status !== 'application' && (
-            <label className="mb-5 block">
+            {lead.status !== 'application' && <label className="mb-5 block">
               <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[var(--crm-muted)]">Current substage</span>
               <select
                 value={lead.substate ?? ''}
@@ -458,8 +470,7 @@ export default function LeadDetailSidebar({
                   Application Submitted is available after moving to To Do, then Application In Progress.
                 </span>
               )}
-            </label>
-            )}
+            </label>}
 
             {lead.status === 'application' ? (
               <div className="grid grid-cols-2 gap-3 border-t border-[var(--crm-border)] pt-4">
@@ -488,6 +499,34 @@ export default function LeadDetailSidebar({
               </div>
             )}
             </LeadDetailsDisclosure>
+            {lead.status === 'application' && (
+              <label className="block border-t border-[var(--crm-border)] px-5 py-4">
+                <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[var(--crm-muted)]">Application substage</span>
+                <select
+                  value={lead.substate ?? ''}
+                  disabled={!canMoveLeadStage || substateBusy || stageSubstates.length === 0}
+                  onChange={async (event) => {
+                    const next = event.target.value;
+                    if (!next || next === lead.substate) return;
+                    setSubstateBusy(true);
+                    try { await onChangeSubstate(lead, next); } finally { setSubstateBusy(false); }
+                  }}
+                  className={inputClass}
+                >
+                  {allStageSubstates.map((substate) => (
+                    <option key={substate} value={substate} disabled={!stageSubstates.includes(substate)}>
+                      {pipelineValueLabel(substate)}{stageSubstates.includes(substate) ? '' : ' — unavailable from current substage'}
+                    </option>
+                  ))}
+                </select>
+                {!canMoveLeadStage && <span className="mt-1 block text-[10px] text-[var(--crm-muted)]">Stage-move permission is required.</span>}
+                {canMoveLeadStage && lead.substate === 'technical_issue' && (
+                  <span className="mt-1.5 block text-[10px] leading-4 text-[var(--crm-muted)]">
+                    Application Submitted is available after moving to To Do, then Application In Progress.
+                  </span>
+                )}
+              </label>
+            )}
           </aside>
 
           <main className="flex min-h-[520px] flex-col overflow-hidden rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)]">
@@ -606,8 +645,8 @@ export default function LeadDetailSidebar({
                 <button type="button" disabled={!canMoveLeadStage || decisionBusy !== null} onClick={() => void decideApplication('accept')} className="inline-flex min-w-24 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
                   {decisionBusy === 'accept' ? <LoaderCircle size={15} className="animate-spin" /> : <Check size={16} />}Approve
                 </button>
-                <button type="button" disabled={!canMoveLeadStage || decisionBusy !== null} onClick={() => void decideApplication('deny')} className="inline-flex min-w-24 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-40">
-                  {decisionBusy === 'deny' ? <LoaderCircle size={15} className="animate-spin" /> : <Archive size={16} />}Reject
+                <button type="button" disabled={!canDeleteLead || decisionBusy !== null} onClick={() => setRejectOpen(true)} className="inline-flex min-w-24 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-40">
+                  <Archive size={16} />Reject
                 </button>
                 <button type="button" disabled={!canHoldLead || decisionBusy !== null || lead.globalStatus === 'on_hold'} onClick={() => void decideApplication('hold')} className="inline-flex min-w-24 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40">
                   {decisionBusy === 'hold' ? <LoaderCircle size={15} className="animate-spin" /> : <PauseCircle size={16} />}{lead.globalStatus === 'on_hold' ? 'On hold' : 'Hold'}
@@ -618,7 +657,7 @@ export default function LeadDetailSidebar({
         )}
 
         <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-[var(--crm-border)] bg-[var(--crm-card)] px-6 py-4">
-          {lead.status === 'qualified' && <><button type="button" disabled={!applicationForm} onClick={() => setApplicationAction('send')} className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"><Send size={15} />Send application</button><button type="button" disabled={!applicationForm} onClick={() => setApplicationAction('offline')} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold disabled:opacity-40"><FileText size={15} />Fill offline</button></>}
+          {lead.status === 'qualified' && (applicationForm ? <><button type="button" onClick={() => setApplicationAction('send')} className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white"><Send size={15} />Send application</button><button type="button" onClick={() => setApplicationAction('offline')} className="inline-flex items-center gap-2 rounded-xl border border-[var(--crm-border)] px-4 py-2.5 text-sm font-semibold"><FileText size={15} />Fill offline</button></> : <p role="status" className="max-w-md text-xs leading-5 text-amber-700">Publish an Application form in Admissions Settings before sending or entering an application.</p>)}
           {lead.status !== 'application' && (editing ? <button type="button" onClick={saveEdits} className="inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white"><Save size={15} />Save changes</button> : <button type="button" disabled={!canUpdateLead || !formSections.length} onClick={() => { setEditValues(formValues); setEditing(true); }} className="inline-flex items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"><Pencil size={15} />Edit</button>)}
           {lead.status === 'application' && (
             <button
@@ -636,6 +675,8 @@ export default function LeadDetailSidebar({
           <button type="button" disabled={!canLogCall} onClick={() => { setComposer('call'); setTab('activity'); }} aria-label="Log call" title="Log call" className="grid h-11 w-11 place-items-center rounded-xl border border-[var(--crm-border)] hover:bg-[var(--crm-panel)] disabled:opacity-40"><Phone size={18} /></button>
           <button type="button" disabled={!canUpdateLead} onClick={() => { setComposer('task'); setTab('tasks'); }} aria-label="Add task" title="Add task" className="grid h-11 w-11 place-items-center rounded-xl border border-[var(--crm-border)] hover:bg-[var(--crm-panel)] disabled:opacity-40"><Plus size={18} /></button>
           <button type="button" disabled={!canTransferLead} onClick={() => onTransferLead(lead)} aria-label="Transfer card" title="Transfer card" className="grid h-11 w-11 place-items-center rounded-xl border border-[var(--crm-border)] hover:bg-[var(--crm-panel)] disabled:opacity-40"><ArrowRightLeft size={18} /></button>
+          {canDeleteLead && lead.status !== 'archived' && <button type="button" onClick={() => setRejectOpen(true)} aria-label="Reject lead" title="Reject lead" className="grid h-11 w-11 place-items-center rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50"><Archive size={18} /></button>}
+          {canDeleteLead && lead.status === 'archived' && <button type="button" onClick={() => setRestoreOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"><ArrowLeft size={16} />Restore lead</button>}
           {canDeleteLead && <button type="button" onClick={() => setDeleteOpen(true)} aria-label="Delete lead" title="Delete lead" className="grid h-11 w-11 place-items-center rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50"><Trash2 size={18} /></button>}
           <button type="button" onClick={requestClose} className="ml-auto rounded-xl border border-[var(--crm-border)] px-5 py-2.5 text-sm font-semibold hover:bg-[var(--crm-panel)]">Close</button>
         </footer>
@@ -654,6 +695,24 @@ export default function LeadDetailSidebar({
                 <button type="button" disabled={deleteBusy} onClick={() => { setDeleteOpen(false); setDeleteReason(''); }} className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold">Cancel</button>
                 <button type="button" disabled={deleteBusy || deleteReason.trim().length < 3} onClick={async () => { setDeleteBusy(true); try { await onDeleteLead(lead, deleteReason.trim()); } finally { setDeleteBusy(false); } }} className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40">{deleteBusy ? <LoaderCircle size={15} className="animate-spin" /> : <Trash2 size={15} />}Delete lead</button>
               </footer>
+            </section>
+          </div>
+        )}
+        {rejectOpen && (
+          <div className="fixed inset-0 z-[180] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label={`Reject ${lead.name}`}>
+            <section className="w-full max-w-md overflow-hidden rounded-xl bg-white text-black shadow-2xl">
+              <header className="flex items-start gap-3 border-b border-neutral-200 px-5 py-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600"><Archive size={19} /></span><div><h2 className="font-bold">Reject {lead.name}?</h2><p className="mt-1 text-xs leading-5 text-neutral-500">Choose a rejection reason. It will be retained in the lead&apos;s history.</p></div></header>
+              <div className="p-5"><label className="block text-xs font-semibold text-neutral-700">Rejection reason<select autoFocus value={rejectionReason} onChange={(event) => setRejectionReason(event.target.value)} className="mt-2 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-rose-500"><option value="">Select a reason</option>{REJECTION_REASONS.map((reason) => <option key={reason} value={reason}>{reason}</option>)}</select></label></div>
+              <footer className="flex justify-end gap-2 border-t border-neutral-200 bg-neutral-50 px-5 py-4"><button type="button" disabled={rejectBusy} onClick={() => { setRejectOpen(false); setRejectionReason(''); }} className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold">Cancel</button><button type="button" disabled={rejectBusy || !rejectionReason} onClick={async () => { setRejectBusy(true); try { await onRejectLead(lead, rejectionReason); setRejectOpen(false); setRejectionReason(''); } finally { setRejectBusy(false); } }} className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40">{rejectBusy ? <LoaderCircle size={15} className="animate-spin" /> : <Archive size={15} />}Reject lead</button></footer>
+            </section>
+          </div>
+        )}
+        {restoreOpen && (
+          <div className="fixed inset-0 z-[180] flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label={`Restore ${lead.name}`}>
+            <section className="w-full max-w-md overflow-hidden rounded-xl bg-white text-black shadow-2xl">
+              <header className="flex items-start gap-3 border-b border-neutral-200 px-5 py-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600"><ArrowLeft size={19} /></span><div><h2 className="font-bold">Restore {lead.name}</h2><p className="mt-1 text-xs leading-5 text-neutral-500">Choose where to return this lead and record why it is being recovered.</p></div></header>
+              <div className="space-y-4 p-5"><label className="block text-xs font-semibold text-neutral-700">Restore to stage<select value={restoreStage} onChange={(event) => setRestoreStage(event.target.value)} className="mt-2 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500"><option value="enquiry">Enquiry</option><option value="contact_attempted">Contact Attempted</option><option value="contacted">Contacted</option><option value="nurture">Nurture</option><option value="qualified">Qualified</option><option value="application">Application</option><option value="application_status">Application Status</option><option value="offer_status">Offer Status</option></select></label><label className="block text-xs font-semibold text-neutral-700">Recovery reason<textarea autoFocus rows={3} maxLength={500} value={restoreReason} onChange={(event) => setRestoreReason(event.target.value)} placeholder="Why is this lead being restored?" className="mt-2 w-full resize-none rounded-lg border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-500" /></label></div>
+              <footer className="flex justify-end gap-2 border-t border-neutral-200 bg-neutral-50 px-5 py-4"><button type="button" disabled={restoreBusy} onClick={() => { setRestoreOpen(false); setRestoreReason(''); }} className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold">Cancel</button><button type="button" disabled={restoreBusy || restoreReason.trim().length < 3} onClick={async () => { setRestoreBusy(true); try { await onRestoreLead(lead, restoreStage, restoreReason.trim()); setRestoreOpen(false); setRestoreReason(''); } finally { setRestoreBusy(false); } }} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40">{restoreBusy ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowLeft size={15} />}Restore lead</button></footer>
             </section>
           </div>
         )}

@@ -57,9 +57,10 @@ test('activity feed reads backend facts instead of only local move history', () 
   assert.match(activitySource, /entry\.eventType/);
 });
 
-test('CRM activity filters and call logging are connected to APIs', () => {
+test('CRM activity filters include requests and call logging is connected to APIs', () => {
   assert.match(activitySource, /onClick=\{\(\) => setFilter\(f\)\}/);
-  assert.match(activitySource, /'All' \| 'Moves' \| 'Calls' \| 'Notes'/);
+  assert.match(activitySource, /'All' \| 'Moves' \| 'Calls' \| 'Requests' \| 'Deleted'/);
+  assert.match(activitySource, /event\.includes\('request'\)/);
   assert.match(leadDetailSource, /logCrmCall\(/);
   assert.match(leadDetailSource, /Call logged in lead activity/);
 });
@@ -112,11 +113,31 @@ test('movement reason confirmation closes immediately while the move persists', 
   assert.doesNotMatch(kanbanSource, /\{ \.\.\.l, status: to, lastContact: 'just now', moveHistory:/);
 });
 
-test('admissions navigation and nurtured stage use the requested display labels', () => {
+test('admissions navigation and nurture stage use the requested display labels', () => {
   assert.match(sidebarSource, /id: 'dashboard', label: 'Overview'/);
   assert.match(sidebarSource, /id: 'pipeline', label: 'Lead'/);
   assert.doesNotMatch(sidebarSource, /id: 'crm', label: 'CRM'/);
-  assert.match(kanbanDataSource, /id: 'nurture', title: 'Nurtured'/);
+  assert.match(kanbanDataSource, /id: 'nurture', title: 'Nurture'/);
+});
+
+test('moving a qualified lead to Application queues its application link', () => {
+  assert.match(kanbanSource, /lead\.status === 'qualified' && nextStatus === 'application'/);
+  assert.match(kanbanSource, /Moved \$\{lead\.name\} to Application\. The application link was queued via WhatsApp\./);
+  assert.doesNotMatch(kanbanSource, /card stays in Qualified until the form is submitted/);
+});
+
+test('lead rejection requires a standardized reason at every active pipeline stage', () => {
+  assert.match(leadDetailSource, /const REJECTION_REASONS = \[/);
+  assert.match(leadDetailSource, /Academic Ineligibility/);
+  assert.match(leadDetailSource, /Student Opted Out/);
+  assert.match(leadDetailSource, /disabled=\{rejectBusy \|\| !rejectionReason\}/);
+  assert.match(kanbanSource, /await archiveCrmLead\(lead\.id, reason\)/);
+});
+
+test('archived leads can be restored through the audited unarchive flow', () => {
+  assert.match(leadDetailSource, /Restore lead/);
+  assert.match(leadDetailSource, /Recovery reason/);
+  assert.match(kanbanSource, /await unarchiveCrmLead\(lead\.id, stage, reason\)/);
 });
 
 test('only Enquiry exposes the permission-gated create lead flow', () => {
