@@ -15,12 +15,31 @@ export class ApiRequestError extends Error {
   }
 }
 
-function errorMessage(body: unknown, status: number) {
-  if (!body || typeof body !== 'object') return `API request failed (${status})`;
+function errorMessage(body: unknown, status: number, raw = '') {
+  if (!body || typeof body !== 'object') {
+    // A rejected request body never reaches a handler, so the API answers in
+    // plain text rather than the usual JSON envelope. Surfacing that text is
+    // the difference between "API request failed (422)" and being told which
+    // field was wrong.
+    const text = raw.trim();
+    return text && text.length <= 400 ? text : `API request failed (${status})`;
+  }
   const value = body as { error?: string | { message?: string }; message?: string };
   if (typeof value.error === 'string') return value.error;
   if (value.error && typeof value.error.message === 'string') return value.error.message;
   return value.message ?? `API request failed (${status})`;
+}
+
+/** Reads an error response once, as text, and parses it as JSON only if it is. */
+async function failure(response: Response) {
+  const raw = await response.text().catch(() => '');
+  let parsed: unknown = null;
+  try {
+    parsed = raw ? JSON.parse(raw) : null;
+  } catch {
+    parsed = null;
+  }
+  return new ApiRequestError(errorMessage(parsed, response.status, raw), response.status);
 }
 
 function canRefresh(path: string) {
@@ -68,10 +87,7 @@ async function refreshAndRetry(path: string, init?: ApiRequestInit): Promise<Res
     if (afterWaiting.status !== 401) return afterWaiting;
 
     const refreshed = await send('/auth/refresh', { method: 'POST' });
-    if (!refreshed.ok) {
-      const body: unknown = await refreshed.json().catch(() => null);
-      throw new ApiRequestError(errorMessage(body, refreshed.status), refreshed.status);
-    }
+    if (!refreshed.ok) throw await failure(refreshed);
     return send(path, init);
   };
 
@@ -97,10 +113,7 @@ export async function apiRequest<T>(path: string, init?: ApiRequestInit, retryAu
       // The original 401 is returned below with a stable authentication error.
     }
   }
-  if (!response.ok) {
-    const body: unknown = await response.json().catch(() => null);
-    throw new ApiRequestError(errorMessage(body, response.status), response.status);
-  }
+  if (!response.ok) throw await failure(response);
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }

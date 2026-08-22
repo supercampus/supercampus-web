@@ -37,6 +37,9 @@ test('tenant role templates include operational defaults without permission gran
   assert.match(source, /key: 'principal'[\s\S]*?team: 'Leadership'/);
   assert.match(source, /key: 'hod'[\s\S]*?team: 'Academics'/);
   assert.match(source, /key: 'accountant'[\s\S]*?team: 'Finance'/);
+  assert.match(source, /key: 'shop_owner'[\s\S]*?team: 'Campus Commerce'/);
+  assert.match(source, /key: 'shop_owner'[\s\S]*?recommendedModules: \['vendor_management', 'canteen'\]/);
+  assert.match(source, /key: 'shop_owner'[\s\S]*?portalFamily: 'staff'/);
   assert.doesNotMatch(source, /recommendedPermissions/);
 });
 

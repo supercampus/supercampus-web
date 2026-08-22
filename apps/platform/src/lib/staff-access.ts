@@ -67,11 +67,24 @@ export function canOpenStaffNavigation(
     case 'students':
       return hasModulePermission(permissions, 'students');
     case 'academics':
-      return hasModulePermission(permissions, 'academics');
+      return hasAnyPermission(permissions, [
+        'academics.timetable.manage',
+        'timetable.configuration.read',
+        'timetable.configuration.update',
+      ])
+        || hasModulePermission(permissions, 'academics')
+        || hasModulePermission(permissions, 'timetable');
     case 'fees':
-      return hasModulePermission(permissions, 'fees');
+      return hasModulePermission(permissions, 'fees')
+        || hasAnyPermission(permissions, [
+          'students.directory.read',
+          'canteen.wallet.top_up',
+          'fees.refunds.prepare',
+          'fees.refunds.approve',
+        ]);
     case 'erp':
-      return hasModulePermission(permissions, 'erp');
+      return hasModulePermission(permissions, 'erp')
+        || hasModulePermission(permissions, 'gatepass');
     case 'reports':
       return hasPermission(permissions, 'crm.reports.read')
         || permissions.some((permission) => permission.endsWith('.reports.read'));
@@ -84,6 +97,14 @@ export function canOpenStaffNavigation(
     case 'settings':
       return availableStaffSettings(permissions).length > 0;
   }
+}
+
+export function availableErpWorkspaceTabs(permissions: readonly string[]) {
+  if (permissions.includes('*') || hasModulePermission(permissions, 'erp')) {
+    return ['Service desk', 'Shops', 'Gatepass', 'Catalogue', 'SLA monitor'];
+  }
+
+  return hasModulePermission(permissions, 'gatepass') ? ['Gatepass'] : [];
 }
 
 export function availableStaffNavigation(permissions: readonly string[]) {

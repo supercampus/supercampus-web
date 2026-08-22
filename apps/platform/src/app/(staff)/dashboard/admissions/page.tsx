@@ -60,6 +60,7 @@ import {
   type AuthorizationGrant,
   type AuthorizationPermission,
   type AuthorizationRole,
+  type AuthorizationSurface,
   type PermissionScope,
   type PortalFamily,
   type TenantUser,
@@ -1401,7 +1402,7 @@ const MOBILE_PORTAL_MODULES: MobilePortalModule[] = [
     id: 'canteen',
     name: 'Canteen',
     features: [
-      { id: 'menu', label: 'Menu', actions: ['read', 'update'] },
+      { id: 'menu', label: 'Menu', actions: ['create', 'read', 'update', 'delete'] },
       { id: 'order', label: 'Orders', actions: ['create', 'read', 'update'] },
       { id: 'wallet', label: 'Wallet', actions: ['read', 'update'] },
     ],
@@ -1429,7 +1430,7 @@ const MOBILE_PORTAL_MODULES: MobilePortalModule[] = [
     id: 'vendor_management',
     name: 'Vendor Management',
     features: [
-      { id: 'vendors', label: 'Vendor directory', actions: ['create', 'read', 'update'] },
+      { id: 'vendors', label: 'Shops and vendor directory', actions: ['create', 'read', 'update', 'delete'] },
       { id: 'contracts', label: 'Contracts and AMCs', actions: ['create', 'read', 'update'] },
       { id: 'purchase_orders', label: 'Purchase orders', actions: ['create', 'read', 'approve'] },
       { id: 'payments', label: 'Payments and history', actions: ['create', 'read', 'approve'] },
@@ -2021,16 +2022,30 @@ export default function AdmissionsPage() {
         moduleIds: Array.from(new Set(Object.values(role.permissionsBySurface ?? { website: role.permissions, app: role.permissions }).flat().map((grant) => permissionModule.get(grant.key)).filter((value): value is string => Boolean(value)))),
       }));
       setCollegeRoles(roles);
-      const nextRoleAccess = Object.fromEntries(rolesResponse.data.flatMap((role) => ([
-        [roleSurfaceKey(role.id, 'web'), (role.permissionsBySurface?.website ?? role.permissions).map((grant) => grant.key)],
-        [roleSurfaceKey(role.id, 'app'), (role.permissionsBySurface?.app ?? role.permissions).map((grant) => grant.key)],
-      ])));
+      const nextRoleAccess = Object.fromEntries(rolesResponse.data.flatMap((role) => {
+        const websiteGrants = role.permissionsBySurface?.website ?? role.permissions;
+        const appGrants = role.permissionsBySurface?.app ?? role.permissions;
+        const authoritativeGrants = websiteGrants.length > 0 ? websiteGrants : appGrants;
+        const synchronizedKeys = authoritativeGrants.map((grant) => grant.key);
+        return [
+          [roleSurfaceKey(role.id, 'web'), synchronizedKeys],
+          [roleSurfaceKey(role.id, 'app'), synchronizedKeys],
+        ];
+      }));
       roleAccessRef.current = nextRoleAccess;
       setRoleAccess(nextRoleAccess);
-      setRoleScopes(Object.fromEntries(rolesResponse.data.flatMap((role) => ([
-        [roleSurfaceKey(role.id, 'web'), Object.fromEntries((role.permissionsBySurface?.website ?? role.permissions).map((grant) => [grant.key, grant.scope]))],
-        [roleSurfaceKey(role.id, 'app'), Object.fromEntries((role.permissionsBySurface?.app ?? role.permissions).map((grant) => [grant.key, grant.scope]))],
-      ]))));
+      setRoleScopes(Object.fromEntries(rolesResponse.data.flatMap((role) => {
+        const websiteGrants = role.permissionsBySurface?.website ?? role.permissions;
+        const appGrants = role.permissionsBySurface?.app ?? role.permissions;
+        const authoritativeGrants = websiteGrants.length > 0 ? websiteGrants : appGrants;
+        const synchronizedScopes = Object.fromEntries(
+          authoritativeGrants.map((grant) => [grant.key, grant.scope]),
+        );
+        return [
+          [roleSurfaceKey(role.id, 'web'), synchronizedScopes],
+          [roleSurfaceKey(role.id, 'app'), synchronizedScopes],
+        ];
+      })));
       // Per-user access overrides are only needed by access administration.
       // Loading one request per tenant user on every CRM/Admission Desk mount
       // can exhaust the API database pool and starve the desk `cases` request.
@@ -2515,37 +2530,47 @@ export default function AdmissionsPage() {
     }
   }, [logout]);
 
+  const accessSaveSurfaces = useCallback(
+    (): AccessSurface[] => ['web', 'app'],
+    [],
+  );
+
   const saveRolePermissions = useCallback(async (roleId: string, keys: string[]) => {
     if (!canUpdateRoles) {
       throw new Error('You do not have permission to update roles');
     }
-    const surfaceKey = roleSurfaceKey(roleId, accessSurface);
-    const previousSave = rolePermissionQueues.current[surfaceKey] ?? Promise.resolve();
-    const save = previousSave.catch(() => undefined).then(async () => {
-      await setAuthorizationRolePermissions(roleId, apiSurface(accessSurface), keys.map((key) => ({
-        key,
-        scope: roleScopes[surfaceKey]?.[key] ?? 'all',
-        constraints: {},
-      })));
-    });
-    rolePermissionQueues.current[surfaceKey] = save;
-    try {
-      await save;
-    } finally {
-      if (rolePermissionQueues.current[surfaceKey] === save) {
-        delete rolePermissionQueues.current[surfaceKey];
+    await Promise.all(accessSaveSurfaces().map(async (surface) => {
+      const surfaceKey = roleSurfaceKey(roleId, surface);
+      const previousSave = rolePermissionQueues.current[surfaceKey] ?? Promise.resolve();
+      const save = previousSave.catch(() => undefined).then(async () => {
+        await setAuthorizationRolePermissions(roleId, apiSurface(surface), keys.map((key) => ({
+          key,
+          scope: roleScopes[surfaceKey]?.[key] ?? 'all',
+          constraints: {},
+        })));
+      });
+      rolePermissionQueues.current[surfaceKey] = save;
+      try {
+        await save;
+      } finally {
+        if (rolePermissionQueues.current[surfaceKey] === save) {
+          delete rolePermissionQueues.current[surfaceKey];
+        }
       }
-    }
-  }, [accessSurface, canUpdateRoles, roleScopes]);
+    }));
+  }, [accessSaveSurfaces, canUpdateRoles, roleScopes]);
 
   const commitRoleAccess = useCallback((roleId: string, keys: string[]) => {
-    const surfaceKey = roleSurfaceKey(roleId, accessSurface);
-    roleAccessRef.current = { ...roleAccessRef.current, [surfaceKey]: keys };
-    setRoleAccess((previous) => ({ ...previous, [surfaceKey]: keys }));
-    setCollegeRoles((previous) => previous.map((role) => role.id === roleId && !role.surfaces.includes(accessSurface)
-      ? { ...role, surfaces: [...role.surfaces, accessSurface] }
-      : role));
-  }, [accessSurface]);
+    const surfaces = accessSaveSurfaces();
+    const updates = Object.fromEntries(surfaces.map((surface) => [roleSurfaceKey(roleId, surface), keys]));
+    roleAccessRef.current = { ...roleAccessRef.current, ...updates };
+    setRoleAccess((previous) => ({ ...previous, ...updates }));
+    setCollegeRoles((previous) => previous.map((role) => {
+      if (role.id !== roleId) return role;
+      const missing = surfaces.filter((surface) => !role.surfaces.includes(surface));
+      return missing.length ? { ...role, surfaces: [...role.surfaces, ...missing] } : role;
+    }));
+  }, [accessSaveSurfaces]);
 
   const toggleRolePermissions = async (roleId: string, permissionKeys: string[]) => {
     if (!permissionKeys.length) return;
@@ -2664,6 +2689,9 @@ export default function AdmissionsPage() {
       return;
     }
     try {
+      const authorizationSurfaces: AuthorizationSurface[] = template?.key === 'shop_owner'
+        ? ['app']
+        : ['website', 'app'];
       const response = await createAuthorizationRole({
         key: roleKey,
         name,
@@ -2672,7 +2700,7 @@ export default function AdmissionsPage() {
           ? template.description
           : 'Custom role managed by tenant admin',
         portalFamily: newRolePortalFamily,
-        surfaces: ['website', 'app'],
+        surfaces: authorizationSurfaces,
       });
       const role: CollegeRole = {
         id: response.data.id,
@@ -2686,16 +2714,17 @@ export default function AdmissionsPage() {
         moduleIds: [],
       };
       setCollegeRoles((previous) => [...previous, role]);
-      const surfaceKey = roleSurfaceKey(role.id, accessSurface);
-      roleAccessRef.current = { ...roleAccessRef.current, [surfaceKey]: [] };
-      setRoleAccess((previous) => ({ ...previous, [surfaceKey]: [] }));
-      setRoleScopes((previous) => ({ ...previous, [surfaceKey]: {} }));
+      const emptyAccess = Object.fromEntries((['web', 'app'] as AccessSurface[]).map((surface) => [roleSurfaceKey(role.id, surface), []]));
+      const emptyScopes = Object.fromEntries((['web', 'app'] as AccessSurface[]).map((surface) => [roleSurfaceKey(role.id, surface), {}]));
+      roleAccessRef.current = { ...roleAccessRef.current, ...emptyAccess };
+      setRoleAccess((previous) => ({ ...previous, ...emptyAccess }));
+      setRoleScopes((previous) => ({ ...previous, ...emptyScopes }));
       setSelectedAccessRoleId(role.id);
       setNewRoleName('');
       setNewRoleTeam('');
       setNewRolePortalFamily('staff');
       setNewRoleTemplateKey('custom');
-      showToast(`Role "${name}" added to WEB and APP access`);
+      showToast(`Role "${name}" added to ${authorizationSurfaces.map((surface) => surface === 'website' ? 'WEB' : 'APP').join(' and ')} access`);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Unable to create role');
     }
@@ -4047,6 +4076,7 @@ export default function AdmissionsPage() {
           <CampusOperationsWorkspace
             key={activeNav}
             section={activeNav as OperationsSection}
+            permissions={permissions}
             users={visibleStaffUsers.map((user) => ({
               id: user.id,
               name: user.name,
@@ -5302,6 +5332,10 @@ export default function AdmissionsPage() {
                             {surface === 'web' ? <Monitor className="mr-1.5 inline" size={14} /> : <Smartphone className="mr-1.5 inline" size={14} />}{surface}
                           </button>
                         ))}
+                      </div>
+                      <div className="flex h-10 items-center gap-2 rounded-lg border border-[var(--crm-border)] bg-[var(--crm-surface)] px-3 text-xs text-[var(--crm-muted)]">
+                        <Check size={14} className="text-emerald-600" />
+                        WEB + APP synced
                       </div>
                       <div className="rounded-lg bg-[var(--crm-surface)] px-4 py-2 text-right">
                         <p className="text-[10px] uppercase tracking-wider text-[var(--crm-muted)]">Current role</p>

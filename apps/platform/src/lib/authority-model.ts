@@ -10,6 +10,7 @@ export type AuthorityRoleKey =
   | 'academic_administrator'
   | 'hod'
   | 'accountant'
+  | 'shop_owner'
   | 'admissions_officer'
   | 'faculty'
   | 'student'
@@ -114,6 +115,17 @@ export const AUTHORITY_ROLE_TEMPLATES: readonly AuthorityRoleTemplate[] = [
     recommendedModules: ['fees', 'collections', 'reconciliation', 'refunds', 'finance-reports'],
     tenantAssignable: true,
     description: 'Prepares and reconciles finance activity but cannot approve refunds.',
+  },
+  {
+    key: 'shop_owner',
+    name: 'Shop Owner',
+    team: 'Campus Commerce',
+    portalFamily: 'staff',
+    authorityLevel: 'assigned',
+    defaultScope: 'assigned',
+    recommendedModules: ['canteen'],
+    tenantAssignable: true,
+    description: 'Runs assigned shops, menus and orders in the app. Shop assignment remains a tenant-admin web function.',
   },
   {
     key: 'admissions_officer',

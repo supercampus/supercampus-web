@@ -218,11 +218,7 @@ export default function KanbanBoard({
       setSelectedLead((current) => current?.id === lead.id
         ? { ...current, status: nextStatus, substate: response.data.substateKey, assignedTo, lastContact: 'just now' }
         : current);
-      onShowToast(
-        lead.status === 'qualified' && nextStatus === 'application'
-          ? `Moved ${lead.name} to Application. The application link was queued via WhatsApp.`
-          : `Moved ${lead.name} to ${getColumnTitle(nextStatus)}`,
-      );
+      onShowToast(`Moved ${lead.name} to ${getColumnTitle(nextStatus)}`);
       return 'moved' as const;
     } catch (error) {
       // Roll the card back to where it came from so the board never shows a move

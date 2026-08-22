@@ -35,6 +35,7 @@ test('staff navigation is derived from effective permissions', () => {
   assert.match(accessSource, /crm\.dashboard\.read/);
   assert.match(accessSource, /crm\.leads\.read/);
   assert.match(accessSource, /authorization\.users\.read/);
+  assert.match(accessSource, /case 'academics':[\s\S]*hasModulePermission\(permissions, 'timetable'\)/);
   assert.match(sidebarSource, /availableStaffNavigation\(permissions\)/);
   assert.match(sidebarSource, /visibleItems\.map/);
   assert.match(accessSource, /case 'application-desk':[\s\S]*application-desk\.view/);
