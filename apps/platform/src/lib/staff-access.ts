@@ -62,7 +62,12 @@ export function canOpenStaffNavigation(
     case 'pipeline':
       return hasPermission(permissions, 'crm.leads.read');
     case 'ai-assistant':
-      return hasAnyPermission(permissions, ['crm.leads.read', 'crm.dashboard.read']);
+      return hasAnyPermission(permissions, [
+        'crm.leads.read',
+        'crm.dashboard.read',
+        'admissions.read',
+        'admissions.records.read',
+      ]);
     case 'admissions':
       return hasModulePermission(permissions, 'admissions')
         || hasPermission(permissions, 'crm.erp.handoff');
