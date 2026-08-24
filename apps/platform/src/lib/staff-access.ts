@@ -2,6 +2,7 @@ export type StaffNavigationId =
   | 'dashboard'
   | 'crm'
   | 'pipeline'
+  | 'ai-assistant'
   | 'admissions'
   | 'application-desk'
   | 'students'
@@ -24,6 +25,7 @@ export const NAVIGATION_ORDER: StaffNavigationId[] = [
   'dashboard',
   'crm',
   'pipeline',
+  'ai-assistant',
   'admissions',
   'application-desk',
   'students',
@@ -59,6 +61,8 @@ export function canOpenStaffNavigation(
       return hasPermission(permissions, 'crm.dashboard.read');
     case 'pipeline':
       return hasPermission(permissions, 'crm.leads.read');
+    case 'ai-assistant':
+      return hasAnyPermission(permissions, ['crm.leads.read', 'crm.dashboard.read']);
     case 'admissions':
       return hasModulePermission(permissions, 'admissions')
         || hasPermission(permissions, 'crm.erp.handoff');

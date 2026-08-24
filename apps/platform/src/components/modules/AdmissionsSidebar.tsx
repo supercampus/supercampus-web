@@ -16,6 +16,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  Sparkles,
   Target,
   UserCog,
   Users,
@@ -38,6 +39,7 @@ const items: NavEntry[] = [
     children: [
       { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
       { id: 'pipeline', label: 'Lead', icon: Kanban },
+      { id: 'ai-assistant', label: 'AI Assistant', icon: Sparkles },
       { id: 'application-desk', label: 'Admission Desk', icon: IdCard },
     ],
   },
@@ -53,7 +55,7 @@ const items: NavEntry[] = [
 /** Server sections carry an icon name; this maps it onto the bundled icon set. */
 const iconByName: Record<string, LucideIcon> = {
   LayoutDashboard, Target, Kanban, ClipboardList, IdCard, Users,
-  ListChecks, Database, Layers, BarChart3, UserCog, Settings,
+  ListChecks, Database, Layers, BarChart3, UserCog, Settings, Sparkles,
 };
 
 interface AdmissionsSidebarProps {

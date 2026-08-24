@@ -7,6 +7,7 @@ import KanbanBoard from '@/components/kanban/KanbanBoard';
 import ActivityFeed from '@/components/kanban/ActivityFeed';
 import { AdmissionsSidebar } from '@/components/modules/AdmissionsSidebar';
 import { ApplicationDeskWorkspace } from '@/components/modules/ApplicationDeskWorkspace';
+import { CrmAiAssistant } from '@/components/modules/CrmAiAssistant';
 import { CampusOperationsWorkspace, type OperationsSection } from '@/components/modules/CampusOperationsWorkspace';
 import { PrincipalTimetableSheet } from '@/components/modules/PrincipalTimetableSheet';
 import { CloudinaryFileField, isStoredMediaValue, type StoredMediaValue } from '@/components/forms/CloudinaryFileField';
@@ -794,6 +795,7 @@ const NAV_TITLES: Record<NavSection, string> = {
   dashboard: 'Overview',
   crm: 'CRM',
   pipeline: 'Lead',
+  'ai-assistant': 'AI Assistant',
   admissions: 'Admissions',
   'application-desk': 'Admission Desk',
   students: 'Students',
@@ -1711,7 +1713,7 @@ export default function AdmissionsPage() {
       : availableStaffSettings(permissions)),
     [serverNavigation, permissions],
   );
-  // Admissions is a navigation group, not a standalone workspace. Only its four
+  // Admissions is a navigation group, not a standalone workspace. Only its
   // children participate in active-page selection and fallback resolution.
   const selectableNavigation = useMemo(
     () => allowedNavigation.filter((section) => section !== 'admissions'),
@@ -3655,6 +3657,8 @@ export default function AdmissionsPage() {
         )}
 
         {activeNav === 'application-desk' && <ApplicationDeskWorkspace embedded />}
+
+        {activeNav === 'ai-assistant' && <CrmAiAssistant />}
 
         {activeNav === 'dashboard' && !isCrmAdministrator && (
           <section className="flex-1 overflow-y-auto bg-[var(--crm-bg)] p-6">

@@ -173,6 +173,15 @@ export interface CreateFormInput {
 
 const CRM_ROOT = '/v1/crm';
 
+export type CrmAssistantIntent = 'general' | 'summarize' | 'extract' | 'follow_up' | 'next_actions';
+
+export function askCrmAssistant(input: string, intent: CrmAssistantIntent = 'general') {
+  return apiRequest<{ data: { content: string; intent: CrmAssistantIntent; model: string } }>(
+    `${CRM_ROOT}/assistant/text`,
+    { method: 'POST', body: JSON.stringify({ input, intent }) },
+  );
+}
+
 export function getCrmBoard(search?: string) {
   const query = search?.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
   return apiRequest<{ data: CrmBoard }>(`${CRM_ROOT}/kanban/board${query}`);
