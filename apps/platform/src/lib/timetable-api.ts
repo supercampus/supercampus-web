@@ -362,7 +362,7 @@ export function generateTimetableVersion(versionId: string, input: {
   preserveExisting?: boolean;
   prioritizeHighCredits?: boolean;
 } = {}) {
-  return apiRequest<{ data: { versionId: string; scheduledPeriods: number; unscheduled: Array<{ subjectOfferingId: string; remainingPeriods: number }>; engine: string } }>(
+  return apiRequest<{ data: { versionId: string; scheduledPeriods: number; unscheduled: Array<{ subjectOfferingId: string; remainingPeriods: number }>; engine: string; aiStatus: 'applied' | 'fallback' | 'not_configured' } }>(
     `${ROOT}/versions/${encodeURIComponent(versionId)}/generate`,
     { method: 'POST', body: JSON.stringify(input) },
   );

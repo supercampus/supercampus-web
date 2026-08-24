@@ -183,9 +183,9 @@ export function PrincipalTimetableSheet() {
     });
   }, [data?.workloadRequirements, offerings]);
 
-  const run = async (action: () => Promise<void>, success: string) => {
+  const run = async <T,>(action: () => Promise<T>, success: string | ((result: T) => string)) => {
     setBusy(true); setError(null); setNotice(null);
-    try { await action(); setNotice(success); await refresh(); }
+    try { const result = await action(); setNotice(typeof success === 'function' ? success(result) : success); await refresh(); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'The timetable change could not be saved.'); }
     finally { setBusy(false); }
   };
@@ -352,9 +352,14 @@ export function PrincipalTimetableSheet() {
         await upsertTimetableWorkloadRequirement({ subjectOfferingId: offering.id, deliveryType: option.value, periodsPerWeek: plan.periods, blockSize: plan.blockSize, maxBlocksPerDay: plan.maxBlocksPerDay });
       }
     }
-    await generateTimetableVersion(versionId, { preserveExisting: false, prioritizeHighCredits: true });
+    const generated = await generateTimetableVersion(versionId, { preserveExisting: false, prioritizeHighCredits: true });
     setShowRules(false);
-  }, 'Timetable generated from the course workload rules.');
+    return generated.data;
+  }, (result) => result.aiStatus === 'applied'
+    ? 'AI planned the timetable and every placement was checked against your academic rules.'
+    : result.aiStatus === 'fallback'
+      ? 'AI was temporarily unavailable, so the timetable was generated safely with the built-in constraint engine.'
+      : 'Timetable generated with the built-in constraint engine. Add the timetable AI settings to enable JarvisLabs.');
 
   const entryInput = (entry: TimetableEntry, slotId: string) => ({
     versionId: entry.versionId, slotId, subjectOfferingId: entry.subjectOfferingId,
