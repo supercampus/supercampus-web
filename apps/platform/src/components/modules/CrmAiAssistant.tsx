@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowUp, FileSearch, ListChecks, LoaderCircle, MessageSquareText, Sparkles, WandSparkles } from 'lucide-react';
-import { askCrmAssistant, type CrmAssistantIntent } from '@/lib/crm-api';
+import { ArrowUp, CheckCircle2, Database, FileSearch, ListChecks, LoaderCircle, MessageSquareText, ShieldCheck, Sparkles, WandSparkles } from 'lucide-react';
+import { askCrmAssistant, executeCrmAssistantAction, type CrmAssistantActionProposal, type CrmAssistantIntent } from '@/lib/crm-api';
 
 const TASKS: Array<{ id: CrmAssistantIntent; label: string; description: string; icon: typeof Sparkles }> = [
   { id: 'general', label: 'Ask anything', description: 'Get practical admissions CRM help', icon: Sparkles },
@@ -25,6 +25,9 @@ export function CrmAiAssistant() {
   const [input, setInput] = useState('');
   const [answer, setAnswer] = useState('');
   const [model, setModel] = useState('');
+  const [grounded, setGrounded] = useState(false);
+  const [action, setAction] = useState<CrmAssistantActionProposal | null>(null);
+  const [actionStatus, setActionStatus] = useState<'idle' | 'working' | 'done'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const characterCount = useMemo(() => Array.from(input).length, [input]);
@@ -35,14 +38,31 @@ export function CrmAiAssistant() {
     setLoading(true);
     setError(null);
     setAnswer('');
+    setAction(null);
+    setActionStatus('idle');
     try {
       const response = await askCrmAssistant(text, intent);
       setAnswer(response.data.content);
       setModel(response.data.model);
+      setGrounded(response.data.grounded);
+      setAction(response.data.action);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'The AI assistant could not complete this request.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const confirmAction = async () => {
+    if (!action || actionStatus === 'working') return;
+    setActionStatus('working');
+    setError(null);
+    try {
+      await executeCrmAssistantAction(action);
+      setActionStatus('done');
+    } catch (cause) {
+      setActionStatus('idle');
+      setError(cause instanceof Error ? cause.message : 'The requested portal action could not be completed.');
     }
   };
 
@@ -54,7 +74,7 @@ export function CrmAiAssistant() {
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[var(--tenant-primary)]">Admissions workspace</p>
             <h1 className="mt-1 text-2xl font-extrabold text-[var(--crm-text)]">AI Assistant</h1>
-            <p className="mt-1 max-w-2xl text-xs leading-5 text-[var(--crm-muted)]">Paste enquiry text or counselor notes. The assistant only works with the information you provide and will mark anything that still needs verification.</p>
+            <p className="mt-1 max-w-2xl text-xs leading-5 text-[var(--crm-muted)]">Ask about live admissions data or request a CRM action. Answers follow your portal permissions, and every data-changing action waits for your confirmation.</p>
           </div>
         </div>
 
@@ -79,7 +99,7 @@ export function CrmAiAssistant() {
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <span className="text-[10px] text-[var(--crm-muted)]">{characterCount.toLocaleString()} / 12,000 · Ctrl/⌘ + Enter to send</span>
                 <div className="flex items-center gap-2">
-                  {(input || answer) && <button type="button" onClick={() => { setInput(''); setAnswer(''); setError(null); setModel(''); }} className="h-10 rounded-xl border border-[var(--crm-border)] px-4 text-xs font-bold text-[var(--crm-muted)] hover:bg-[var(--crm-panel)]">Clear</button>}
+                  {(input || answer) && <button type="button" onClick={() => { setInput(''); setAnswer(''); setError(null); setModel(''); setGrounded(false); setAction(null); setActionStatus('idle'); }} className="h-10 rounded-xl border border-[var(--crm-border)] px-4 text-xs font-bold text-[var(--crm-muted)] hover:bg-[var(--crm-panel)]">Clear</button>}
                   <button type="button" disabled={!input.trim() || loading} onClick={() => void submit()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--tenant-primary)] px-5 text-xs font-extrabold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-40">
                     {loading ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowUp size={15} />}{loading ? 'Working…' : 'Generate'}
                   </button>
@@ -89,8 +109,12 @@ export function CrmAiAssistant() {
 
             {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold leading-5 text-red-700">{error}</div>}
             {(answer || loading) && <div className="rounded-2xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-3 border-b border-[var(--crm-border)] pb-3"><div className="flex items-center gap-2 text-xs font-extrabold"><Sparkles size={15} className="text-[var(--tenant-primary)]" /> Assistant result</div>{model && <span className="text-[9px] text-[var(--crm-muted)]">{model}</span>}</div>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--crm-border)] pb-3"><div className="flex items-center gap-2 text-xs font-extrabold"><Sparkles size={15} className="text-[var(--tenant-primary)]" /> Assistant result {grounded && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-700"><Database size={11} /> Live CRM data</span>}</div>{model && <span className="text-[9px] text-[var(--crm-muted)]">{model}</span>}</div>
               {loading ? <div className="flex min-h-32 items-center justify-center gap-2 text-xs text-[var(--crm-muted)]"><LoaderCircle size={16} className="animate-spin" /> Preparing the response…</div> : <div className="whitespace-pre-wrap py-4 text-sm leading-7 text-[var(--crm-text)]">{answer}</div>}
+              {action && !loading && <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-start gap-3"><ShieldCheck size={18} className="mt-0.5 shrink-0 text-amber-700" /><div className="min-w-0 flex-1"><p className="text-xs font-extrabold text-amber-950">Confirmation required</p><p className="mt-1 text-xs leading-5 text-amber-800">{action.description}. The assistant has not changed the portal yet.</p></div></div>
+                <div className="mt-3 flex justify-end">{actionStatus === 'done' ? <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-100 px-4 py-2 text-xs font-extrabold text-emerald-700"><CheckCircle2 size={15} /> Completed</span> : <button type="button" disabled={actionStatus === 'working'} onClick={() => void confirmAction()} className="inline-flex items-center gap-2 rounded-xl bg-amber-700 px-4 py-2 text-xs font-extrabold text-white disabled:opacity-50">{actionStatus === 'working' && <LoaderCircle size={14} className="animate-spin" />}{actionStatus === 'working' ? 'Completing…' : 'Confirm action'}</button>}</div>
+              </div>}
             </div>}
           </div>
         </div>

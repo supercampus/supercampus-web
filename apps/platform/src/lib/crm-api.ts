@@ -175,10 +175,33 @@ const CRM_ROOT = '/v1/crm';
 
 export type CrmAssistantIntent = 'general' | 'summarize' | 'extract' | 'follow_up' | 'next_actions';
 
+export interface CrmAssistantActionProposal {
+  actionType: 'add_lead_note' | 'create_lead_task' | 'move_lead';
+  leadId: string;
+  leadName: string;
+  description: string;
+  payload: Record<string, unknown>;
+}
+
+export interface CrmAssistantResponse {
+  content: string;
+  intent: CrmAssistantIntent;
+  model: string;
+  grounded: boolean;
+  action: CrmAssistantActionProposal | null;
+}
+
 export function askCrmAssistant(input: string, intent: CrmAssistantIntent = 'general') {
-  return apiRequest<{ data: { content: string; intent: CrmAssistantIntent; model: string } }>(
+  return apiRequest<{ data: CrmAssistantResponse }>(
     `${CRM_ROOT}/assistant/text`,
     { method: 'POST', body: JSON.stringify({ input, intent }) },
+  );
+}
+
+export function executeCrmAssistantAction(action: CrmAssistantActionProposal) {
+  return apiRequest<{ data: { completed: boolean; actionType: string; leadId: string; leadName: string } }>(
+    `${CRM_ROOT}/assistant/actions/execute`,
+    { method: 'POST', body: JSON.stringify({ action }) },
   );
 }
 
