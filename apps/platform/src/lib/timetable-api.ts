@@ -132,7 +132,7 @@ export interface TimetableContext {
   terms: Array<{ id: string; academicYearId: string; code: string; name: string; sequence: number; status: string }>;
   departments: Array<{ id: string; code: string; name: string }>;
   sections: Array<{ id: string; code: string; name: string; departmentId: string; programmeName: string; batchName: string; capacity: number | null }>;
-  subjectOfferings: Array<{ id: string; subjectId: string; code: string; name: string; academicYearId: string; termId: string | null; sectionId: string; sectionName: string; departmentId: string }>;
+  subjectOfferings: Array<{ id: string; subjectId: string; code: string; name: string; credits: number; academicYearId: string; termId: string | null; sectionId: string; sectionName: string; departmentId: string }>;
   teachingAssignments: Array<{ id: string; subjectOfferingId: string; facultyUserId: string; facultyName: string; assignmentType: string }>;
   configurations: TimetableConfiguration[];
   slots: TimetableSlot[];
@@ -281,6 +281,39 @@ export function createTimetableEntry(input: {
     method: 'POST',
     body: JSON.stringify(input),
   });
+}
+
+export function updateTimetableEntry(entryId: string, input: {
+  versionId: string;
+  slotId: string;
+  subjectOfferingId: string;
+  teachingAssignmentId: string;
+  roomId: string;
+  electiveGroupId?: string | null;
+  deliveryType?: TimetableDeliveryType;
+  sessionBlockId?: string;
+  blockSequence?: number;
+  blockLength?: number;
+}) {
+  return apiRequest<{ data: Record<string, unknown> }>(`${ROOT}/entries/${encodeURIComponent(entryId)}`, {
+    method: 'PUT', body: JSON.stringify(input),
+  });
+}
+
+export function deleteTimetableEntry(entryId: string) {
+  return apiRequest<{ data: { id: string; deleted: boolean } }>(`${ROOT}/entries/${encodeURIComponent(entryId)}`, {
+    method: 'DELETE',
+  });
+}
+
+export function generateTimetableVersion(versionId: string, input: {
+  preserveExisting?: boolean;
+  prioritizeHighCredits?: boolean;
+} = {}) {
+  return apiRequest<{ data: { versionId: string; scheduledPeriods: number; unscheduled: Array<{ subjectOfferingId: string; remainingPeriods: number }>; engine: string } }>(
+    `${ROOT}/versions/${encodeURIComponent(versionId)}/generate`,
+    { method: 'POST', body: JSON.stringify(input) },
+  );
 }
 
 export function publishTimetableVersion(versionId: string) {

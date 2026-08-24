@@ -10,6 +10,8 @@ import {
   RefreshCw,
   Rocket,
   Save,
+  Sparkles,
+  Trash2,
   Users,
   X,
 } from 'lucide-react';
@@ -18,9 +20,12 @@ import {
   createTimetableEntry,
   createTimetableRoomsBulk,
   createTimetableVersion,
+  deleteTimetableEntry,
+  generateTimetableVersion,
   getTimetableContext,
   publishTimetableVersion,
   replaceTimetableSlots,
+  updateTimetableEntry,
   upsertTimetableWorkloadRequirement,
   type TimetableContext,
   type TimetableDeliveryType,
@@ -69,6 +74,7 @@ export function TimetableAllocatorWorkspace() {
   const [departmentId, setDepartmentId] = useState('');
   const [sectionId, setSectionId] = useState('');
   const [assignmentSlotId, setAssignmentSlotId] = useState<string | null>(null);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [offeringId, setOfferingId] = useState('');
   const [teachingAssignmentId, setTeachingAssignmentId] = useState('');
   const [roomId, setRoomId] = useState('');
@@ -132,9 +138,20 @@ export function TimetableAllocatorWorkspace() {
 
   const saveAssignment = () => run(async () => {
     if (!versionId || !assignmentSlotId || !offeringId || !teachingAssignmentId || !roomId) throw new Error('Choose a subject, faculty member, and room.');
-    await createTimetableEntry({ versionId, slotId: assignmentSlotId, subjectOfferingId: offeringId, teachingAssignmentId, roomId, deliveryType });
-    setAssignmentSlotId(null); setOfferingId(''); setTeachingAssignmentId(''); setRoomId('');
-  }, 'Period assigned and conflict checks passed.');
+    const input = { versionId, slotId: assignmentSlotId, subjectOfferingId: offeringId, teachingAssignmentId, roomId, deliveryType };
+    if (editingEntryId) await updateTimetableEntry(editingEntryId, input);
+    else await createTimetableEntry(input);
+    setAssignmentSlotId(null); setEditingEntryId(null); setOfferingId(''); setTeachingAssignmentId(''); setRoomId('');
+  }, editingEntryId ? 'Period updated and conflict checks passed.' : 'Period assigned and conflict checks passed.');
+
+  const openCell = (slotId: string, entry?: TimetableContext['entries'][number]) => {
+    setAssignmentSlotId(slotId);
+    setEditingEntryId(entry?.id ?? null);
+    setOfferingId(entry?.subjectOfferingId ?? '');
+    setTeachingAssignmentId(entry?.teachingAssignmentId ?? '');
+    setRoomId(entry?.roomId ?? '');
+    setDeliveryType(entry?.deliveryType ?? 'class');
+  };
 
   if (loading && !context) return <div className="mt-4 flex min-h-80 items-center justify-center gap-2 text-sm text-[var(--crm-muted)]"><LoaderCircle className="animate-spin" size={18} /> Loading timetable allocator...</div>;
 
@@ -144,10 +161,13 @@ export function TimetableAllocatorWorkspace() {
         <div>
           <p className="text-[10px] uppercase tracking-widest text-[var(--tenant-primary)]">Academic operations / Web</p>
           <h2 className="mt-1 text-2xl">Timetable allocator</h2>
-          <p className="mt-1 text-xs text-[var(--crm-muted)]">Configure seven daily periods, faculty workload, rooms, conflicts, and published schedules.</p>
+          <p className="mt-1 text-xs text-[var(--crm-muted)]">Principal-only spreadsheet playground with credit-aware automatic scheduling and controlled publishing.</p>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" title="Refresh timetable" onClick={() => void refresh()} className="grid h-10 w-10 place-items-center rounded-md border border-[var(--crm-border)] bg-[var(--crm-card)]"><RefreshCw size={16} /></button>
+          {selectedVersion?.status === 'draft' && <button type="button" disabled={busy || !versionId || (context?.rooms.length ?? 0) === 0} onClick={() => void run(async () => {
+            await generateTimetableVersion(versionId, { preserveExisting: true, prioritizeHighCredits: true });
+          }, 'AI timetable generated. Existing principal edits were preserved.')} className="inline-flex h-10 items-center gap-2 rounded-md border border-[var(--tenant-primary)] px-4 text-xs text-[var(--tenant-primary)] disabled:opacity-40"><Sparkles size={15} /> Auto-generate</button>}
           {selectedVersion?.status === 'draft' && <button type="button" disabled={busy} onClick={() => void run(async () => { await publishTimetableVersion(versionId); }, 'Timetable published to students and staff.')} className="inline-flex h-10 items-center gap-2 rounded-md bg-[var(--tenant-primary)] px-4 text-xs text-white disabled:opacity-50"><Rocket size={15} /> Publish</button>}
         </div>
       </header>
@@ -177,10 +197,11 @@ export function TimetableAllocatorWorkspace() {
           </div>
 
           {tab === 'schedule' && <section className="mt-4">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <select value={departmentId} onChange={(event) => setDepartmentId(event.target.value)} className={control} aria-label="Department"><option value="">All departments</option>{context.departments.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select>
               <select value={sectionId} onChange={(event) => setSectionId(event.target.value)} className={control} aria-label="Section"><option value="">Choose section</option>{visibleSections.map((item) => <option key={item.id} value={item.id}>{item.programmeName} / {item.batchName} / {item.name}</option>)}</select>
               <span className="inline-flex h-10 items-center gap-2 px-2 text-xs text-[var(--crm-muted)]"><Users size={15} /> {selectedSection?.capacity ?? 0} seats</span>
+              <span className="text-[10px] text-[var(--crm-muted)]">Click any cell to add or edit. Automatic generation preserves your manual cells.</span>
             </div>
             <div className="mt-3 overflow-x-auto border border-[var(--crm-border)] bg-[var(--crm-card)]">
               <div className="grid min-w-[1080px] grid-cols-[120px_repeat(7,minmax(130px,1fr))]">
@@ -191,7 +212,7 @@ export function TimetableAllocatorWorkspace() {
                   ...PERIODS.map(([label], periodIndex) => {
                     const slot = slots.find((item) => item.dayOfWeek === day && item.sequence === periodIndex + 1);
                     const entry = slot && entries.find((item) => item.slotId === slot.id);
-                    return <button key={`${day}-${label}`} type="button" disabled={!slot || !sectionId || selectedVersion?.status !== 'draft' || Boolean(entry)} onClick={() => slot && setAssignmentSlotId(slot.id)} title={entry ? `${entry.subjectName}, ${entry.facultyName}, ${entry.roomCode}` : 'Assign this period'} className="min-h-24 border-b border-r border-[var(--crm-border)] p-3 text-left last:border-r-0 hover:bg-[var(--crm-surface)] disabled:cursor-default">
+                    return <button key={`${day}-${label}`} type="button" disabled={!slot || !sectionId || selectedVersion?.status !== 'draft'} onClick={() => slot && openCell(slot.id, entry)} title={entry ? `Edit ${entry.subjectName}, ${entry.facultyName}, ${entry.roomCode}` : 'Assign this period'} className="min-h-24 border-b border-r border-[var(--crm-border)] p-3 text-left last:border-r-0 hover:bg-[var(--crm-surface)] disabled:cursor-default">
                       {entry ? <><p className="text-xs">{entry.subjectCode}</p><p className="mt-1 line-clamp-2 text-[10px] text-[var(--crm-muted)]">{entry.subjectName}</p><p className="mt-2 text-[9px] text-[var(--tenant-primary)]">{entry.facultyName}</p><p className="mt-1 text-[9px] text-[var(--crm-muted)]">{entry.roomCode} / {entry.deliveryType}</p></> : <span className="flex items-center gap-1 text-[10px] text-[var(--crm-muted)]"><Plus size={13} /> Assign</span>}
                     </button>;
                   }),
@@ -223,14 +244,17 @@ export function TimetableAllocatorWorkspace() {
 
       {assignmentSlotId && <div className="fixed inset-0 z-[120] flex items-center justify-end bg-black/30" onMouseDown={(event) => { if (event.currentTarget === event.target) setAssignmentSlotId(null); }}>
         <aside className="h-full w-full max-w-md overflow-y-auto bg-[var(--crm-card)] p-6 shadow-xl">
-          <div className="flex items-start justify-between"><div><p className="text-[10px] uppercase tracking-widest text-[var(--tenant-primary)]">Assign period</p><h3 className="mt-1 text-xl">{DAYS.find(([day]) => day === selectedSlot?.dayOfWeek)?.[1]} / {selectedSlot?.label}</h3></div><button type="button" title="Close" onClick={() => setAssignmentSlotId(null)} className="grid h-9 w-9 place-items-center"><X size={18} /></button></div>
+          <div className="flex items-start justify-between"><div><p className="text-[10px] uppercase tracking-widest text-[var(--tenant-primary)]">{editingEntryId ? 'Edit period' : 'Assign period'}</p><h3 className="mt-1 text-xl">{DAYS.find(([day]) => day === selectedSlot?.dayOfWeek)?.[1]} / {selectedSlot?.label}</h3></div><button type="button" title="Close" onClick={() => { setAssignmentSlotId(null); setEditingEntryId(null); }} className="grid h-9 w-9 place-items-center"><X size={18} /></button></div>
           <div className="mt-6 grid gap-4">
             <label className="text-xs text-[var(--crm-muted)]">Subject<select value={offeringId} onChange={(event) => { setOfferingId(event.target.value); setTeachingAssignmentId(''); }} className={`${control} mt-1 w-full text-[var(--crm-text)]`}><option value="">Choose subject</option>{offerings.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select></label>
             <label className="text-xs text-[var(--crm-muted)]">Faculty<select value={teachingAssignmentId} onChange={(event) => setTeachingAssignmentId(event.target.value)} className={`${control} mt-1 w-full text-[var(--crm-text)]`}><option value="">Choose assigned faculty</option>{assignments.map((item) => <option key={item.id} value={item.id}>{item.facultyName} ({item.assignmentType})</option>)}</select></label>
             <label className="text-xs text-[var(--crm-muted)]">Room<select value={roomId} onChange={(event) => setRoomId(event.target.value)} className={`${control} mt-1 w-full text-[var(--crm-text)]`}><option value="">Choose room</option>{context?.rooms.map((item: TimetableRoom) => <option key={item.id} value={item.id}>{item.code} - {item.name} ({item.capacity})</option>)}</select></label>
             <label className="text-xs text-[var(--crm-muted)]">Delivery<select value={deliveryType} onChange={(event) => setDeliveryType(event.target.value as TimetableDeliveryType)} className={`${control} mt-1 w-full text-[var(--crm-text)]`}>{['class', 'laboratory', 'tutorial', 'project', 'activity'].map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
           </div>
-          <button type="button" disabled={busy} onClick={() => void saveAssignment()} className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[var(--tenant-primary)] text-xs text-white disabled:opacity-50"><Save size={15} /> Save assignment</button>
+          <div className="mt-6 flex gap-2">
+            {editingEntryId && <button type="button" disabled={busy} onClick={() => void run(async () => { await deleteTimetableEntry(editingEntryId); setAssignmentSlotId(null); setEditingEntryId(null); }, 'Period cleared.')} className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-red-200 px-4 text-xs text-red-700 disabled:opacity-50"><Trash2 size={15} /> Clear</button>}
+            <button type="button" disabled={busy} onClick={() => void saveAssignment()} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-md bg-[var(--tenant-primary)] text-xs text-white disabled:opacity-50"><Save size={15} /> {editingEntryId ? 'Update cell' : 'Save assignment'}</button>
+          </div>
         </aside>
       </div>}
     </div>
