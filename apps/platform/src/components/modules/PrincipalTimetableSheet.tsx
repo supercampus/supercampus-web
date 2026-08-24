@@ -4,11 +4,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  Building2,
   Check,
   ChevronDown,
   ChevronUp,
   Clock3,
   GripVertical,
+  GraduationCap,
   LoaderCircle,
   Plus,
   RefreshCw,
@@ -20,10 +22,13 @@ import {
 } from 'lucide-react';
 import {
   createTimetableConfiguration,
+  createTimetableClass,
+  createTimetableDepartment,
   createTimetableEntry,
   createTimetableVersion,
   deleteTimetableEntry,
   deleteTimetableWorkloadRequirement,
+  clearTimetableDraftEntries,
   generateTimetableVersion,
   getTimetableContext,
   publishTimetableVersion,
@@ -88,6 +93,18 @@ export function PrincipalTimetableSheet() {
   const [layoutSlots, setLayoutSlots] = useState<LayoutSlot[]>(INITIAL_LAYOUT);
   const [layoutMaxDaily, setLayoutMaxDaily] = useState(6);
   const [layoutMaxConsecutive, setLayoutMaxConsecutive] = useState(3);
+  const [academicSetup, setAcademicSetup] = useState<'department' | 'class' | null>(null);
+  const [departmentCode, setDepartmentCode] = useState('');
+  const [departmentName, setDepartmentName] = useState('');
+  const [classDepartmentId, setClassDepartmentId] = useState('');
+  const [classYearId, setClassYearId] = useState('');
+  const [programmeCode, setProgrammeCode] = useState('');
+  const [programmeName, setProgrammeName] = useState('');
+  const [batchCode, setBatchCode] = useState('');
+  const [batchName, setBatchName] = useState('');
+  const [newSectionCode, setNewSectionCode] = useState('A');
+  const [newSectionName, setNewSectionName] = useState('Section A');
+  const [newSectionCapacity, setNewSectionCapacity] = useState(60);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -126,6 +143,7 @@ export function PrincipalTimetableSheet() {
   }, [allSlots, sheetDays]);
   const weeklyCapacity = slots.length;
   const entries = useMemo(() => (data?.entries ?? []).filter((item) => item.versionId === versionId && item.sectionId === sectionId), [data, versionId, sectionId]);
+  const configurationEntryCount = useMemo(() => (data?.entries ?? []).filter((entry) => versions.some((version) => version.id === entry.versionId)).length, [data, versions]);
   const offerings = useMemo(() => (data?.subjectOfferings ?? []).filter((item) => item.sectionId === sectionId).sort((a, b) => b.credits - a.credits || a.code.localeCompare(b.code)), [data, sectionId]);
   const assignments = useMemo(() => (data?.teachingAssignments ?? []).filter((item) => item.subjectOfferingId === offeringId), [data, offeringId]);
 
@@ -138,10 +156,11 @@ export function PrincipalTimetableSheet() {
   useEffect(() => {
     if (!selectedConfiguration) return;
     const firstDay = selectedConfiguration.workingDays[0] ?? allSlots[0]?.dayOfWeek;
+    let periodNumber = 0;
     const template = allSlots
       .filter((item) => item.dayOfWeek === firstDay)
       .sort((a, b) => a.sequence - b.sequence)
-      .map((item) => ({ key: item.id, label: item.label, slotType: item.slotType, startsAt: item.startsAt.slice(0, 5), endsAt: item.endsAt.slice(0, 5) }));
+      .map((item) => ({ key: item.id, label: item.slotType === 'instructional' ? `Period ${++periodNumber}` : item.slotType === 'lunch' ? 'Lunch' : 'Break', slotType: item.slotType, startsAt: item.startsAt.slice(0, 5), endsAt: item.endsAt.slice(0, 5) }));
     setLayoutDays(selectedConfiguration.workingDays);
     if (template.length) setLayoutSlots(template);
     setLayoutMaxDaily(selectedConfiguration.maxFacultyPeriodsPerDay);
@@ -183,14 +202,17 @@ export function PrincipalTimetableSheet() {
     return layoutSlots.filter((item) => item.slotType === 'instructional').length * layoutDays.length;
   };
 
-  const expandedLayout = () => layoutDays.flatMap((day) => layoutSlots.map((item, index) => ({
-    dayOfWeek: day,
-    sequence: index + 1,
-    label: item.label.trim(),
-    slotType: item.slotType,
-    startsAt: item.startsAt,
-    endsAt: item.endsAt,
-  })));
+  const expandedLayout = () => layoutDays.flatMap((day) => {
+    let periodNumber = 0;
+    return layoutSlots.map((item, index) => ({
+      dayOfWeek: day,
+      sequence: index + 1,
+      label: item.slotType === 'instructional' ? `Period ${++periodNumber}` : item.slotType === 'lunch' ? 'Lunch' : 'Break',
+      slotType: item.slotType,
+      startsAt: item.startsAt,
+      endsAt: item.endsAt,
+    }));
+  });
 
   const createWorkspace = () => run(async () => {
     if (!setupYearId) throw new Error('Choose an academic year first.');
@@ -204,9 +226,8 @@ export function PrincipalTimetableSheet() {
 
   const saveLayout = () => run(async () => {
     if (!selectedConfiguration) throw new Error('Choose a timetable configuration first.');
-    const hasEntries = (data?.entries ?? []).some((entry) => versions.some((version) => version.id === entry.versionId));
-    if (hasEntries) throw new Error('Clear the generated timetable before changing its days or periods. This protects existing classes from moving silently.');
     const capacity = validateLayout();
+    if (configurationEntryCount > 0) await clearTimetableDraftEntries(selectedConfiguration.id);
     await updateTimetableConfiguration(selectedConfiguration.id, {
       name: selectedConfiguration.name,
       timezone: selectedConfiguration.timezone,
@@ -252,6 +273,67 @@ export function PrincipalTimetableSheet() {
     delete deliveries[delivery];
     return { ...current, [offeringId]: { deliveries } };
   });
+
+  const setCourseWeeklyTotal = (offeringId: string, total: number) => setCourseRules((current) => {
+    const rule = current[offeringId] ?? { deliveries: {} };
+    const active = DELIVERY_OPTIONS.filter((option) => (rule.deliveries[option.value]?.periods ?? 0) > 0);
+    const primary = active.find((option) => option.value === 'class')?.value ?? active[0]?.value ?? 'class';
+    const otherPeriods = active.filter((option) => option.value !== primary).reduce((sum, option) => sum + (rule.deliveries[option.value]?.periods ?? 0), 0);
+    const existing = rule.deliveries[primary] ?? { periods: 1, blockSize: 1, maxBlocksPerDay: 1 };
+    return { ...current, [offeringId]: { deliveries: { ...rule.deliveries, [primary]: { ...existing, periods: Math.max(1, total - otherPeriods) } } } };
+  });
+
+  const suggestBalancedWorkload = () => {
+    if (!offerings.length || weeklyCapacity < offerings.length) {
+      setError('The weekly layout needs at least one period for every course. Add more bell-time periods first.');
+      return;
+    }
+    const weights = offerings.map((offering) => Math.max(1, offering.credits || 1));
+    const weightTotal = weights.reduce((sum, value) => sum + value, 0);
+    const remaining = weeklyCapacity - offerings.length;
+    const allocations = weights.map((weight) => 1 + Math.floor((remaining * weight) / weightTotal));
+    let unallocated = weeklyCapacity - allocations.reduce((sum, value) => sum + value, 0);
+    for (let index = 0; unallocated > 0; index = (index + 1) % allocations.length) {
+      allocations[index] += 1;
+      unallocated -= 1;
+    }
+    setCourseRules(Object.fromEntries(offerings.map((offering, index) => [offering.id, { deliveries: { class: { periods: allocations[index], blockSize: 1, maxBlocksPerDay: 1 } } }] as const)));
+    setError(null);
+    setNotice('A balanced starting point was created from the course credits. You can still adjust any course.');
+  };
+
+  const openClassSetup = () => {
+    setClassDepartmentId(departmentId || departments[0]?.id || '');
+    setClassYearId(selectedConfiguration?.academicYearId || data?.academicYears.find((item) => item.status === 'active')?.id || data?.academicYears[0]?.id || '');
+    setAcademicSetup('class');
+  };
+
+  const saveDepartment = () => run(async () => {
+    const created = await createTimetableDepartment({ code: departmentCode, name: departmentName });
+    const id = String(created.data.id ?? '');
+    if (id) setDepartmentId(id);
+    setAcademicSetup(null);
+    setDepartmentCode('');
+    setDepartmentName('');
+  }, 'Department saved.');
+
+  const saveClass = () => run(async () => {
+    const created = await createTimetableClass({
+      departmentId: classDepartmentId,
+      academicYearId: classYearId,
+      programmeCode,
+      programmeName,
+      batchCode,
+      batchName,
+      sectionCode: newSectionCode,
+      sectionName: newSectionName,
+      capacity: newSectionCapacity || null,
+    });
+    const id = String(created.data.section.id ?? '');
+    setDepartmentId(classDepartmentId);
+    if (id) setSectionId(id);
+    setAcademicSetup(null);
+  }, 'Class saved and selected.');
 
   const applyRulesAndGenerate = () => run(async () => {
     if (!versionId || !sectionId) throw new Error('Choose a section and a draft timetable.');
@@ -363,6 +445,8 @@ export function PrincipalTimetableSheet() {
     <div className="flex flex-wrap items-center gap-2 border-b border-slate-300 bg-slate-50 px-4 py-2">
       <select value={departmentId} onChange={(event) => setDepartmentId(event.target.value)} className={selectClass} aria-label="Department"><option value="">All departments</option>{departments.map((item) => <option key={item.id} value={item.id}>{item.code}</option>)}</select>
       <select value={sectionId} onChange={(event) => setSectionId(event.target.value)} className={`${selectClass} min-w-64`} aria-label="Section"><option value="">Select a class / section</option>{sections.map((item) => <option key={item.id} value={item.id}>{item.programmeName} · {item.batchName} · {item.name}</option>)}</select>
+      <button type="button" onClick={() => setAcademicSetup('department')} className="inline-flex h-9 items-center gap-2 rounded border border-slate-300 bg-white px-3 text-xs text-slate-700"><Building2 size={13} /> New department</button>
+      <button type="button" onClick={openClassSetup} className="inline-flex h-9 items-center gap-2 rounded border border-slate-300 bg-white px-3 text-xs text-slate-700"><GraduationCap size={13} /> New class</button>
       <span className="text-[11px] text-slate-500">{showRules ? 'Choose the class whose weekly course periods you want to prepare.' : 'Drag subjects into cells, or click a cell to edit it.'}</span>
     </div>
 
@@ -371,7 +455,7 @@ export function PrincipalTimetableSheet() {
     {showRules && <section className="min-h-0 flex-1 overflow-y-auto border-b border-slate-300 bg-slate-50 p-4">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-700">Workload setup</p><h2 className="mt-1 text-lg font-semibold text-slate-900">How should each course be taught?</h2><p className="mt-1 text-xs text-slate-500">Set the periods per week. Add a lab, tutorial, project, or activity only when the course needs it.</p></div>
+          <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-700">Step 2 · Course periods</p><h2 className="mt-1 text-lg font-semibold text-slate-900">How many times should each course meet this week?</h2><p className="mt-1 text-xs text-slate-500">This is the total for the whole week—not the same number every day. The generator spreads these periods across the selected working days.</p><button type="button" onClick={suggestBalancedWorkload} className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"><Sparkles size={14} /> Suggest a balanced workload from credits</button></div>
           <div className="min-w-72">
             <div className="flex items-center justify-between text-xs"><span className="font-medium text-slate-600">Planned periods</span><strong className={workloadDifference === 0 ? 'text-emerald-700' : workloadDifference > 0 ? 'text-amber-700' : 'text-red-700'}>{plannedPeriods} of {weeklyCapacity}</strong></div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full transition-all ${workloadDifference === 0 ? 'bg-emerald-500' : workloadDifference > 0 ? 'bg-amber-400' : 'bg-red-500'}`} style={{ width: `${Math.min(100, weeklyCapacity ? (plannedPeriods / weeklyCapacity) * 100 : 0)}%` }} /></div>
@@ -388,15 +472,17 @@ export function PrincipalTimetableSheet() {
             return <article key={offering.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="rounded bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white">{offering.code}</span><h3 className="font-semibold text-slate-900">{offering.name}</h3><span className="text-[11px] text-slate-400">{offering.credits || '—'} credits</span></div><p className="mt-2 text-xs text-slate-500">{faculty}</p></div>
-                <div className="rounded-lg bg-emerald-50 px-4 py-2 text-center"><strong className="block text-lg text-emerald-800">{courseTotal(rule)}</strong><span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-700">periods/week</span></div>
+                <div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-2"><button type="button" onClick={() => setCourseWeeklyTotal(offering.id, Math.max(1, courseTotal(rule) - 1))} className="grid h-8 w-8 place-items-center rounded bg-white text-lg text-emerald-800 shadow-sm" aria-label={`Reduce ${offering.code} weekly periods`}>−</button><label className="text-center"><input aria-label={`${offering.code} total periods in the whole week`} type="number" min={1} max={weeklyCapacity} value={courseTotal(rule)} onChange={(event) => setCourseWeeklyTotal(offering.id, Math.max(1, Number(event.target.value)))} className="h-8 w-14 border-0 bg-transparent text-center text-lg font-semibold text-emerald-800 outline-none" /><span className="block text-[9px] font-semibold uppercase tracking-wider text-emerald-700">in the whole week</span></label><button type="button" onClick={() => setCourseWeeklyTotal(offering.id, courseTotal(rule) + 1)} className="grid h-8 w-8 place-items-center rounded bg-white text-lg text-emerald-800 shadow-sm" aria-label={`Increase ${offering.code} weekly periods`}>+</button></div>
               </div>
 
-              <div className="mt-4 grid gap-2">
+              <details className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <summary className="cursor-pointer select-none text-xs font-medium text-slate-600">Teaching method: {activePlans.map((option) => option.label).join(' + ') || 'Not set'} <span className="ml-2 text-[10px] font-normal text-slate-400">Customize only if this course needs labs, tutorials, or consecutive periods</span></summary>
+              <div className="mt-3 grid gap-2">
                 {activePlans.map((option) => {
                   const plan = rule.deliveries[option.value]!;
                   return <div key={option.value} className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                     <span className="w-24 text-xs font-semibold text-slate-800">{option.label}</span>
-                    <label className="flex items-center gap-2 text-[10px] text-slate-500">Periods/week<input aria-label={`${offering.code} ${option.label} periods`} type="number" min={1} max={168} value={plan.periods} onChange={(event) => updateDeliveryPlan(offering.id, option.value, { periods: Math.max(1, Number(event.target.value)) })} className="h-8 w-16 rounded border border-slate-300 bg-white px-2 text-center text-xs text-slate-800" /></label>
+                    <label className="flex items-center gap-2 text-[10px] text-slate-500">Periods in whole week<input aria-label={`${offering.code} ${option.label} periods`} type="number" min={1} max={168} value={plan.periods} onChange={(event) => updateDeliveryPlan(offering.id, option.value, { periods: Math.max(1, Number(event.target.value)) })} className="h-8 w-16 rounded border border-slate-300 bg-white px-2 text-center text-xs text-slate-800" /></label>
                     <label className="flex items-center gap-2 text-[10px] text-slate-500">Consecutive<input aria-label={`${offering.code} ${option.label} block size`} type="number" min={1} max={168} value={plan.blockSize} onChange={(event) => updateDeliveryPlan(offering.id, option.value, { blockSize: Math.max(1, Number(event.target.value)) })} className="h-8 w-16 rounded border border-slate-300 bg-white px-2 text-center text-xs text-slate-800" /></label>
                     <details className="text-[10px] text-slate-500"><summary className="cursor-pointer select-none">More</summary><label className="mt-2 flex items-center gap-2">Maximum sessions/day<input aria-label={`${offering.code} ${option.label} daily block limit`} type="number" min={1} max={24} value={plan.maxBlocksPerDay} onChange={(event) => updateDeliveryPlan(offering.id, option.value, { maxBlocksPerDay: Math.max(1, Number(event.target.value)) })} className="h-8 w-16 rounded border border-slate-300 bg-white px-2 text-center text-xs text-slate-800" /></label></details>
                     <button type="button" onClick={() => removeDeliveryPlan(offering.id, option.value)} className="ml-auto grid h-8 w-8 place-items-center rounded text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label={`Remove ${option.label} from ${offering.code}`}><X size={14} /></button>
@@ -406,6 +492,7 @@ export function PrincipalTimetableSheet() {
               </div>
 
               {unusedOptions.length > 0 && <label className="relative mt-3 inline-block"><span className="sr-only">Add teaching method</span><select aria-label={`Add teaching method to ${offering.code}`} value="" onChange={(event) => { const value = event.target.value as TimetableDeliveryType; if (value) updateDeliveryPlan(offering.id, value, { periods: 1, blockSize: 1, maxBlocksPerDay: 1 }); }} className="h-9 appearance-none rounded-lg border border-dashed border-slate-300 bg-white pl-3 pr-8 text-xs font-medium text-slate-600 outline-none hover:border-emerald-500"><option value="">+ Add teaching method</option>{unusedOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><ChevronDown size={13} className="pointer-events-none absolute right-3 top-3 text-slate-400" /></label>}
+              </details>
             </article>;
           })}
           {sectionId && offerings.length === 0 && <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">No courses are assigned to this section yet.</div>}
@@ -450,12 +537,33 @@ export function PrincipalTimetableSheet() {
       </div>
     </div>}
 
+    {academicSetup && <div className="fixed inset-0 z-[170] grid place-items-center bg-black/30 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setAcademicSetup(null); }}>
+      <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700">Academic structure</p><h2 className="mt-1 text-xl">{academicSetup === 'department' ? 'Create a department' : 'Create a class'}</h2><p className="mt-2 text-xs text-slate-500">{academicSetup === 'department' ? 'The new department is created only for this tenant.' : 'A class belongs to a programme, batch, and academic year.'}</p></div><button type="button" onClick={() => setAcademicSetup(null)} className="grid h-9 w-9 place-items-center"><X size={18} /></button></div>
+        {academicSetup === 'department' ? <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <label className="text-xs text-slate-500">Department code<input value={departmentCode} onChange={(event) => setDepartmentCode(event.target.value.toUpperCase())} placeholder="Example: ECE" className={`${selectClass} mt-1 w-full`} /></label>
+          <label className="text-xs text-slate-500">Department name<input value={departmentName} onChange={(event) => setDepartmentName(event.target.value)} placeholder="Electronics and Communication Engineering" className={`${selectClass} mt-1 w-full`} /></label>
+        </div> : <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <EditorSelect label="Department" value={classDepartmentId} onChange={setClassDepartmentId}><option value="">Choose department</option>{departments.map((item) => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</EditorSelect>
+          <EditorSelect label="Academic year" value={classYearId} onChange={setClassYearId}><option value="">Choose academic year</option>{data.academicYears.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</EditorSelect>
+          <label className="text-xs text-slate-500">Programme code<input value={programmeCode} onChange={(event) => setProgrammeCode(event.target.value.toUpperCase())} placeholder="Example: BTECH-ECE" className={`${selectClass} mt-1 w-full`} /></label>
+          <label className="text-xs text-slate-500">Programme name<input value={programmeName} onChange={(event) => setProgrammeName(event.target.value)} placeholder="B.Tech Electronics and Communication" className={`${selectClass} mt-1 w-full`} /></label>
+          <label className="text-xs text-slate-500">Batch code<input value={batchCode} onChange={(event) => setBatchCode(event.target.value.toUpperCase())} placeholder="Example: 2026-2030" className={`${selectClass} mt-1 w-full`} /></label>
+          <label className="text-xs text-slate-500">Batch name<input value={batchName} onChange={(event) => setBatchName(event.target.value)} placeholder="ECE Batch of 2026-2030" className={`${selectClass} mt-1 w-full`} /></label>
+          <label className="text-xs text-slate-500">Class code<input value={newSectionCode} onChange={(event) => setNewSectionCode(event.target.value.toUpperCase())} placeholder="A" className={`${selectClass} mt-1 w-full`} /></label>
+          <label className="text-xs text-slate-500">Class name<input value={newSectionName} onChange={(event) => setNewSectionName(event.target.value)} placeholder="Section A" className={`${selectClass} mt-1 w-full`} /></label>
+          <label className="text-xs text-slate-500">Student capacity<input type="number" min={1} value={newSectionCapacity} onChange={(event) => setNewSectionCapacity(Math.max(1, Number(event.target.value)))} className={`${selectClass} mt-1 w-full`} /></label>
+        </div>}
+        <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setAcademicSetup(null)} className="h-10 rounded-lg border border-slate-300 px-4 text-xs text-slate-600">Cancel</button><button type="button" disabled={busy || (academicSetup === 'department' ? !departmentCode.trim() || !departmentName.trim() : !classDepartmentId || !classYearId || !programmeCode.trim() || !programmeName.trim() || !batchCode.trim() || !batchName.trim() || !newSectionCode.trim() || !newSectionName.trim())} onClick={() => void (academicSetup === 'department' ? saveDepartment() : saveClass())} className="h-10 rounded-lg bg-slate-900 px-5 text-xs font-semibold text-white disabled:opacity-40">{academicSetup === 'department' ? 'Create department' : 'Create class'}</button></div>
+      </div>
+    </div>}
+
     {showLayout && <div className="fixed inset-0 z-[160] flex justify-end bg-black/30" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowLayout(false); }}>
       <aside className="h-full w-full max-w-3xl overflow-y-auto bg-white p-6 shadow-2xl">
-        <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700">Principal settings</p><h2 className="mt-1 text-xl">Timetable structure</h2><p className="mt-2 text-xs text-slate-500">Create any number of working days and rows. Each row has its own duration.</p></div><button type="button" onClick={() => setShowLayout(false)} className="grid h-9 w-9 place-items-center"><X size={18} /></button></div>
+        <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700">Step 1 · Week setup</p><h2 className="mt-1 text-xl">Working days and bell times</h2><p className="mt-2 text-xs text-slate-500">Set when each period begins and ends. Subjects are assigned later and can be different on every day.</p></div><button type="button" onClick={() => setShowLayout(false)} className="grid h-9 w-9 place-items-center"><X size={18} /></button></div>
         <div className="mt-6"><StructureEditor days={layoutDays} setDays={setLayoutDays} slots={layoutSlots} setSlots={setLayoutSlots} maxDaily={layoutMaxDaily} setMaxDaily={setLayoutMaxDaily} maxConsecutive={layoutMaxConsecutive} setMaxConsecutive={setLayoutMaxConsecutive} addSlot={addLayoutSlot} moveSlot={moveLayoutSlot} /></div>
-        <div className="mt-6 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Changing the structure is available while the timetable is a draft and has no placed classes. This prevents existing classes from being silently moved.</div>
-        <button type="button" disabled={busy} onClick={() => void saveLayout()} className="mt-5 inline-flex h-11 items-center gap-2 rounded bg-slate-900 px-5 text-xs text-white disabled:opacity-40"><Save size={14} /> Save structure</button>
+        {configurationEntryCount > 0 && <div className="mt-6 rounded border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">This draft currently contains {configurationEntryCount} generated class placements. Saving new bell times will clear those placements and regenerate them later. Your courses, faculty assignments, and workload settings will remain saved.</div>}
+        <button type="button" disabled={busy} onClick={() => void saveLayout()} className={`mt-5 inline-flex h-11 items-center gap-2 rounded px-5 text-xs text-white disabled:opacity-40 ${configurationEntryCount > 0 ? 'bg-amber-700' : 'bg-slate-900'}`}><Save size={14} /> {configurationEntryCount > 0 ? 'Clear draft and save bell times' : 'Save bell times'}</button>
       </aside>
     </div>}
 
@@ -505,13 +613,14 @@ function StructureEditor({ days, setDays, slots, setSlots, maxDaily, setMaxDaily
       <label className="text-xs text-slate-500">Maximum faculty periods per day<input type="number" min={1} max={24} value={maxDaily} onChange={(event) => setMaxDaily(Math.max(1, Number(event.target.value)))} className={`${selectClass} mt-1 w-full`} /></label>
       <label className="text-xs text-slate-500">Maximum consecutive faculty periods<input type="number" min={1} max={24} value={maxConsecutive} onChange={(event) => setMaxConsecutive(Math.max(1, Number(event.target.value)))} className={`${selectClass} mt-1 w-full`} /></label>
     </div>
-    <div className="mt-6 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold text-slate-900">Rows and durations</h3><p className="mt-1 text-[11px] text-slate-500">The order below becomes the sheet columns for every selected day.</p></div><div className="flex gap-2"><button type="button" onClick={() => addSlot('instructional')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={13} className="inline" /> Period</button><button type="button" onClick={() => addSlot('break')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={13} className="inline" /> Break</button><button type="button" onClick={() => addSlot('lunch')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={13} className="inline" /> Lunch</button></div></div>
+    <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-900"><strong>Bell times only—do not enter subjects here.</strong> For example, Period 1 can be Maths on Monday and Data Structures on Tuesday. Subjects are placed after the workload is generated.</div>
+    <div className="mt-6 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold text-slate-900">Bell times</h3><p className="mt-1 text-[11px] text-slate-500">These times repeat on every selected working day; the subjects do not.</p></div><div className="flex gap-2"><button type="button" onClick={() => addSlot('instructional')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={13} className="inline" /> Period</button><button type="button" onClick={() => addSlot('break')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={13} className="inline" /> Break</button><button type="button" onClick={() => addSlot('lunch')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={13} className="inline" /> Lunch</button></div></div>
     <div className="mt-3 overflow-x-auto border-l border-t border-slate-300">
-      <div className="grid min-w-[650px] grid-cols-[44px_minmax(170px,1fr)_130px_120px_120px_92px] bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{['#', 'Label', 'Type', 'Start', 'End', 'Actions'].map((heading) => <div key={heading} className="border-b border-r border-slate-300 px-2 py-2">{heading}</div>)}</div>
+      <div className="grid min-w-[650px] grid-cols-[44px_minmax(170px,1fr)_130px_120px_120px_92px] bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{['#', 'Bell-time row', 'Type', 'Start', 'End', 'Actions'].map((heading) => <div key={heading} className="border-b border-r border-slate-300 px-2 py-2">{heading}</div>)}</div>
       {slots.map((item, index) => <div key={item.key} className="grid min-w-[650px] grid-cols-[44px_minmax(170px,1fr)_130px_120px_120px_92px] text-xs">
         <div className="border-b border-r border-slate-300 px-2 py-3 text-center">{index + 1}</div>
-        <div className="border-b border-r border-slate-300 p-1.5"><input value={item.label} onChange={(event) => updateSlot(item.key, { label: event.target.value })} className="h-8 w-full border border-slate-200 px-2" /></div>
-        <div className="border-b border-r border-slate-300 p-1.5"><select value={item.slotType} onChange={(event) => updateSlot(item.key, { slotType: event.target.value as LayoutSlot['slotType'] })} className="h-8 w-full border border-slate-200 bg-white px-2"><option value="instructional">Period</option><option value="break">Break</option><option value="lunch">Lunch</option></select></div>
+        <div className="flex items-center border-b border-r border-slate-300 bg-slate-50 px-3 font-semibold text-slate-700">{item.slotType === 'instructional' ? `Period ${slots.slice(0, index + 1).filter((slot) => slot.slotType === 'instructional').length}` : item.slotType === 'lunch' ? 'Lunch' : 'Break'}</div>
+        <div className="border-b border-r border-slate-300 p-1.5"><select value={item.slotType} onChange={(event) => { const slotType = event.target.value as LayoutSlot['slotType']; updateSlot(item.key, { slotType, label: slotType === 'instructional' ? `Period ${slots.filter((slot) => slot.slotType === 'instructional').length + (item.slotType === 'instructional' ? 0 : 1)}` : slotType === 'lunch' ? 'Lunch' : 'Break' }); }} className="h-8 w-full border border-slate-200 bg-white px-2"><option value="instructional">Period</option><option value="break">Break</option><option value="lunch">Lunch</option></select></div>
         <div className="border-b border-r border-slate-300 p-1.5"><input type="time" value={item.startsAt} onChange={(event) => updateSlot(item.key, { startsAt: event.target.value })} className="h-8 w-full border border-slate-200 px-2" /></div>
         <div className="border-b border-r border-slate-300 p-1.5"><input type="time" value={item.endsAt} onChange={(event) => updateSlot(item.key, { endsAt: event.target.value })} className="h-8 w-full border border-slate-200 px-2" /></div>
         <div className="flex items-center justify-center gap-1 border-b border-r border-slate-300"><button type="button" disabled={index === 0} onClick={() => moveSlot(index, -1)} className="grid h-7 w-7 place-items-center disabled:opacity-25" aria-label="Move row up"><ChevronUp size={14} /></button><button type="button" disabled={index === slots.length - 1} onClick={() => moveSlot(index, 1)} className="grid h-7 w-7 place-items-center disabled:opacity-25" aria-label="Move row down"><ChevronDown size={14} /></button><button type="button" onClick={() => setSlots((current) => current.filter((slot) => slot.key !== item.key))} className="grid h-7 w-7 place-items-center text-red-600" aria-label="Remove row"><Trash2 size={13} /></button></div>

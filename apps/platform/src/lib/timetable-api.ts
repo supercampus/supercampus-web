@@ -181,6 +181,30 @@ export function createTimetableConfiguration(input: {
   });
 }
 
+export function createTimetableDepartment(input: { code: string; name: string }) {
+  return apiRequest<{ data: Record<string, unknown> }>(`${ROOT}/departments`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function createTimetableClass(input: {
+  departmentId: string;
+  academicYearId: string;
+  programmeCode: string;
+  programmeName: string;
+  batchCode: string;
+  batchName: string;
+  sectionCode: string;
+  sectionName: string;
+  capacity?: number | null;
+}) {
+  return apiRequest<{ data: { section: Record<string, unknown> } }>(`${ROOT}/classes`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
 export function updateTimetableConfiguration(configurationId: string, input: {
   name: string;
   timezone: string;
@@ -256,6 +280,13 @@ export function upsertTimetableWorkloadRequirement(input: {
     method: 'PUT',
     body: JSON.stringify(input),
   });
+}
+
+export function clearTimetableDraftEntries(configurationId: string) {
+  return apiRequest<{ data: { configurationId: string; removedEntries: number } }>(
+    `${ROOT}/configurations/${encodeURIComponent(configurationId)}/draft-entries`,
+    { method: 'DELETE' },
+  );
 }
 
 export function deleteTimetableWorkloadRequirement(subjectOfferingId: string, deliveryType: TimetableDeliveryType) {
