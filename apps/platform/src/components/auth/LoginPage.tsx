@@ -86,13 +86,13 @@ export default function LoginPage() {
             <div className="sc-login-card__mobile-brand"><span className="sc-login-card__mobile-mark">SC</span> <span className="sc-font-secondary">SuperCampus</span></div>
             <div className="sc-login-card__heading"><span className={`sc-login-card__status sc-login-card__status--${backendStatus}`} /> Secure access</div>
             <h2>Sign in</h2>
-            <p className="sc-login-card__sub">Use the email and password issued by your institution administrator.</p>
+            <p className="sc-login-card__sub">Use the email address or mobile number and password issued by your institution administrator.</p>
 
-            <label className="sc-field"><span>Email</span>
-              <div className="sc-field__with-icon"><Mail size={18} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" placeholder="name@college.edu.in" required /></div>
+            <label className="sc-field"><span>Email or mobile number</span>
+              <div className="sc-field__with-icon"><Mail size={18} /><input type="text" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" placeholder="name@college.edu.in or mobile number" required /></div>
             </label>
             <label className="sc-field"><span>Password</span>
-              <div className="sc-field__password"><LockKeyhole size={18} /><input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required minLength={12} />
+              <div className="sc-field__password"><LockKeyhole size={18} /><input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required />
                 <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button>
               </div>
             </label>
