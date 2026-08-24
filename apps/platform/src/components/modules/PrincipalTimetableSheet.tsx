@@ -6,6 +6,8 @@ import {
   AlertTriangle,
   Check,
   ChevronDown,
+  ChevronUp,
+  Clock3,
   GripVertical,
   LoaderCircle,
   Plus,
@@ -27,6 +29,7 @@ import {
   getTimetableContext,
   publishTimetableVersion,
   replaceTimetableSlots,
+  updateTimetableConfiguration,
   updateTimetableEntry,
   upsertTimetableWorkloadRequirement,
   type TimetableContext,
@@ -34,22 +37,14 @@ import {
   type TimetableEntry,
 } from '@/lib/timetable-api';
 
-const DAYS = [[1, 'Monday'], [2, 'Tuesday'], [3, 'Wednesday'], [4, 'Thursday'], [5, 'Friday']] as const;
-const PERIODS = [
-  ['P1', '08:30', '09:20'], ['P2', '09:20', '10:10'], ['P3', '10:30', '11:20'],
-  ['P4', '11:20', '12:10'], ['P5', '13:00', '13:50'], ['P6', '13:50', '14:40'],
-  ['P7', '14:40', '15:30'],
-] as const;
-const DISPLAY_COLUMNS = [
-  { kind: 'period' as const, sequence: 1, label: 'Period I', time: '8.30–9.20' },
-  { kind: 'period' as const, sequence: 2, label: 'Period II', time: '9.20–10.10' },
-  { kind: 'break' as const, label: 'Break', time: '10.10–10.30' },
-  { kind: 'period' as const, sequence: 3, label: 'Period III', time: '10.30–11.20' },
-  { kind: 'period' as const, sequence: 4, label: 'Period IV', time: '11.20–12.10' },
-  { kind: 'break' as const, label: 'Lunch', time: '12.10–1.00' },
-  { kind: 'period' as const, sequence: 5, label: 'Period V', time: '1.00–1.50' },
-  { kind: 'period' as const, sequence: 6, label: 'Period VI', time: '1.50–2.40' },
-  { kind: 'period' as const, sequence: 7, label: 'Period VII', time: '2.40–3.30' },
+const DAY_OPTIONS = [[1, 'Monday'], [2, 'Tuesday'], [3, 'Wednesday'], [4, 'Thursday'], [5, 'Friday'], [6, 'Saturday'], [7, 'Sunday']] as const;
+
+type LayoutSlot = { key: string; label: string; slotType: 'instructional' | 'break' | 'lunch'; startsAt: string; endsAt: string };
+const INITIAL_LAYOUT: LayoutSlot[] = [
+  { key: 'initial-1', label: 'Period 1', slotType: 'instructional', startsAt: '08:30', endsAt: '09:20' },
+  { key: 'initial-2', label: 'Period 2', slotType: 'instructional', startsAt: '09:20', endsAt: '10:10' },
+  { key: 'initial-3', label: 'Break', slotType: 'break', startsAt: '10:10', endsAt: '10:30' },
+  { key: 'initial-4', label: 'Period 3', slotType: 'instructional', startsAt: '10:30', endsAt: '11:20' },
 ];
 
 const MEC_ROOMS: Array<Parameters<typeof createTimetableRoomsBulk>[0][number]> = [
@@ -89,6 +84,11 @@ export function PrincipalTimetableSheet() {
   const [setupTermId, setSetupTermId] = useState('');
   const [showRules, setShowRules] = useState(true);
   const [courseRules, setCourseRules] = useState<Record<string, CourseRule>>({});
+  const [showLayout, setShowLayout] = useState(false);
+  const [layoutDays, setLayoutDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [layoutSlots, setLayoutSlots] = useState<LayoutSlot[]>(INITIAL_LAYOUT);
+  const [layoutMaxDaily, setLayoutMaxDaily] = useState(6);
+  const [layoutMaxConsecutive, setLayoutMaxConsecutive] = useState(3);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -108,12 +108,24 @@ export function PrincipalTimetableSheet() {
   useEffect(() => { void refresh(); }, [refresh]);
 
   const configurations = data?.configurations ?? [];
+  const selectedConfiguration = configurations.find((item) => item.id === configurationId);
   const versions = useMemo(() => (data?.versions ?? []).filter((item) => item.configurationId === configurationId), [data, configurationId]);
   const selectedVersion = versions.find((item) => item.id === versionId);
   const departments = data?.departments ?? [];
   const sections = useMemo(() => (data?.sections ?? []).filter((item) => !departmentId || item.departmentId === departmentId), [data, departmentId]);
   const selectedSection = sections.find((item) => item.id === sectionId);
-  const slots = useMemo(() => (data?.slots ?? []).filter((item) => item.configurationId === configurationId && item.slotType === 'instructional'), [data, configurationId]);
+  const allSlots = useMemo(() => (data?.slots ?? []).filter((item) => item.configurationId === configurationId), [data, configurationId]);
+  const slots = useMemo(() => allSlots.filter((item) => item.slotType === 'instructional'), [allSlots]);
+  const sheetDays = useMemo(() => {
+    const configured = selectedConfiguration?.workingDays ?? [];
+    const available = new Set(allSlots.map((item) => item.dayOfWeek));
+    return (configured.length ? configured : [...available]).filter((day) => available.has(day)).sort((a, b) => a - b);
+  }, [allSlots, selectedConfiguration?.workingDays]);
+  const displayColumns = useMemo(() => {
+    const firstDay = sheetDays[0];
+    return allSlots.filter((item) => item.dayOfWeek === firstDay).sort((a, b) => a.sequence - b.sequence);
+  }, [allSlots, sheetDays]);
+  const weeklyCapacity = slots.length;
   const entries = useMemo(() => (data?.entries ?? []).filter((item) => item.versionId === versionId && item.sectionId === sectionId), [data, versionId, sectionId]);
   const offerings = useMemo(() => (data?.subjectOfferings ?? []).filter((item) => item.sectionId === sectionId).sort((a, b) => b.credits - a.credits || a.code.localeCompare(b.code)), [data, sectionId]);
   const assignments = useMemo(() => (data?.teachingAssignments ?? []).filter((item) => item.subjectOfferingId === offeringId), [data, offeringId]);
@@ -124,6 +136,18 @@ export function PrincipalTimetableSheet() {
   useEffect(() => {
     setSectionId((current) => sections.some((item) => item.id === current) ? current : sections[0]?.id ?? '');
   }, [sections]);
+  useEffect(() => {
+    if (!selectedConfiguration) return;
+    const firstDay = selectedConfiguration.workingDays[0] ?? allSlots[0]?.dayOfWeek;
+    const template = allSlots
+      .filter((item) => item.dayOfWeek === firstDay)
+      .sort((a, b) => a.sequence - b.sequence)
+      .map((item) => ({ key: item.id, label: item.label, slotType: item.slotType, startsAt: item.startsAt.slice(0, 5), endsAt: item.endsAt.slice(0, 5) }));
+    setLayoutDays(selectedConfiguration.workingDays);
+    if (template.length) setLayoutSlots(template);
+    setLayoutMaxDaily(selectedConfiguration.maxFacultyPeriodsPerDay);
+    setLayoutMaxConsecutive(selectedConfiguration.maxConsecutiveFacultyPeriods);
+  }, [allSlots, selectedConfiguration]);
   useEffect(() => {
     setCourseRules((current) => {
       const next = { ...current };
@@ -158,14 +182,68 @@ export function PrincipalTimetableSheet() {
     finally { setBusy(false); }
   };
 
+  const validateLayout = () => {
+    if (!layoutDays.length) throw new Error('Select at least one working day.');
+    if (!layoutSlots.some((item) => item.slotType === 'instructional')) throw new Error('Add at least one teaching period.');
+    for (let index = 0; index < layoutSlots.length; index += 1) {
+      const item = layoutSlots[index];
+      if (!item.label.trim() || !item.startsAt || !item.endsAt || item.endsAt <= item.startsAt) throw new Error(`Check the name and time for row ${index + 1}.`);
+      if (index > 0 && item.startsAt < layoutSlots[index - 1].endsAt) throw new Error(`Row ${index + 1} overlaps the previous row.`);
+    }
+    if (layoutMaxConsecutive > layoutMaxDaily) throw new Error('Maximum consecutive periods cannot exceed the daily faculty limit.');
+    return layoutSlots.filter((item) => item.slotType === 'instructional').length * layoutDays.length;
+  };
+
+  const expandedLayout = () => layoutDays.flatMap((day) => layoutSlots.map((item, index) => ({
+    dayOfWeek: day,
+    sequence: index + 1,
+    label: item.label.trim(),
+    slotType: item.slotType,
+    startsAt: item.startsAt,
+    endsAt: item.endsAt,
+  })));
+
   const createWorkspace = () => run(async () => {
     if (!setupYearId) throw new Error('Choose an academic year first.');
-    const created = await createTimetableConfiguration({ academicYearId: setupYearId, termId: setupTermId || null, name: setupName, maxFacultyPeriodsPerDay: 7, maxConsecutiveFacultyPeriods: 3 });
+    const capacity = validateLayout();
+    const created = await createTimetableConfiguration({ academicYearId: setupYearId, termId: setupTermId || null, name: setupName, workingDays: layoutDays, maxFacultyPeriodsPerDay: layoutMaxDaily, maxConsecutiveFacultyPeriods: layoutMaxConsecutive, rules: { requiredSectionPeriodsPerWeek: capacity } });
     const id = String(created.data.id ?? '');
     if (!id) throw new Error('The timetable configuration was not created.');
-    await replaceTimetableSlots(id, DAYS.flatMap(([day]) => PERIODS.map(([label, startsAt, endsAt], index) => ({ dayOfWeek: day, sequence: index + 1, label, startsAt, endsAt, slotType: 'instructional' as const }))));
+    await replaceTimetableSlots(id, expandedLayout());
     await createTimetableVersion(id, 'Principal working sheet');
   }, 'Editable timetable sheet created.');
+
+  const saveLayout = () => run(async () => {
+    if (!selectedConfiguration) throw new Error('Choose a timetable configuration first.');
+    const hasEntries = (data?.entries ?? []).some((entry) => versions.some((version) => version.id === entry.versionId));
+    if (hasEntries) throw new Error('Clear the generated timetable before changing its days or periods. This protects existing classes from moving silently.');
+    const capacity = validateLayout();
+    await updateTimetableConfiguration(selectedConfiguration.id, {
+      name: selectedConfiguration.name,
+      timezone: selectedConfiguration.timezone,
+      workingDays: layoutDays,
+      maxFacultyPeriodsPerDay: layoutMaxDaily,
+      maxConsecutiveFacultyPeriods: layoutMaxConsecutive,
+      rules: { ...selectedConfiguration.rules, requiredSectionPeriodsPerWeek: capacity },
+    });
+    await replaceTimetableSlots(selectedConfiguration.id, expandedLayout());
+    setShowLayout(false);
+  }, 'Timetable structure saved. The sheet and generator now use this layout.');
+
+  const addLayoutSlot = (slotType: LayoutSlot['slotType']) => {
+    const last = layoutSlots.at(-1);
+    const startsAt = last?.endsAt ?? '08:30';
+    const minutes = slotType === 'instructional' ? 50 : slotType === 'lunch' ? 45 : 15;
+    setLayoutSlots((current) => [...current, { key: crypto.randomUUID(), label: slotType === 'instructional' ? `Period ${current.filter((item) => item.slotType === 'instructional').length + 1}` : slotType === 'lunch' ? 'Lunch' : 'Break', slotType, startsAt, endsAt: addMinutes(startsAt, minutes) }]);
+  };
+
+  const moveLayoutSlot = (index: number, direction: -1 | 1) => setLayoutSlots((current) => {
+    const target = index + direction;
+    if (target < 0 || target >= current.length) return current;
+    const next = [...current];
+    [next[index], next[target]] = [next[target], next[index]];
+    return next;
+  });
 
   const updateCourseRule = (offeringId: string, patch: Partial<CourseRule>) => {
     setCourseRules((current) => {
@@ -181,7 +259,7 @@ export function PrincipalTimetableSheet() {
   const applyRulesAndGenerate = () => run(async () => {
     if (!versionId || !sectionId) throw new Error('Choose a section and a draft timetable.');
     const total = offerings.reduce((sum, offering) => sum + (courseRules[offering.id]?.workload ?? 0), 0);
-    if (total !== 35) throw new Error(`Weekly workload is ${total}. It must equal the 35 available periods.`);
+    if (total !== weeklyCapacity) throw new Error(`Weekly workload is ${total}. It must equal the ${weeklyCapacity} teaching periods in the principal's layout.`);
     for (const offering of offerings) {
       const rule = courseRules[offering.id];
       if (!rule || rule.workload < 1 || rule.theory + rule.lab > rule.workload) throw new Error(`${offering.code} has an invalid workload split.`);
@@ -256,12 +334,13 @@ export function PrincipalTimetableSheet() {
   if (configurations.length === 0) return <div className="m-auto w-full max-w-2xl border border-slate-300 bg-white p-8 shadow-sm">
     <p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald-700">Principal timetable</p>
     <h1 className="mt-2 text-2xl text-slate-900">Create the editable sheet</h1>
-    <p className="mt-2 text-sm text-slate-500">This creates a Monday–Friday grid with seven periods per day.</p>
+    <p className="mt-2 text-sm text-slate-500">Define the working days and every period, break, and lunch row before creating the sheet.</p>
     <div className="mt-6 grid gap-3 md:grid-cols-3">
       <input value={setupName} onChange={(event) => setSetupName(event.target.value)} className={selectClass} aria-label="Timetable name" />
       <select value={setupYearId} onChange={(event) => { setSetupYearId(event.target.value); setSetupTermId(''); }} className={selectClass} aria-label="Academic year"><option value="">Academic year</option>{data.academicYears.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
       <select value={setupTermId} onChange={(event) => setSetupTermId(event.target.value)} className={selectClass} aria-label="Term"><option value="">Whole year</option>{data.terms.filter((item) => item.academicYearId === setupYearId).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
     </div>
+    <div className="mt-6"><StructureEditor days={layoutDays} setDays={setLayoutDays} slots={layoutSlots} setSlots={setLayoutSlots} maxDaily={layoutMaxDaily} setMaxDaily={setLayoutMaxDaily} maxConsecutive={layoutMaxConsecutive} setMaxConsecutive={setLayoutMaxConsecutive} addSlot={addLayoutSlot} moveSlot={moveLayoutSlot} /></div>
     {(error || notice) && <Message error={error} notice={notice} />}
     <button type="button" disabled={busy || !setupName.trim()} onClick={() => void createWorkspace()} className="mt-5 inline-flex h-10 items-center gap-2 rounded bg-slate-900 px-5 text-xs text-white disabled:opacity-40"><Plus size={15} /> Create timetable sheet</button>
   </div>;
@@ -274,6 +353,7 @@ export function PrincipalTimetableSheet() {
         <select value={versionId} onChange={(event) => setVersionId(event.target.value)} className={selectClass} aria-label="Version">{versions.map((item) => <option key={item.id} value={item.id}>{item.label} · {item.status}</option>)}</select>
         {versions.length === 0 && <button type="button" disabled={busy} onClick={() => void run(async () => { await createTimetableVersion(configurationId, 'Principal working sheet'); }, 'Draft created.')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={14} className="inline" /> Draft</button>}
         {(data.rooms.length === 0) && <button type="button" disabled={busy} onClick={() => void run(async () => { await createTimetableRoomsBulk(MEC_ROOMS); }, 'MEC rooms prepared.')} className="h-9 rounded border border-amber-300 bg-amber-50 px-3 text-xs text-amber-800">Prepare rooms</button>}
+        <button type="button" disabled={busy} onClick={() => setShowLayout(true)} className="inline-flex h-9 items-center gap-2 rounded border border-slate-300 bg-white px-3 text-xs text-slate-700"><Clock3 size={14} /> Days & periods</button>
         {selectedVersion?.status === 'draft' && <button type="button" onClick={() => setShowRules((visible) => !visible)} className={`inline-flex h-9 items-center gap-2 rounded border px-3 text-xs ${showRules ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white text-slate-700'}`}><Sparkles size={14} /> Course workload</button>}
         {selectedVersion?.status === 'draft' && <button type="button" disabled={busy || entries.length === 0} onClick={() => void run(async () => { await publishTimetableVersion(versionId); }, 'Timetable published.')} className="inline-flex h-9 items-center gap-2 rounded bg-emerald-700 px-4 text-xs text-white disabled:opacity-40"><Rocket size={14} /> Publish</button>}
         <button type="button" onClick={() => void refresh()} className="grid h-9 w-9 place-items-center rounded border border-slate-300" aria-label="Refresh"><RefreshCw size={14} /></button>
@@ -289,7 +369,7 @@ export function PrincipalTimetableSheet() {
     {(error || notice) && <div className="px-4"><Message error={error} notice={notice} /></div>}
 
     {showRules && <section className="border-b border-slate-300 bg-white p-4">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-700">Generator input</p><h2 className="mt-1 text-base font-semibold text-slate-900">Course workload rules</h2><p className="mt-1 text-[11px] text-slate-500">Theory is distributed across the week. Lab hours stay together and never cross break or lunch.</p></div><div className="flex items-center gap-3"><span className={`rounded px-3 py-2 text-xs font-semibold ${offerings.reduce((sum, item) => sum + (courseRules[item.id]?.workload ?? 0), 0) === 35 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>Weekly total: {offerings.reduce((sum, item) => sum + (courseRules[item.id]?.workload ?? 0), 0)} / 35</span><button type="button" disabled={busy || selectedVersion?.status !== 'draft' || data.rooms.length === 0 || offerings.length === 0} onClick={() => void applyRulesAndGenerate()} className="inline-flex h-10 items-center gap-2 rounded bg-violet-700 px-4 text-xs text-white disabled:opacity-40"><Sparkles size={14} /> Generate timetable</button></div></div>
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-700">Generator input</p><h2 className="mt-1 text-base font-semibold text-slate-900">Course workload rules</h2><p className="mt-1 text-[11px] text-slate-500">Theory is distributed across the week. Lab hours stay together and never cross break or lunch.</p></div><div className="flex items-center gap-3"><span className={`rounded px-3 py-2 text-xs font-semibold ${offerings.reduce((sum, item) => sum + (courseRules[item.id]?.workload ?? 0), 0) === weeklyCapacity ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>Weekly total: {offerings.reduce((sum, item) => sum + (courseRules[item.id]?.workload ?? 0), 0)} / {weeklyCapacity}</span><button type="button" disabled={busy || selectedVersion?.status !== 'draft' || data.rooms.length === 0 || offerings.length === 0 || weeklyCapacity === 0} onClick={() => void applyRulesAndGenerate()} className="inline-flex h-10 items-center gap-2 rounded bg-violet-700 px-4 text-xs text-white disabled:opacity-40"><Sparkles size={14} /> Generate timetable</button></div></div>
       <div className="overflow-x-auto border-l border-t border-slate-300">
         <div className="grid min-w-[1050px] grid-cols-[56px_110px_minmax(220px,1fr)_100px_minmax(190px,1fr)_100px_100px_100px] bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
           {['S.No', 'Course code', 'Course name', 'Type', 'Faculty name', 'Work load', 'Theory', 'Lab block'].map((heading) => <div key={heading} className="border-b border-r border-slate-300 px-3 py-3">{heading}</div>)}
@@ -324,14 +404,16 @@ export function PrincipalTimetableSheet() {
     </section>}
 
     <div className="min-h-0 flex-1 overflow-auto bg-slate-100 p-4">
-      <div className="min-w-[1320px] border-l border-t border-slate-400 bg-white">
-        <div className="grid grid-cols-[120px_repeat(2,minmax(125px,1fr))_64px_repeat(2,minmax(125px,1fr))_64px_repeat(3,minmax(125px,1fr))]">
+      <div className="border-l border-t border-slate-400 bg-white" style={{ minWidth: `${120 + displayColumns.reduce((sum, item) => sum + (item.slotType === 'instructional' ? 145 : 68), 0)}px` }}>
+        <div className="grid" style={{ gridTemplateColumns: `120px ${displayColumns.map((item) => item.slotType === 'instructional' ? 'minmax(125px,1fr)' : '64px').join(' ')}` }}>
           <div className="sticky left-0 top-0 z-30 flex items-center justify-center border-b border-r border-slate-400 bg-slate-100 px-3 text-xs font-semibold text-slate-700">DAY / TIME</div>
-          {DISPLAY_COLUMNS.map((column) => <div key={`${column.label}-head`} className={`sticky top-0 z-20 border-b border-r border-slate-400 bg-slate-100 px-2 py-3 text-center ${column.kind === 'break' ? 'text-[9px]' : ''}`}><strong className="block text-[10px] uppercase text-slate-700">{column.label}</strong><span className="mt-1 block text-[9px] text-slate-500">{column.time}</span></div>)}
-          {DAYS.flatMap(([day, dayName]) => [
+          {displayColumns.map((column) => <div key={`${column.id}-head`} className={`sticky top-0 z-20 border-b border-r border-slate-400 bg-slate-100 px-2 py-3 text-center ${column.slotType !== 'instructional' ? 'text-[9px]' : ''}`}><strong className="block text-[10px] uppercase text-slate-700">{column.label}</strong><span className="mt-1 block text-[9px] text-slate-500">{formatTimeRange(column.startsAt, column.endsAt)}</span></div>)}
+          {sheetDays.flatMap((day) => {
+            const dayName = DAY_OPTIONS.find(([value]) => value === day)?.[1] ?? `Day ${day}`;
+            return [
             <div key={`${day}-name`} className="sticky left-0 z-10 flex min-h-24 items-center border-b border-r border-slate-400 bg-slate-100 px-3 text-xs font-semibold uppercase text-slate-700">{dayName}</div>,
-            ...DISPLAY_COLUMNS.map((column) => {
-              if (column.kind === 'break') return <div key={`${day}-${column.label}`} className="flex min-h-24 items-center justify-center border-b border-r border-slate-400 bg-slate-50"><span className="-rotate-90 whitespace-nowrap text-[9px] font-semibold uppercase tracking-[.18em] text-slate-400">{column.label}</span></div>;
+            ...displayColumns.map((column) => {
+              if (column.slotType !== 'instructional') return <div key={`${day}-${column.sequence}`} className="flex min-h-24 items-center justify-center border-b border-r border-slate-400 bg-slate-50"><span className="-rotate-90 whitespace-nowrap text-[9px] font-semibold uppercase tracking-[.18em] text-slate-400">{column.label}</span></div>;
               const slot = slots.find((item) => item.dayOfWeek === day && item.sequence === column.sequence);
               const entry = slot && entries.find((item) => item.slotId === slot.id);
               const activeDrop = slot?.id === dropSlotId;
@@ -339,10 +421,19 @@ export function PrincipalTimetableSheet() {
                 {entry ? <div className={`flex h-full flex-col justify-center border-l-4 px-2 py-1.5 ${entry.deliveryType === 'laboratory' ? 'border-violet-600 bg-violet-50' : entry.deliveryType === 'activity' ? 'border-amber-500 bg-amber-50' : 'border-emerald-600 bg-emerald-50'}`}><div className="flex items-start justify-between gap-1"><strong className="text-xs text-slate-900">{entry.subjectCode}{entry.deliveryType === 'laboratory' ? ' · Lab' : ''}</strong><GripVertical size={12} className="text-slate-400 opacity-0 group-hover:opacity-100" /></div><p className="mt-1 truncate text-[9px] text-slate-600">{entry.facultyName}</p><p className="mt-1 text-[9px] text-slate-500">{entry.roomCode}</p></div> : <span className="flex h-full items-center justify-center text-[10px] text-slate-300 group-hover:text-slate-500">Drop</span>}
               </button>;
             }),
-          ])}
+          ];})}
         </div>
       </div>
     </div>
+
+    {showLayout && <div className="fixed inset-0 z-[160] flex justify-end bg-black/30" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowLayout(false); }}>
+      <aside className="h-full w-full max-w-3xl overflow-y-auto bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700">Principal settings</p><h2 className="mt-1 text-xl">Timetable structure</h2><p className="mt-2 text-xs text-slate-500">Create any number of working days and rows. Each row has its own duration.</p></div><button type="button" onClick={() => setShowLayout(false)} className="grid h-9 w-9 place-items-center"><X size={18} /></button></div>
+        <div className="mt-6"><StructureEditor days={layoutDays} setDays={setLayoutDays} slots={layoutSlots} setSlots={setLayoutSlots} maxDaily={layoutMaxDaily} setMaxDaily={setLayoutMaxDaily} maxConsecutive={layoutMaxConsecutive} setMaxConsecutive={setLayoutMaxConsecutive} addSlot={addLayoutSlot} moveSlot={moveLayoutSlot} /></div>
+        <div className="mt-6 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Changing the structure is available while the timetable is a draft and has no placed classes. This prevents existing classes from being silently moved.</div>
+        <button type="button" disabled={busy} onClick={() => void saveLayout()} className="mt-5 inline-flex h-11 items-center gap-2 rounded bg-slate-900 px-5 text-xs text-white disabled:opacity-40"><Save size={14} /> Save structure</button>
+      </aside>
+    </div>}
 
     {editorSlotId && <div className="fixed inset-0 z-[150] flex justify-end bg-black/30" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditorSlotId(null); }}>
       <aside className="h-full w-full max-w-md overflow-y-auto bg-white p-6 shadow-2xl">
@@ -364,9 +455,58 @@ function Message({ error, notice }: { error: string | null; notice: string | nul
 }
 
 function RuleNumber({ value, disabled = false, onChange }: { value: number; disabled?: boolean; onChange: (value: number) => void }) {
-  return <div className="border-b border-r border-slate-300 p-1.5"><input type="number" min={0} max={35} value={value} disabled={disabled} onChange={(event) => onChange(Math.max(0, Number(event.target.value)))} className="h-8 w-full border border-slate-200 bg-white px-2 text-center text-xs outline-none focus:border-emerald-600 disabled:bg-slate-100 disabled:text-slate-400" /></div>;
+  return <div className="border-b border-r border-slate-300 p-1.5"><input type="number" min={0} max={168} value={value} disabled={disabled} onChange={(event) => onChange(Math.max(0, Number(event.target.value)))} className="h-8 w-full border border-slate-200 bg-white px-2 text-center text-xs outline-none focus:border-emerald-600 disabled:bg-slate-100 disabled:text-slate-400" /></div>;
 }
 
 function EditorSelect({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: React.ReactNode }) {
   return <label className="text-xs text-slate-500">{label}<span className="relative mt-1 block"><select value={value} onChange={(event) => onChange(event.target.value)} className="h-11 w-full appearance-none rounded border border-slate-300 bg-white px-3 pr-9 text-sm text-slate-800 outline-none focus:border-emerald-600">{children}</select><ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-slate-400" /></span></label>;
+}
+
+function StructureEditor({ days, setDays, slots, setSlots, maxDaily, setMaxDaily, maxConsecutive, setMaxConsecutive, addSlot, moveSlot }: {
+  days: number[];
+  setDays: (days: number[]) => void;
+  slots: LayoutSlot[];
+  setSlots: (updater: LayoutSlot[] | ((current: LayoutSlot[]) => LayoutSlot[])) => void;
+  maxDaily: number;
+  setMaxDaily: (value: number) => void;
+  maxConsecutive: number;
+  setMaxConsecutive: (value: number) => void;
+  addSlot: (type: LayoutSlot['slotType']) => void;
+  moveSlot: (index: number, direction: -1 | 1) => void;
+}) {
+  const updateSlot = (key: string, patch: Partial<LayoutSlot>) => setSlots((current) => current.map((item) => item.key === key ? { ...item, ...patch } : item));
+  return <div>
+    <h3 className="text-sm font-semibold text-slate-900">Working days</h3>
+    <div className="mt-2 flex flex-wrap gap-2">{DAY_OPTIONS.map(([value, label]) => {
+      const selected = days.includes(value);
+      return <button key={value} type="button" onClick={() => setDays(selected ? days.filter((day) => day !== value) : [...days, value].sort((a, b) => a - b))} className={`h-9 rounded border px-3 text-xs ${selected ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-slate-300 bg-white text-slate-600'}`}>{label}</button>;
+    })}</div>
+    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <label className="text-xs text-slate-500">Maximum faculty periods per day<input type="number" min={1} max={24} value={maxDaily} onChange={(event) => setMaxDaily(Math.max(1, Number(event.target.value)))} className={`${selectClass} mt-1 w-full`} /></label>
+      <label className="text-xs text-slate-500">Maximum consecutive faculty periods<input type="number" min={1} max={24} value={maxConsecutive} onChange={(event) => setMaxConsecutive(Math.max(1, Number(event.target.value)))} className={`${selectClass} mt-1 w-full`} /></label>
+    </div>
+    <div className="mt-6 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold text-slate-900">Rows and durations</h3><p className="mt-1 text-[11px] text-slate-500">The order below becomes the sheet columns for every selected day.</p></div><div className="flex gap-2"><button type="button" onClick={() => addSlot('instructional')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={13} className="inline" /> Period</button><button type="button" onClick={() => addSlot('break')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={13} className="inline" /> Break</button><button type="button" onClick={() => addSlot('lunch')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={13} className="inline" /> Lunch</button></div></div>
+    <div className="mt-3 overflow-x-auto border-l border-t border-slate-300">
+      <div className="grid min-w-[650px] grid-cols-[44px_minmax(170px,1fr)_130px_120px_120px_92px] bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{['#', 'Label', 'Type', 'Start', 'End', 'Actions'].map((heading) => <div key={heading} className="border-b border-r border-slate-300 px-2 py-2">{heading}</div>)}</div>
+      {slots.map((item, index) => <div key={item.key} className="grid min-w-[650px] grid-cols-[44px_minmax(170px,1fr)_130px_120px_120px_92px] text-xs">
+        <div className="border-b border-r border-slate-300 px-2 py-3 text-center">{index + 1}</div>
+        <div className="border-b border-r border-slate-300 p-1.5"><input value={item.label} onChange={(event) => updateSlot(item.key, { label: event.target.value })} className="h-8 w-full border border-slate-200 px-2" /></div>
+        <div className="border-b border-r border-slate-300 p-1.5"><select value={item.slotType} onChange={(event) => updateSlot(item.key, { slotType: event.target.value as LayoutSlot['slotType'] })} className="h-8 w-full border border-slate-200 bg-white px-2"><option value="instructional">Period</option><option value="break">Break</option><option value="lunch">Lunch</option></select></div>
+        <div className="border-b border-r border-slate-300 p-1.5"><input type="time" value={item.startsAt} onChange={(event) => updateSlot(item.key, { startsAt: event.target.value })} className="h-8 w-full border border-slate-200 px-2" /></div>
+        <div className="border-b border-r border-slate-300 p-1.5"><input type="time" value={item.endsAt} onChange={(event) => updateSlot(item.key, { endsAt: event.target.value })} className="h-8 w-full border border-slate-200 px-2" /></div>
+        <div className="flex items-center justify-center gap-1 border-b border-r border-slate-300"><button type="button" disabled={index === 0} onClick={() => moveSlot(index, -1)} className="grid h-7 w-7 place-items-center disabled:opacity-25" aria-label="Move row up"><ChevronUp size={14} /></button><button type="button" disabled={index === slots.length - 1} onClick={() => moveSlot(index, 1)} className="grid h-7 w-7 place-items-center disabled:opacity-25" aria-label="Move row down"><ChevronDown size={14} /></button><button type="button" onClick={() => setSlots((current) => current.filter((slot) => slot.key !== item.key))} className="grid h-7 w-7 place-items-center text-red-600" aria-label="Remove row"><Trash2 size={13} /></button></div>
+      </div>)}
+    </div>
+    <p className="mt-3 text-xs font-semibold text-slate-700">Capacity: {slots.filter((item) => item.slotType === 'instructional').length} teaching periods/day × {days.length} days = {slots.filter((item) => item.slotType === 'instructional').length * days.length} periods/week</p>
+  </div>;
+}
+
+function addMinutes(time: string, minutes: number) {
+  const [hours, currentMinutes] = time.split(':').map(Number);
+  const total = hours * 60 + currentMinutes + minutes;
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function formatTimeRange(startsAt: string, endsAt: string) {
+  return `${startsAt.slice(0, 5)}–${endsAt.slice(0, 5)}`;
 }

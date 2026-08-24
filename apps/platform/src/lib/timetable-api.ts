@@ -181,6 +181,20 @@ export function createTimetableConfiguration(input: {
   });
 }
 
+export function updateTimetableConfiguration(configurationId: string, input: {
+  name: string;
+  timezone: string;
+  workingDays: number[];
+  maxFacultyPeriodsPerDay: number;
+  maxConsecutiveFacultyPeriods: number;
+  rules?: Record<string, unknown>;
+}) {
+  return apiRequest<{ data: Record<string, unknown> }>(
+    `${ROOT}/configurations/${encodeURIComponent(configurationId)}`,
+    { method: 'PUT', body: JSON.stringify(input) },
+  );
+}
+
 export function replaceTimetableSlots(configurationId: string, slots: Array<{
   dayOfWeek: number;
   sequence: number;
