@@ -22,6 +22,7 @@ import {
   createTimetableRoomsBulk,
   createTimetableVersion,
   deleteTimetableEntry,
+  deleteTimetableWorkloadRequirement,
   generateTimetableVersion,
   getTimetableContext,
   publishTimetableVersion,
@@ -185,10 +186,15 @@ export function PrincipalTimetableSheet() {
       const rule = courseRules[offering.id];
       if (!rule || rule.workload < 1 || rule.theory + rule.lab > rule.workload) throw new Error(`${offering.code} has an invalid workload split.`);
       if (rule.courseType === 'ACT') {
+        await deleteTimetableWorkloadRequirement(offering.id, 'class');
+        await deleteTimetableWorkloadRequirement(offering.id, 'laboratory');
         await upsertTimetableWorkloadRequirement({ subjectOfferingId: offering.id, deliveryType: 'activity', periodsPerWeek: rule.workload, blockSize: Math.min(2, rule.workload), maxBlocksPerDay: 1 });
       } else {
+        await deleteTimetableWorkloadRequirement(offering.id, 'activity');
         if (rule.theory > 0) await upsertTimetableWorkloadRequirement({ subjectOfferingId: offering.id, deliveryType: 'class', periodsPerWeek: rule.theory, blockSize: 1, maxBlocksPerDay: 1, requiredRoomTypes: ['classroom'] });
+        else await deleteTimetableWorkloadRequirement(offering.id, 'class');
         if (rule.lab > 0) await upsertTimetableWorkloadRequirement({ subjectOfferingId: offering.id, deliveryType: 'laboratory', periodsPerWeek: rule.lab, blockSize: rule.lab, maxBlocksPerDay: 1 });
+        else await deleteTimetableWorkloadRequirement(offering.id, 'laboratory');
       }
     }
     await generateTimetableVersion(versionId, { preserveExisting: false, prioritizeHighCredits: true });

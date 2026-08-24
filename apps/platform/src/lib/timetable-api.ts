@@ -244,6 +244,13 @@ export function upsertTimetableWorkloadRequirement(input: {
   });
 }
 
+export function deleteTimetableWorkloadRequirement(subjectOfferingId: string, deliveryType: TimetableDeliveryType) {
+  return apiRequest<{ data: { deleted: boolean } }>(
+    `${ROOT}/workload-requirements/${encodeURIComponent(subjectOfferingId)}/${encodeURIComponent(deliveryType)}`,
+    { method: 'DELETE' },
+  );
+}
+
 export function createElectiveGroup(input: {
   academicYearId: string;
   termId?: string | null;
