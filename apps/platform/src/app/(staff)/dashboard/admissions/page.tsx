@@ -8,7 +8,7 @@ import ActivityFeed from '@/components/kanban/ActivityFeed';
 import { AdmissionsSidebar } from '@/components/modules/AdmissionsSidebar';
 import { ApplicationDeskWorkspace } from '@/components/modules/ApplicationDeskWorkspace';
 import { CampusOperationsWorkspace, type OperationsSection } from '@/components/modules/CampusOperationsWorkspace';
-import { TimetableAllocatorWorkspace } from '@/components/modules/TimetableAllocatorWorkspace';
+import { PrincipalTimetableSheet } from '@/components/modules/PrincipalTimetableSheet';
 import { CloudinaryFileField, isStoredMediaValue, type StoredMediaValue } from '@/components/forms/CloudinaryFileField';
 import {
   availableStaffNavigation,
@@ -4072,7 +4072,13 @@ export default function AdmissionsPage() {
           </section>
         )}
 
-        {OPERATIONS_NAV.has(activeNav) && (
+        {activeNav === 'academics' && (
+          <section className="flex min-h-0 flex-1 overflow-auto bg-[var(--crm-surface)] p-4">
+            <PrincipalTimetableSheet />
+          </section>
+        )}
+
+        {OPERATIONS_NAV.has(activeNav) && activeNav !== 'academics' && (
           <CampusOperationsWorkspace
             key={activeNav}
             section={activeNav as OperationsSection}
@@ -4091,7 +4097,7 @@ export default function AdmissionsPage() {
           />
         )}
 
-        {requirementPage && !OPERATIONS_NAV.has(activeNav) && (
+        {requirementPage && !OPERATIONS_NAV.has(activeNav) && activeNav !== 'academics' && (
           <section className={`campus-admin-module campus-admin-module-${activeNav} flex-1 overflow-y-auto kanban-scroll-hidden p-6`}>
             <div className="campus-module-header mb-5 flex flex-wrap items-end justify-between gap-4">
               <div>
@@ -4635,10 +4641,6 @@ export default function AdmissionsPage() {
                   </div>
                 </div>
               </div>
-            )}
-
-            {activeNav === 'academics' && (
-              <TimetableAllocatorWorkspace />
             )}
 
             {activeNav === 'fees' && (
