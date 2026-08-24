@@ -21,7 +21,6 @@ import {
 import {
   createTimetableConfiguration,
   createTimetableEntry,
-  createTimetableRoomsBulk,
   createTimetableVersion,
   deleteTimetableEntry,
   deleteTimetableWorkloadRequirement,
@@ -47,17 +46,17 @@ const INITIAL_LAYOUT: LayoutSlot[] = [
   { key: 'initial-4', label: 'Period 3', slotType: 'instructional', startsAt: '10:30', endsAt: '11:20' },
 ];
 
-const MEC_ROOMS: Array<Parameters<typeof createTimetableRoomsBulk>[0][number]> = [
-  ...['AIDS', 'CSBS', 'CSE', 'AIML', 'CYBER', 'IT'].map((code) => ({ departmentCode: code, code: `${code}-CR`, name: `${code} Classroom`, roomType: 'classroom' as const, capacity: 60 })),
-  { code: 'CL-01', name: 'Computer Lab 1', roomType: 'computer_lab', capacity: 60 },
-  { code: 'CL-02', name: 'Computer Lab 2', roomType: 'computer_lab', capacity: 60 },
-  { code: 'PHY-LAB', name: 'Physics Laboratory', roomType: 'physics_lab', capacity: 60 },
-  { code: 'CHEM-LAB', name: 'Chemistry Laboratory', roomType: 'chemistry_lab', capacity: 60 },
-  { code: 'SEMINAR', name: 'Seminar Hall', roomType: 'seminar_hall', capacity: 200 },
-];
-
 type DragItem = { kind: 'subject'; offeringId: string } | { kind: 'entry'; entryId: string };
-type CourseRule = { courseType: 'T' | 'LIT' | 'ACT'; workload: number; theory: number; lab: number };
+type DeliveryPlan = { periods: number; blockSize: number; maxBlocksPerDay: number };
+type CourseRule = { deliveries: Partial<Record<TimetableDeliveryType, DeliveryPlan>> };
+
+const DELIVERY_OPTIONS: Array<{ value: TimetableDeliveryType; label: string }> = [
+  { value: 'class', label: 'Class' },
+  { value: 'laboratory', label: 'Laboratory' },
+  { value: 'tutorial', label: 'Tutorial' },
+  { value: 'project', label: 'Project' },
+  { value: 'activity', label: 'Activity' },
+];
 
 const selectClass = 'h-9 rounded border border-slate-300 bg-white px-3 text-xs text-slate-700 outline-none focus:border-emerald-600';
 
@@ -154,22 +153,12 @@ export function PrincipalTimetableSheet() {
       for (const offering of offerings) {
         if (next[offering.id]) continue;
         const requirements = (data?.workloadRequirements ?? []).filter((item) => item.subjectOfferingId === offering.id);
-        const theory = requirements.filter((item) => item.deliveryType === 'class' || item.deliveryType === 'tutorial').reduce((sum, item) => sum + item.periodsPerWeek, 0);
-        const lab = requirements.filter((item) => item.deliveryType === 'laboratory').reduce((sum, item) => sum + item.periodsPerWeek, 0);
-        const activity = requirements.filter((item) => item.deliveryType === 'activity').reduce((sum, item) => sum + item.periodsPerWeek, 0);
         if (requirements.length) {
-          next[offering.id] = { courseType: activity ? 'ACT' : lab ? 'LIT' : 'T', workload: theory + lab + activity, theory, lab };
+          next[offering.id] = { deliveries: Object.fromEntries(requirements.map((item) => [item.deliveryType, { periods: item.periodsPerWeek, blockSize: item.blockSize, maxBlocksPerDay: item.maxBlocksPerDay }])) };
           continue;
         }
-        const name = offering.name.toLowerCase();
-        const workload = Math.max(1, Math.round(offering.credits || (name.includes('library') ? 1 : name.includes('club') ? 2 : 5)));
-        if (name.includes('library') || name.includes('club') || name.includes('activity')) next[offering.id] = { courseType: 'ACT', workload, theory: 0, lab: 0 };
-        else if (name.includes('laboratory') || name.includes(' lab')) next[offering.id] = { courseType: 'LIT', workload: Math.max(3, workload), theory: 0, lab: Math.max(3, workload) };
-        else if (name.includes('mathematics')) next[offering.id] = { courseType: 'T', workload, theory: workload, lab: 0 };
-        else {
-          const labHours = workload >= 7 ? 3 : workload >= 5 ? 2 : 0;
-          next[offering.id] = { courseType: labHours ? 'LIT' : 'T', workload, theory: workload - labHours, lab: labHours };
-        }
+        const periods = Math.max(1, Math.round(offering.credits || 1));
+        next[offering.id] = { deliveries: { class: { periods, blockSize: 1, maxBlocksPerDay: 1 } } };
       }
       return next;
     });
@@ -245,34 +234,31 @@ export function PrincipalTimetableSheet() {
     return next;
   });
 
-  const updateCourseRule = (offeringId: string, patch: Partial<CourseRule>) => {
+  const updateDeliveryPlan = (offeringId: string, delivery: TimetableDeliveryType, patch: Partial<DeliveryPlan>) => {
     setCourseRules((current) => {
-      const existing = current[offeringId] ?? { courseType: 'T', workload: 5, theory: 5, lab: 0 };
-      const next = { ...existing, ...patch };
-      if (patch.courseType === 'T') { next.theory = next.workload; next.lab = 0; }
-      if (patch.courseType === 'ACT') { next.theory = 0; next.lab = 0; }
-      if (patch.workload !== undefined && next.courseType === 'T') next.theory = patch.workload;
-      return { ...current, [offeringId]: next };
+      const rule = current[offeringId] ?? { deliveries: {} };
+      const existing = rule.deliveries[delivery] ?? { periods: 0, blockSize: 1, maxBlocksPerDay: 1 };
+      return { ...current, [offeringId]: { deliveries: { ...rule.deliveries, [delivery]: { ...existing, ...patch } } } };
     });
   };
 
+  const courseTotal = (rule?: CourseRule) => Object.values(rule?.deliveries ?? {}).reduce((sum, plan) => sum + (plan?.periods ?? 0), 0);
+
   const applyRulesAndGenerate = () => run(async () => {
     if (!versionId || !sectionId) throw new Error('Choose a section and a draft timetable.');
-    const total = offerings.reduce((sum, offering) => sum + (courseRules[offering.id]?.workload ?? 0), 0);
+    const total = offerings.reduce((sum, offering) => sum + courseTotal(courseRules[offering.id]), 0);
     if (total !== weeklyCapacity) throw new Error(`Weekly workload is ${total}. It must equal the ${weeklyCapacity} teaching periods in the principal's layout.`);
     for (const offering of offerings) {
       const rule = courseRules[offering.id];
-      if (!rule || rule.workload < 1 || rule.theory + rule.lab > rule.workload) throw new Error(`${offering.code} has an invalid workload split.`);
-      if (rule.courseType === 'ACT') {
-        await deleteTimetableWorkloadRequirement(offering.id, 'class');
-        await deleteTimetableWorkloadRequirement(offering.id, 'laboratory');
-        await upsertTimetableWorkloadRequirement({ subjectOfferingId: offering.id, deliveryType: 'activity', periodsPerWeek: rule.workload, blockSize: Math.min(2, rule.workload), maxBlocksPerDay: 1 });
-      } else {
-        await deleteTimetableWorkloadRequirement(offering.id, 'activity');
-        if (rule.theory > 0) await upsertTimetableWorkloadRequirement({ subjectOfferingId: offering.id, deliveryType: 'class', periodsPerWeek: rule.theory, blockSize: 1, maxBlocksPerDay: 1, requiredRoomTypes: ['classroom'] });
-        else await deleteTimetableWorkloadRequirement(offering.id, 'class');
-        if (rule.lab > 0) await upsertTimetableWorkloadRequirement({ subjectOfferingId: offering.id, deliveryType: 'laboratory', periodsPerWeek: rule.lab, blockSize: rule.lab, maxBlocksPerDay: 1 });
-        else await deleteTimetableWorkloadRequirement(offering.id, 'laboratory');
+      if (!rule || courseTotal(rule) < 1) throw new Error(`${offering.code} needs at least one delivery period.`);
+      for (const option of DELIVERY_OPTIONS) {
+        const plan = rule.deliveries[option.value];
+        if (!plan?.periods) {
+          await deleteTimetableWorkloadRequirement(offering.id, option.value);
+          continue;
+        }
+        if (plan.blockSize < 1 || plan.blockSize > plan.periods || plan.maxBlocksPerDay < 1) throw new Error(`${offering.code} has an invalid ${option.label.toLowerCase()} plan.`);
+        await upsertTimetableWorkloadRequirement({ subjectOfferingId: offering.id, deliveryType: option.value, periodsPerWeek: plan.periods, blockSize: plan.blockSize, maxBlocksPerDay: plan.maxBlocksPerDay });
       }
     }
     await generateTimetableVersion(versionId, { preserveExisting: false, prioritizeHighCredits: true });
@@ -352,7 +338,7 @@ export function PrincipalTimetableSheet() {
         <select value={configurationId} onChange={(event) => setConfigurationId(event.target.value)} className={selectClass} aria-label="Configuration">{configurations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <select value={versionId} onChange={(event) => setVersionId(event.target.value)} className={selectClass} aria-label="Version">{versions.map((item) => <option key={item.id} value={item.id}>{item.label} · {item.status}</option>)}</select>
         {versions.length === 0 && <button type="button" disabled={busy} onClick={() => void run(async () => { await createTimetableVersion(configurationId, 'Principal working sheet'); }, 'Draft created.')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={14} className="inline" /> Draft</button>}
-        {(data.rooms.length === 0) && <button type="button" disabled={busy} onClick={() => void run(async () => { await createTimetableRoomsBulk(MEC_ROOMS); }, 'MEC rooms prepared.')} className="h-9 rounded border border-amber-300 bg-amber-50 px-3 text-xs text-amber-800">Prepare rooms</button>}
+        {(data.rooms.length === 0) && <span className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">Add this tenant&apos;s rooms before generating</span>}
         <button type="button" disabled={busy} onClick={() => setShowLayout(true)} className="inline-flex h-9 items-center gap-2 rounded border border-slate-300 bg-white px-3 text-xs text-slate-700"><Clock3 size={14} /> Days & periods</button>
         {selectedVersion?.status === 'draft' && <button type="button" onClick={() => setShowRules((visible) => !visible)} className={`inline-flex h-9 items-center gap-2 rounded border px-3 text-xs ${showRules ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white text-slate-700'}`}><Sparkles size={14} /> Course workload</button>}
         {selectedVersion?.status === 'draft' && <button type="button" disabled={busy || entries.length === 0} onClick={() => void run(async () => { await publishTimetableVersion(versionId); }, 'Timetable published.')} className="inline-flex h-9 items-center gap-2 rounded bg-emerald-700 px-4 text-xs text-white disabled:opacity-40"><Rocket size={14} /> Publish</button>}
@@ -369,23 +355,25 @@ export function PrincipalTimetableSheet() {
     {(error || notice) && <div className="px-4"><Message error={error} notice={notice} /></div>}
 
     {showRules && <section className="border-b border-slate-300 bg-white p-4">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-700">Generator input</p><h2 className="mt-1 text-base font-semibold text-slate-900">Course workload rules</h2><p className="mt-1 text-[11px] text-slate-500">Theory is distributed across the week. Lab hours stay together and never cross break or lunch.</p></div><div className="flex items-center gap-3"><span className={`rounded px-3 py-2 text-xs font-semibold ${offerings.reduce((sum, item) => sum + (courseRules[item.id]?.workload ?? 0), 0) === weeklyCapacity ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>Weekly total: {offerings.reduce((sum, item) => sum + (courseRules[item.id]?.workload ?? 0), 0)} / {weeklyCapacity}</span><button type="button" disabled={busy || selectedVersion?.status !== 'draft' || data.rooms.length === 0 || offerings.length === 0 || weeklyCapacity === 0} onClick={() => void applyRulesAndGenerate()} className="inline-flex h-10 items-center gap-2 rounded bg-violet-700 px-4 text-xs text-white disabled:opacity-40"><Sparkles size={14} /> Generate timetable</button></div></div>
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-700">Generator input</p><h2 className="mt-1 text-base font-semibold text-slate-900">Tenant course delivery plan</h2><p className="mt-1 text-[11px] text-slate-500">Courses and faculty come from the selected tenant and section. The principal defines each course&apos;s delivery modes, weekly periods, and block size.</p></div><div className="flex items-center gap-3"><span className={`rounded px-3 py-2 text-xs font-semibold ${offerings.reduce((sum, item) => sum + courseTotal(courseRules[item.id]), 0) === weeklyCapacity ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>Weekly total: {offerings.reduce((sum, item) => sum + courseTotal(courseRules[item.id]), 0)} / {weeklyCapacity}</span><button type="button" disabled={busy || selectedVersion?.status !== 'draft' || data.rooms.length === 0 || offerings.length === 0 || weeklyCapacity === 0} onClick={() => void applyRulesAndGenerate()} className="inline-flex h-10 items-center gap-2 rounded bg-violet-700 px-4 text-xs text-white disabled:opacity-40"><Sparkles size={14} /> Generate timetable</button></div></div>
       <div className="overflow-x-auto border-l border-t border-slate-300">
-        <div className="grid min-w-[1050px] grid-cols-[56px_110px_minmax(220px,1fr)_100px_minmax(190px,1fr)_100px_100px_100px] bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
-          {['S.No', 'Course code', 'Course name', 'Type', 'Faculty name', 'Work load', 'Theory', 'Lab block'].map((heading) => <div key={heading} className="border-b border-r border-slate-300 px-3 py-3">{heading}</div>)}
+        <div className="grid min-w-[1120px] grid-cols-[56px_110px_minmax(220px,1fr)_minmax(170px,1fr)_80px_minmax(390px,1.6fr)_100px] bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+          {['S.No', 'Course code', 'Course name', 'Assigned faculty', 'Credits', 'Delivery modes · periods · block', 'Weekly total'].map((heading) => <div key={heading} className="border-b border-r border-slate-300 px-3 py-3">{heading}</div>)}
         </div>
         {offerings.map((offering, index) => {
-          const rule = courseRules[offering.id] ?? { courseType: 'T' as const, workload: 5, theory: 5, lab: 0 };
-          const faculty = data.teachingAssignments.find((item) => item.subjectOfferingId === offering.id)?.facultyName ?? 'Not assigned';
-          return <div key={offering.id} className="grid min-w-[1050px] grid-cols-[56px_110px_minmax(220px,1fr)_100px_minmax(190px,1fr)_100px_100px_100px] text-xs text-slate-700">
+          const rule = courseRules[offering.id] ?? { deliveries: {} };
+          const faculty = data.teachingAssignments.filter((item) => item.subjectOfferingId === offering.id).map((item) => item.facultyName).join(', ') || 'Not assigned';
+          return <div key={offering.id} className="grid min-w-[1120px] grid-cols-[56px_110px_minmax(220px,1fr)_minmax(170px,1fr)_80px_minmax(390px,1.6fr)_100px] text-xs text-slate-700">
             <div className="border-b border-r border-slate-300 px-3 py-3 text-center">{index + 1}</div>
             <div className="border-b border-r border-slate-300 px-3 py-3 font-semibold">{offering.code}</div>
             <div className="border-b border-r border-slate-300 px-3 py-3">{offering.name}</div>
-            <div className="border-b border-r border-slate-300 p-1.5"><select value={rule.courseType} onChange={(event) => updateCourseRule(offering.id, { courseType: event.target.value as CourseRule['courseType'] })} className="h-8 w-full border border-slate-200 bg-white px-2"><option value="T">T</option><option value="LIT">LIT</option><option value="ACT">Activity</option></select></div>
             <div className="border-b border-r border-slate-300 px-3 py-3">{faculty}</div>
-            <RuleNumber value={rule.workload} onChange={(workload) => updateCourseRule(offering.id, { workload })} />
-            <RuleNumber value={rule.theory} disabled={rule.courseType === 'ACT'} onChange={(theory) => updateCourseRule(offering.id, { theory })} />
-            <RuleNumber value={rule.lab} disabled={rule.courseType !== 'LIT'} onChange={(lab) => updateCourseRule(offering.id, { lab })} />
+            <div className="border-b border-r border-slate-300 px-3 py-3 text-center">{offering.credits || '—'}</div>
+            <div className="border-b border-r border-slate-300 p-2"><div className="grid gap-1">{DELIVERY_OPTIONS.map((option) => {
+              const plan = rule.deliveries[option.value] ?? { periods: 0, blockSize: 1, maxBlocksPerDay: 1 };
+              return <div key={option.value} className={`grid grid-cols-[90px_repeat(3,1fr)] items-center gap-2 rounded px-2 py-1 ${plan.periods > 0 ? 'bg-emerald-50' : 'bg-slate-50 text-slate-400'}`}><span className="text-[10px] font-semibold">{option.label}</span><label className="text-[9px]">Periods<input aria-label={`${offering.code} ${option.label} periods`} type="number" min={0} max={168} value={plan.periods} onChange={(event) => updateDeliveryPlan(offering.id, option.value, { periods: Math.max(0, Number(event.target.value)) })} className="ml-1 h-7 w-12 border border-slate-200 bg-white px-1 text-center text-xs text-slate-700" /></label><label className="text-[9px]">Block<input aria-label={`${offering.code} ${option.label} block size`} type="number" min={1} max={168} value={plan.blockSize} disabled={plan.periods === 0} onChange={(event) => updateDeliveryPlan(offering.id, option.value, { blockSize: Math.max(1, Number(event.target.value)) })} className="ml-1 h-7 w-12 border border-slate-200 bg-white px-1 text-center text-xs text-slate-700 disabled:bg-slate-100" /></label><label className="text-[9px]">Daily cap<input aria-label={`${offering.code} ${option.label} daily block limit`} type="number" min={1} max={24} value={plan.maxBlocksPerDay} disabled={plan.periods === 0} onChange={(event) => updateDeliveryPlan(offering.id, option.value, { maxBlocksPerDay: Math.max(1, Number(event.target.value)) })} className="ml-1 h-7 w-12 border border-slate-200 bg-white px-1 text-center text-xs text-slate-700 disabled:bg-slate-100" /></label></div>;
+            })}</div></div>
+            <div className="border-b border-r border-slate-300 px-3 py-3 text-center font-semibold">{courseTotal(rule)}</div>
           </div>;
         })}
       </div>
@@ -452,10 +440,6 @@ export function PrincipalTimetableSheet() {
 
 function Message({ error, notice }: { error: string | null; notice: string | null }) {
   return <div className={`mt-3 flex items-center gap-2 border px-3 py-2 text-xs ${error ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>{error ? <AlertTriangle size={14} /> : <Check size={14} />}{error ?? notice}</div>;
-}
-
-function RuleNumber({ value, disabled = false, onChange }: { value: number; disabled?: boolean; onChange: (value: number) => void }) {
-  return <div className="border-b border-r border-slate-300 p-1.5"><input type="number" min={0} max={168} value={value} disabled={disabled} onChange={(event) => onChange(Math.max(0, Number(event.target.value)))} className="h-8 w-full border border-slate-200 bg-white px-2 text-center text-xs outline-none focus:border-emerald-600 disabled:bg-slate-100 disabled:text-slate-400" /></div>;
 }
 
 function EditorSelect({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: React.ReactNode }) {
