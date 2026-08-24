@@ -340,30 +340,35 @@ export function PrincipalTimetableSheet() {
     <button type="button" disabled={busy || !setupName.trim()} onClick={() => void createWorkspace()} className="mt-5 inline-flex h-10 items-center gap-2 rounded bg-slate-900 px-5 text-xs text-white disabled:opacity-40"><Plus size={15} /> Create timetable sheet</button>
   </div>;
 
-  return <div className="flex min-h-[calc(100vh-2rem)] w-full min-w-0 flex-col overflow-hidden border border-slate-300 bg-white shadow-sm">
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-300 bg-white px-4 py-3">
-      <div><p className="text-[10px] font-semibold uppercase tracking-[.2em] text-emerald-700">Principal workspace</p><h1 className="text-xl text-slate-900">Timetable</h1></div>
-      <div className="flex flex-wrap items-center gap-2">
-        <select value={configurationId} onChange={(event) => setConfigurationId(event.target.value)} className={selectClass} aria-label="Configuration">{configurations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
-        <select value={versionId} onChange={(event) => setVersionId(event.target.value)} className={selectClass} aria-label="Version">{versions.map((item) => <option key={item.id} value={item.id}>{item.label} · {item.status}</option>)}</select>
-        {versions.length === 0 && <button type="button" disabled={busy} onClick={() => void run(async () => { await createTimetableVersion(configurationId, 'Principal working sheet'); }, 'Draft created.')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={14} className="inline" /> Draft</button>}
-        {(data.rooms.length === 0) && <span className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">Add this tenant&apos;s rooms before generating</span>}
-        <button type="button" disabled={busy} onClick={() => setShowLayout(true)} className="inline-flex h-9 items-center gap-2 rounded border border-slate-300 bg-white px-3 text-xs text-slate-700"><Clock3 size={14} /> Days & periods</button>
-        {selectedVersion?.status === 'draft' && <button type="button" onClick={() => setShowRules((visible) => !visible)} className={`inline-flex h-9 items-center gap-2 rounded border px-3 text-xs ${showRules ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white text-slate-700'}`}><Sparkles size={14} /> Set workload</button>}
-        {selectedVersion?.status === 'draft' && <button type="button" disabled={busy || entries.length === 0} onClick={() => void run(async () => { await publishTimetableVersion(versionId); }, 'Timetable published.')} className="inline-flex h-9 items-center gap-2 rounded bg-emerald-700 px-4 text-xs text-white disabled:opacity-40"><Rocket size={14} /> Publish</button>}
+  return <div className="flex h-[calc(100vh-2rem)] min-h-0 w-full min-w-0 flex-col overflow-hidden border border-slate-300 bg-white shadow-sm">
+    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-3">
+      <div><h1 className="text-xl font-semibold text-slate-900">Build your class timetable</h1><p className="mt-1 text-xs text-slate-500">Set up the week, assign course periods, then review and publish.</p></div>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="text-[10px] font-medium text-slate-500">Plan<select value={configurationId} onChange={(event) => setConfigurationId(event.target.value)} className={`${selectClass} ml-2 min-w-56`} aria-label="Timetable plan">{configurations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label className="text-[10px] font-medium text-slate-500">Version<select value={versionId} onChange={(event) => setVersionId(event.target.value)} className={`${selectClass} ml-2 min-w-48`} aria-label="Timetable version">{versions.map((item) => <option key={item.id} value={item.id}>{item.label} · {item.status}</option>)}</select></label>
+        {versions.length === 0 && <button type="button" disabled={busy} onClick={() => void run(async () => { await createTimetableVersion(configurationId, 'Principal working sheet'); }, 'Draft created.')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={14} className="inline" /> Create draft</button>}
         <button type="button" onClick={() => void refresh()} className="grid h-9 w-9 place-items-center rounded border border-slate-300" aria-label="Refresh"><RefreshCw size={14} /></button>
       </div>
     </header>
 
+    <nav className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-5 py-2" aria-label="Timetable steps">
+      <button type="button" disabled={busy} onClick={() => setShowLayout(true)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 hover:border-emerald-500"><span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-800">1</span><Clock3 size={13} /> Set up the week {weeklyCapacity > 0 && <Check size={13} className="text-emerald-600" />}</button>
+      <span className="text-slate-300">→</span>
+      <button type="button" onClick={() => setShowRules(true)} className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-medium ${showRules ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-500'}`}><span className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold ${showRules ? 'bg-white/20' : 'bg-emerald-100 text-emerald-800'}`}>2</span><Sparkles size={13} /> Set course periods {workloadDifference === 0 && <Check size={13} className={showRules ? 'text-emerald-300' : 'text-emerald-600'} />}</button>
+      <span className="text-slate-300">→</span>
+      <button type="button" onClick={() => setShowRules(false)} className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-medium ${!showRules ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-500'}`}><span className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold ${!showRules ? 'bg-white/20' : 'bg-slate-100 text-slate-600'}`}>3</span> Review timetable</button>
+      <div className="ml-auto flex items-center gap-2">{data.rooms.length === 0 && <span className="text-[11px] text-amber-700">Rooms must be added before generation</span>}{!showRules && selectedVersion?.status === 'draft' && <button type="button" disabled={busy || entries.length === 0} onClick={() => void run(async () => { await publishTimetableVersion(versionId); }, 'Timetable published.')} className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-xs font-medium text-white disabled:opacity-40"><Rocket size={14} /> Publish timetable</button>}</div>
+    </nav>
+
     <div className="flex flex-wrap items-center gap-2 border-b border-slate-300 bg-slate-50 px-4 py-2">
       <select value={departmentId} onChange={(event) => setDepartmentId(event.target.value)} className={selectClass} aria-label="Department"><option value="">All departments</option>{departments.map((item) => <option key={item.id} value={item.id}>{item.code}</option>)}</select>
       <select value={sectionId} onChange={(event) => setSectionId(event.target.value)} className={`${selectClass} min-w-64`} aria-label="Section"><option value="">Select a class / section</option>{sections.map((item) => <option key={item.id} value={item.id}>{item.programmeName} · {item.batchName} · {item.name}</option>)}</select>
-      <span className="text-[11px] text-slate-500">Drag subjects into cells. Drag a filled cell to move it. Click any cell for detailed editing.</span>
+      <span className="text-[11px] text-slate-500">{showRules ? 'Choose the class whose weekly course periods you want to prepare.' : 'Drag subjects into cells, or click a cell to edit it.'}</span>
     </div>
 
     {(error || notice) && <div className="px-4"><Message error={error} notice={notice} /></div>}
 
-    {showRules && <section className="border-b border-slate-300 bg-slate-50 p-4">
+    {showRules && <section className="min-h-0 flex-1 overflow-y-auto border-b border-slate-300 bg-slate-50 p-4">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-700">Workload setup</p><h2 className="mt-1 text-lg font-semibold text-slate-900">How should each course be taught?</h2><p className="mt-1 text-xs text-slate-500">Set the periods per week. Add a lab, tutorial, project, or activity only when the course needs it.</p></div>
@@ -422,7 +427,7 @@ export function PrincipalTimetableSheet() {
       </div>
     </section>}
 
-    <div className="min-h-0 flex-1 overflow-auto bg-slate-100 p-4">
+    {!showRules && <div className="min-h-0 flex-1 overflow-auto bg-slate-100 p-4">
       <div className="border-l border-t border-slate-400 bg-white" style={{ minWidth: `${120 + displayColumns.reduce((sum, item) => sum + (item.slotType === 'instructional' ? 145 : 68), 0)}px` }}>
         <div className="grid" style={{ gridTemplateColumns: `120px ${displayColumns.map((item) => item.slotType === 'instructional' ? 'minmax(125px,1fr)' : '64px').join(' ')}` }}>
           <div className="sticky left-0 top-0 z-30 flex items-center justify-center border-b border-r border-slate-400 bg-slate-100 px-3 text-xs font-semibold text-slate-700">DAY / TIME</div>
@@ -443,7 +448,7 @@ export function PrincipalTimetableSheet() {
           ];})}
         </div>
       </div>
-    </div>
+    </div>}
 
     {showLayout && <div className="fixed inset-0 z-[160] flex justify-end bg-black/30" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowLayout(false); }}>
       <aside className="h-full w-full max-w-3xl overflow-y-auto bg-white p-6 shadow-2xl">
