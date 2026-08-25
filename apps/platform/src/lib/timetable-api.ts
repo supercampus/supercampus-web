@@ -359,6 +359,7 @@ export function deleteTimetableEntry(entryId: string) {
 }
 
 export function generateTimetableVersion(versionId: string, input: {
+  sectionId?: string;
   preserveExisting?: boolean;
   prioritizeHighCredits?: boolean;
 } = {}) {

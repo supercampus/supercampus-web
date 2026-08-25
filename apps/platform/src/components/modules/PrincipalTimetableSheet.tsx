@@ -301,7 +301,8 @@ export function PrincipalTimetableSheet() {
       allocations[index] += 1;
       unallocated -= 1;
     }
-    setCourseRules(Object.fromEntries(offerings.map((offering, index) => [offering.id, { deliveries: { class: { periods: allocations[index], blockSize: 1, maxBlocksPerDay: 1 } } }] as const)));
+    const workingDayCount = Math.max(1, sheetDays.length);
+    setCourseRules(Object.fromEntries(offerings.map((offering, index) => [offering.id, { deliveries: { class: { periods: allocations[index], blockSize: 1, maxBlocksPerDay: Math.max(1, Math.ceil(allocations[index] / workingDayCount)) } } }] as const)));
     setError(null);
     setNotice('A balanced starting point was created from the course credits. You can still adjust any course.');
   };
@@ -364,7 +365,11 @@ export function PrincipalTimetableSheet() {
         await upsertTimetableWorkloadRequirement({ subjectOfferingId: offering.id, deliveryType: option.value, periodsPerWeek: plan.periods, blockSize: plan.blockSize, maxBlocksPerDay: plan.maxBlocksPerDay });
       }
     }
-    const generated = await generateTimetableVersion(versionId, { preserveExisting: false, prioritizeHighCredits: true });
+    const generated = await generateTimetableVersion(versionId, { sectionId, preserveExisting: false, prioritizeHighCredits: true });
+    if (generated.data.unscheduled.length) {
+      const remaining = generated.data.unscheduled.reduce((sum, item) => sum + item.remainingPeriods, 0);
+      throw new Error(`${remaining} periods could not be placed. Check faculty limits, consecutive periods, and room availability.`);
+    }
     setShowRules(false);
     return generated.data;
   }, (result) => result.aiStatus === 'applied'
@@ -456,7 +461,7 @@ export function PrincipalTimetableSheet() {
       <button type="button" onClick={() => setShowRules(true)} className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-medium ${showRules ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-500'}`}><span className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold ${showRules ? 'bg-white/20' : 'bg-emerald-100 text-emerald-800'}`}>2</span><Sparkles size={13} /> Set course periods {workloadDifference === 0 && <Check size={13} className={showRules ? 'text-emerald-300' : 'text-emerald-600'} />}</button>
       <span className="text-slate-300">→</span>
       <button type="button" onClick={() => setShowRules(false)} className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-medium ${!showRules ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-500'}`}><span className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold ${!showRules ? 'bg-white/20' : 'bg-slate-100 text-slate-600'}`}>3</span> Review timetable</button>
-      <div className="ml-auto flex items-center gap-2">{data.rooms.length === 0 && <span className="text-[11px] text-amber-700">Rooms must be added before generation</span>}{!showRules && selectedVersion?.status === 'draft' && <button type="button" disabled={busy || entries.length === 0} onClick={() => void run(async () => { await publishTimetableVersion(versionId); }, 'Timetable published.')} className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-xs font-medium text-white disabled:opacity-40"><Rocket size={14} /> Publish timetable</button>}</div>
+      <div className="ml-auto flex items-center gap-2">{data.rooms.length === 0 && <span className="text-[11px] text-amber-700">Rooms must be added before generation</span>}{!showRules && entries.length !== weeklyCapacity && <span className="text-[11px] text-amber-700">Generate all {weeklyCapacity} periods for this class before publishing</span>}{!showRules && selectedVersion?.status === 'draft' && <button type="button" disabled={busy || weeklyCapacity === 0 || entries.length !== weeklyCapacity} onClick={() => void run(async () => { await publishTimetableVersion(versionId); }, 'Timetable published.')} className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-xs font-medium text-white disabled:opacity-40"><Rocket size={14} /> Publish timetable</button>}</div>
     </nav>
 
     <div className="flex flex-wrap items-center gap-2 border-b border-slate-300 bg-slate-50 px-4 py-2">
