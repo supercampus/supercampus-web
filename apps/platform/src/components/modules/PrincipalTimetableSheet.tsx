@@ -144,7 +144,11 @@ export function PrincipalTimetableSheet() {
   const weeklyCapacity = slots.length;
   const entries = useMemo(() => (data?.entries ?? []).filter((item) => item.versionId === versionId && item.sectionId === sectionId), [data, versionId, sectionId]);
   const configurationEntryCount = useMemo(() => (data?.entries ?? []).filter((entry) => versions.some((version) => version.id === entry.versionId)).length, [data, versions]);
-  const offerings = useMemo(() => (data?.subjectOfferings ?? []).filter((item) => item.sectionId === sectionId).sort((a, b) => b.credits - a.credits || a.code.localeCompare(b.code)), [data, sectionId]);
+  const offerings = useMemo(() => (data?.subjectOfferings ?? [])
+    .filter((item) => item.sectionId === sectionId
+      && (!selectedConfiguration || (item.academicYearId === selectedConfiguration.academicYearId
+        && item.termId === selectedConfiguration.termId)))
+    .sort((a, b) => b.credits - a.credits || a.code.localeCompare(b.code)), [data, sectionId, selectedConfiguration]);
   const assignments = useMemo(() => (data?.teachingAssignments ?? []).filter((item) => item.subjectOfferingId === offeringId), [data, offeringId]);
 
   useEffect(() => {
