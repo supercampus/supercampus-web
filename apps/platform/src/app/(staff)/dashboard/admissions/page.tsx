@@ -3663,7 +3663,7 @@ export default function AdmissionsPage() {
 
         {activeNav === 'application-desk' && <ApplicationDeskWorkspace embedded />}
 
-        {activeNav === 'ai-assistant' && <CrmAiAssistant />}
+        {activeNav === 'ai-assistant' && <CrmAiAssistant userId={student?.id ?? 'current-user'} />}
 
         {activeNav === 'dashboard' && !isCrmAdministrator && (
           <section className="flex-1 overflow-y-auto bg-[var(--crm-bg)] p-6">

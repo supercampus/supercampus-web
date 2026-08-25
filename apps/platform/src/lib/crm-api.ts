@@ -191,6 +191,24 @@ export interface CrmAssistantResponse {
   action: CrmAssistantActionProposal | null;
 }
 
+export interface CrmAssistantHistoryEntry {
+  id: string;
+  createdAt: string;
+  input: string;
+  intent: CrmAssistantIntent;
+  answer: string;
+  model: string;
+  grounded: boolean;
+  action: CrmAssistantActionProposal | null;
+  actionStatus: 'idle' | 'done';
+}
+
+export interface CrmAssistantHistory {
+  draft: string;
+  intent: CrmAssistantIntent;
+  messages: CrmAssistantHistoryEntry[];
+}
+
 export function askCrmAssistant(input: string, intent: CrmAssistantIntent = 'general') {
   return apiRequest<{ data: CrmAssistantResponse }>(
     `${CRM_ROOT}/assistant/text`,
@@ -202,6 +220,17 @@ export function executeCrmAssistantAction(action: CrmAssistantActionProposal) {
   return apiRequest<{ data: { completed: boolean; actionType: string; leadId: string; leadName: string } }>(
     `${CRM_ROOT}/assistant/actions/execute`,
     { method: 'POST', body: JSON.stringify({ action }) },
+  );
+}
+
+export function getCrmAssistantHistory() {
+  return apiRequest<{ data: CrmAssistantHistory }>(`${CRM_ROOT}/assistant/history`);
+}
+
+export function saveCrmAssistantHistory(history: CrmAssistantHistory) {
+  return apiRequest<{ data: CrmAssistantHistory }>(
+    `${CRM_ROOT}/assistant/history`,
+    { method: 'PUT', body: JSON.stringify(history) },
   );
 }
 
