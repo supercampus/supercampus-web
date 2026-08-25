@@ -339,13 +339,21 @@ export function PrincipalTimetableSheet() {
     if (!versionId || !sectionId) throw new Error('Choose a section and a draft timetable.');
     const total = offerings.reduce((sum, offering) => sum + courseTotal(courseRules[offering.id]), 0);
     if (total !== weeklyCapacity) throw new Error(`Weekly workload is ${total}. It must equal the ${weeklyCapacity} teaching periods in the principal's layout.`);
+    const savedDeliveries = new Set((data?.workloadRequirements ?? []).map((requirement) =>
+      `${requirement.subjectOfferingId}:${requirement.deliveryType}`));
     for (const offering of offerings) {
       const rule = courseRules[offering.id];
       if (!rule || courseTotal(rule) < 1) throw new Error(`${offering.code} needs at least one delivery period.`);
       for (const option of DELIVERY_OPTIONS) {
         const plan = rule.deliveries[option.value];
         if (!plan?.periods) {
-          await deleteTimetableWorkloadRequirement(offering.id, option.value);
+          // Only call DELETE for a rule that was actually persisted. Besides
+          // avoiding four redundant requests per course, this keeps workload
+          // generation compatible with API deployments where the optional
+          // cleanup route has not yet been introduced.
+          if (savedDeliveries.has(`${offering.id}:${option.value}`)) {
+            await deleteTimetableWorkloadRequirement(offering.id, option.value);
+          }
           continue;
         }
         if (plan.blockSize < 1 || plan.blockSize > plan.periods || plan.maxBlocksPerDay < 1) throw new Error(`${offering.code} has an invalid ${option.label.toLowerCase()} plan.`);
