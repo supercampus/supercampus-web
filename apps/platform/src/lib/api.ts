@@ -1,4 +1,4 @@
-import type { AppState, AuthStudent, LoginCredentials, PersistedAppState } from './types';
+import type { AppState, AuthStudent, Campus, CampusGeofence, LoginCredentials, PersistedAppState } from './types';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? '/api').replace(/\/$/, '');
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -220,4 +220,26 @@ export function toPersistedState(state: AppState): PersistedAppState {
     placeApp: state.placeApp,
     feedback: state.feedback,
   };
+}
+
+export function getCampuses() {
+  return apiRequest<{ data: { campuses: Campus[] } }>(
+    `/v1/operations/campuses?_sync=${Date.now()}`,
+    { headers: { 'Cache-Control': 'no-cache, no-store', Pragma: 'no-cache' } },
+  );
+}
+
+/** Passing `null` clears the fence, which reopens activation from anywhere. */
+export function saveCampusGeofence(campusId: string, geofence: CampusGeofence | null) {
+  return apiRequest<{ data: Campus }>(
+    `/v1/operations/campuses/${campusId}/geofence`,
+    { method: 'PUT', body: JSON.stringify({ geofence }) },
+  );
+}
+
+export function createCampus(name: string, code?: string) {
+  return apiRequest<{ data: Campus }>(
+    '/v1/operations/campuses',
+    { method: 'POST', body: JSON.stringify({ name, code: code || undefined }) },
+  );
 }

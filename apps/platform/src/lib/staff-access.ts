@@ -13,7 +13,7 @@ export type StaffNavigationId =
   | 'users'
   | 'settings';
 
-export type StaffSettingsId = 'account' | 'access' | 'forms' | 'workflows' | 'theme';
+export type StaffSettingsId = 'account' | 'access' | 'forms' | 'workflows' | 'theme' | 'campus';
 
 /**
  * Sections this build knows how to render.
@@ -37,7 +37,7 @@ export const NAVIGATION_ORDER: StaffNavigationId[] = [
   'settings',
 ];
 
-export const SETTINGS_ORDER: StaffSettingsId[] = ['account', 'access', 'forms', 'workflows', 'theme'];
+export const SETTINGS_ORDER: StaffSettingsId[] = ['account', 'access', 'forms', 'workflows', 'theme', 'campus'];
 
 export function hasPermission(permissions: readonly string[], permission: string) {
   return permissions.includes('*') || permissions.includes(permission);
@@ -131,6 +131,12 @@ export function availableStaffSettings(permissions: readonly string[]): StaffSet
   if (hasPermission(permissions, 'crm.configuration.read')) settings.push('workflows');
   if (permissions.includes('*') || hasPermission(permissions, 'platform.configuration.update')) {
     settings.push('theme');
+  }
+  // Read is enough to open it: the panel renders the fence read-only without
+  // the update grant, which is worth showing to anyone who needs to know where
+  // the boundary is without being able to move it.
+  if (hasPermission(permissions, 'platform.configuration.read')) {
+    settings.push('campus');
   }
   return settings;
 }

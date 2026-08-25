@@ -150,3 +150,23 @@ export interface AuthStudent extends Student {
 
 export type AuthStatus = 'checking' | 'authenticated' | 'unauthenticated';
 export interface LoginCredentials { email: string; password: string }
+
+/**
+ * The campus entry fence, as the gatepass module enforces it.
+ *
+ * A circle, because that is the shape the API compares against: one centre and
+ * one radius, measured as great-circle distance. `null` means no fence is set,
+ * and entry passes activate from anywhere.
+ */
+export interface CampusGeofence {
+  latitude: number;
+  longitude: number;
+  radiusMetres: number;
+}
+
+export interface Campus {
+  id: string;
+  code: string;
+  name: string;
+  geofence: CampusGeofence | null;
+}

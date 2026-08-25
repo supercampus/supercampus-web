@@ -19,8 +19,23 @@ function apiConnectSource(): string {
   return `'self' ${apiUrl.origin}`;
 }
 
+/**
+ * Where the campus-boundary map fetches its tiles.
+ *
+ * This is the one third-party origin the app talks to, and it is images only —
+ * `img-src`, never `script-src` or `connect-src` — so a compromised tile host
+ * can serve wrong pictures and nothing else. It is needed because the geofence
+ * editor has to show an admin where on the earth they are placing the fence,
+ * and a self-hosted tile set is not something this deployment carries.
+ *
+ * Swap this for your own tile server to remove the dependency: OpenStreetMap's
+ * public tiles are rate-limited and its usage policy discourages production
+ * traffic.
+ */
+const MAP_TILE_ORIGIN = "https://tile.openstreetmap.org";
+
 const productionSecurityHeaders = [
-  { key: "Content-Security-Policy", value: `default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src ${apiConnectSource()}; upgrade-insecure-requests` },
+  { key: "Content-Security-Policy", value: `default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${MAP_TILE_ORIGIN}; font-src 'self' data:; connect-src ${apiConnectSource()}; upgrade-insecure-requests` },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
   { key: "Strict-Transport-Security", value: "max-age=31536000" },

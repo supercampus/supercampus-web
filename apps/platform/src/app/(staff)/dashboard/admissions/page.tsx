@@ -9,6 +9,7 @@ import { AdmissionsSidebar } from '@/components/modules/AdmissionsSidebar';
 import { ApplicationDeskWorkspace } from '@/components/modules/ApplicationDeskWorkspace';
 import { CrmAiAssistant } from '@/components/modules/CrmAiAssistant';
 import { CampusOperationsWorkspace, type OperationsSection } from '@/components/modules/CampusOperationsWorkspace';
+import { CampusGeofenceSettings } from '@/components/modules/CampusGeofenceSettings';
 import { PrincipalTimetableSheet } from '@/components/modules/PrincipalTimetableSheet';
 import { CloudinaryFileField, isStoredMediaValue, type StoredMediaValue } from '@/components/forms/CloudinaryFileField';
 import {
@@ -2940,6 +2941,7 @@ export default function AdmissionsPage() {
     { id: 'forms' as const, label: 'Form Builders', icon: ClipboardList },
     { id: 'workflows' as const, label: 'Workflow Studio', icon: ListChecks },
     { id: 'theme' as const, label: 'Theme', icon: Sun },
+    { id: 'campus' as const, label: 'Campus Boundary', icon: MapPin },
   ].filter((tab) => allowedSettings.includes(tab.id));
   const selectedForm = formBuilders.find((form) => form.id === selectedFormId) ?? formBuilders[0] ?? EMPTY_FORM;
   const selectedFormSchema = formSchemas[selectedForm.id] ?? [];
@@ -5760,6 +5762,10 @@ export default function AdmissionsPage() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {settingsSection === 'campus' && (
+              <CampusGeofenceSettings canEdit={hasPermission(permissions, 'platform.configuration.update')} />
             )}
 
             {settingsSection === 'theme' && (
