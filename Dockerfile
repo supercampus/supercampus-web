@@ -30,6 +30,7 @@ COPY . .
 ARG NEXT_PUBLIC_API_URL=/api
 ENV NODE_ENV=production
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV API_PROXY_TARGET=https://api.supercampus.ai/api
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN case "$NEXT_PUBLIC_API_URL" in /api|https://*) ;; *) echo "NEXT_PUBLIC_API_URL must be /api or an HTTPS production API URL" >&2; exit 1;; esac \
     && npm run build
@@ -39,6 +40,7 @@ WORKDIR /app
 ARG NEXT_PUBLIC_API_URL=/api
 ENV NODE_ENV=production
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV API_PROXY_TARGET=https://api.supercampus.ai/api
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000
