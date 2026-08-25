@@ -6,6 +6,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import TopBar from '@/components/layout/TopBar';
 
 import HomeDashboard from '@/components/modules/HomeDashboard';
+import StaffAcademicDashboard from '@/components/modules/StaffAcademicDashboard';
 import AttendancePage from '@/components/modules/AttendancePage';
 import GatePassPage from '@/components/modules/GatePassPage';
 import FeesPage from '@/components/modules/FeesPage';
@@ -22,11 +23,12 @@ import LoginPage from '@/components/auth/LoginPage';
 import { portalDestination } from '@/lib/portal-access';
 
 function DashboardContent() {
-  const { state, authStatus, student } = useApp();
+  const { state, authStatus, student, roles } = useApp();
   const destination = authStatus === 'authenticated' && student
     ? portalDestination(student)
     : null;
-  const shouldOpenStaffWorkspace = destination === 'staff';
+  const academicAppUser = roles.some((role) => role === 'staff' || role === 'class_advisor');
+  const shouldOpenStaffWorkspace = destination === 'staff' && !academicAppUser;
 
   useEffect(() => {
     if (shouldOpenStaffWorkspace) {
@@ -41,13 +43,13 @@ function DashboardContent() {
   if (shouldOpenStaffWorkspace) {
     return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">SC</div><span>Opening your staff workspace...</span></div>;
   }
-  if (destination && destination !== 'student') {
+  if (destination && destination !== 'student' && !academicAppUser) {
     return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">SC</div><span>This portal is not available in this app yet.</span></div>;
   }
 
   const renderActiveModule = () => {
     switch (state.active) {
-      case 'home': return <HomeDashboard />;
+      case 'home': return academicAppUser ? <StaffAcademicDashboard /> : <HomeDashboard />;
       case 'attendance': return <AttendancePage />;
       case 'gatepass': return <GatePassPage />;
       case 'fees': return <FeesPage />;

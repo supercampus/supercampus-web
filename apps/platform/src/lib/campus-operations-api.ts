@@ -138,6 +138,8 @@ export type AttendanceStudent = {
 
 export type AttendanceSession = {
   id: string;
+  timetableEntryId: string | null;
+  subjectOfferingId: string | null;
   subjectName: string;
   heldOn: string;
   periodLabel: string;
@@ -171,9 +173,17 @@ export const getGatepassOverview = () => apiRequest<{ data: GatepassOverview }>(
 export const decideGatepass = (id: string, decision: 'approved' | 'rejected', note?: string) => apiRequest(`/v1/operations/gatepass/requests/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, note }) });
 export const scanGatepass = (qrPayload: string, direction: 'entry' | 'exit', checkpoint: string) => apiRequest('/v1/operations/gatepass/scan', { method: 'POST', body: JSON.stringify({ qrPayload, direction, checkpoint }) });
 
-export const getAttendanceRoster = () => apiRequest<{ data: { students: AttendanceStudent[] } }>('/v1/operations/attendance/roster');
+export const getAttendanceRoster = (sectionId?: string) => apiRequest<{ data: { students: AttendanceStudent[] } }>(`/v1/operations/attendance/roster${sectionId ? `?sectionId=${encodeURIComponent(sectionId)}` : ''}`);
 export const getAttendanceSessions = () => apiRequest<{ data: { sessions: AttendanceSession[] } }>('/v1/operations/attendance/sessions');
-export const createAttendanceSession = (subjectName: string, heldOn: string, periodLabel: string) => apiRequest('/v1/operations/attendance/sessions', { method: 'POST', body: JSON.stringify({ subjectOfferingId: null, sectionId: null, subjectName, heldOn, periodLabel }) });
+export function createAttendanceSession(input: { timetableEntryId: string; subjectOfferingId: string; sectionId: string; subjectName: string; heldOn: string; periodLabel: string }): ReturnType<typeof createScheduledAttendanceSession>;
+export function createAttendanceSession(subjectName: string, heldOn: string, periodLabel: string): ReturnType<typeof createScheduledAttendanceSession>;
+export function createAttendanceSession(input: { timetableEntryId: string; subjectOfferingId: string; sectionId: string; subjectName: string; heldOn: string; periodLabel: string } | string, heldOn?: string, periodLabel?: string) {
+  return createScheduledAttendanceSession(typeof input === 'string' ? { timetableEntryId: null, subjectOfferingId: null, sectionId: null, subjectName: input, heldOn: heldOn ?? '', periodLabel: periodLabel ?? '' } : input);
+}
+function createScheduledAttendanceSession(input: { timetableEntryId: string | null; subjectOfferingId: string | null; sectionId: string | null; subjectName: string; heldOn: string; periodLabel: string }) {
+  return apiRequest<{ data: AttendanceSession }>('/v1/operations/attendance/sessions', { method: 'POST', body: JSON.stringify(input) });
+}
+export const getMyAttendanceSummary = () => apiRequest<{ data: { studentUserId: string; totalClasses: number; attendedClasses: number; absences: number; percentage: number; records: Array<{ sessionId: string; subjectName: string; heldOn: string; periodLabel: string; status: string }> } }>('/v1/operations/attendance/summary/me');
 export const saveAttendanceEntries = (sessionId: string, entries: Array<{ studentUserId: string; studentName: string; status: string }>) => apiRequest(`/v1/operations/attendance/sessions/${sessionId}/entries`, { method: 'PUT', body: JSON.stringify({ entries }) });
 export const publishAttendanceSession = (sessionId: string) => apiRequest(`/v1/operations/attendance/sessions/${sessionId}/publish`, { method: 'POST' });
 export const getAttendanceReports = () => apiRequest<{ data: { reports: AttendanceReport[] } }>('/v1/operations/attendance/reports');

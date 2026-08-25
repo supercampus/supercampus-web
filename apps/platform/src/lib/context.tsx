@@ -95,6 +95,7 @@ function reducer(state: AppState, action: Action): AppState {
 interface AppContextValue {
   state: AppState;
   student: AuthStudent | null;
+  roles: string[];
   tenantBrand: TenantBrand;
   authStatus: AuthStatus;
   backendStatus: BackendStatus;
@@ -110,6 +111,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, baseDispatch] = useReducer(reducer, initialState);
   const [student, setStudent] = useState<AuthStudent | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
   const [tenantBrand, setTenantBrandState] = useState<TenantBrand>(defaultTenantBrand);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('checking');
   const [backendStatus, setBackendStatus] = useState<BackendStatus>('connecting');
@@ -153,12 +155,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const { data } = await getSession();
         if (cancelled) return;
         setStudent(data.student);
+        setRoles(data.roles ?? [data.student.role]);
         await hydrateStudentState();
         if (cancelled) return;
         setAuthStatus('authenticated'); setBackendStatus('online');
       } catch (error) {
         if (cancelled) return;
         setStudent(null); setAuthStatus('unauthenticated');
+        setRoles([]);
         setBackendStatus(error instanceof ApiRequestError ? 'online' : 'offline');
       }
     })();
@@ -170,12 +174,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data } = await loginRequest(credentials);
       setStudent(data.student);
+      setRoles(data.roles ?? [data.student.role]);
       await hydrateStudentState();
       setAuthStatus('authenticated');
       setBackendStatus('online');
     } catch (error) {
       hydrated.current = false;
       setStudent(null);
+      setRoles([]);
       setAuthStatus('unauthenticated');
       setBackendStatus(error instanceof ApiRequestError && error.status < 500 ? 'online' : 'offline');
       throw error;
@@ -186,6 +192,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try { await logoutRequest(); setBackendStatus('online'); }
     finally {
       hydrated.current = false; setStudent(null); setAuthStatus('unauthenticated');
+      setRoles([]);
       lastAction.current = undefined; baseDispatch({ type: 'RESET' });
     }
   }, []);
@@ -226,7 +233,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     toastTimer.current = setTimeout(() => baseDispatch({ type: 'SET_TOAST', msg: null }), 2600);
   }, []);
 
-  return <AppContext.Provider value={{ state, student, tenantBrand, authStatus, backendStatus, nav, toast: showToast, setTenantBrand, dispatch, login, logout }}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={{ state, student, roles, tenantBrand, authStatus, backendStatus, nav, toast: showToast, setTenantBrand, dispatch, login, logout }}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {

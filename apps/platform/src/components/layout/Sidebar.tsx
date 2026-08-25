@@ -20,7 +20,8 @@ function groupOf(id: NavId) {
 }
 
 export default function Sidebar() {
-  const { state, nav, student, tenantBrand } = useApp();
+  const { state, nav, student, tenantBrand, roles } = useApp();
+  const isStaff = roles.some((role) => role === 'staff' || role === 'class_advisor');
   const currentStudent = student ?? STUDENT;
   const hosteller = state.persona === 'hosteller';
   const dues = duesTotal(state.paid);
@@ -32,14 +33,14 @@ export default function Sidebar() {
 
   const activeGroup = groupOf(state.active);
 
-  const campusItems: NavId[] = hosteller
+  const campusItems: NavId[] = isStaff ? ['timetable', 'attendance'] : hosteller
     ? ['gatepass', 'qr', 'fees', 'hostel', 'library', 'placement']
     : ['gatepass', 'qr', 'fees', 'transport', 'library', 'placement'];
 
   const groupItems: Record<string, NavId[]> = {
-    academic: ['home', 'attendance', 'exams', 'timetable'],
+    academic: isStaff ? ['home', 'timetable', 'attendance'] : ['home', 'attendance', 'exams', 'timetable'],
     campus: campusItems,
-    account: ['documents', 'profile'],
+    account: isStaff ? ['profile'] : ['documents', 'profile'],
   };
 
   const curGroupItems = groupItems[activeGroup] ?? groupItems['academic'];

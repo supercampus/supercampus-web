@@ -3115,6 +3115,21 @@ a.sc-login-card__submit { text-decoration: none; }
   .sc-test-accounts { grid-template-columns: 1fr; }.sc-test-accounts > span { grid-column: 1; }
   .sc-topbar__logout span { display: none; }.sc-topbar__logout { width: 38px; padding: 0; justify-content: center; }
 }
+
+@media (max-width: 680px) {
+  .sc-timetable-row {
+    grid-template-columns: 72px minmax(0, 1fr) !important;
+  }
+
+  .sc-timetable-row > :nth-child(3) {
+    grid-column: 2;
+  }
+
+  .sc-timetable-row > button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
 /* Dynamic tenant student ID */
 .sc-id-face { padding: 24px; display: flex; flex-direction: column; align-items: center; color: #191a2c; background: linear-gradient(165deg, #fff 0%, #f4f1ff 70%, #e7e0ff 100%); border: 1px solid rgba(119,108,245,.18); }
 .sc-id-face::before { content: ''; position: absolute; inset: 0 0 auto; height: 7px; background: var(--primary-grad); }

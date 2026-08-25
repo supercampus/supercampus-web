@@ -1,129 +1,46 @@
 'use client';
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useApp } from '@/lib/context';
-import { THEORY_BARS, LAB_BARS, buildCalendar, stepper, attPct as getAttPct } from '@/lib/data';
-import { Card, SectionTitle, AppNotice, Stepper } from '@/components/ui/primitives';
+import { Card } from '@/components/ui/primitives';
+import { getAttendanceSessions, getMyAttendanceSummary, type AttendanceSession } from '@/lib/campus-operations-api';
+
+type Summary = Awaited<ReturnType<typeof getMyAttendanceSummary>>['data'];
 
 export default function AttendancePage() {
-  const { state, dispatch, toast } = useApp();
-  const pct = getAttPct();
-  const R = 52; const circ = 2 * Math.PI * R;
-  const attColor = pct >= 75 ? '#10b981' : pct >= 65 ? '#d97706' : '#ef4444';
-  const attLabel = pct >= 75 ? 'Eligible' : pct >= 65 ? 'Warning' : 'Critical — condonation required';
-  const offset = (circ * (1 - pct / 100)).toFixed(1);
-  const thrOffset = (circ * (1 - 0.75)).toFixed(1);
-  const cond = state.condonation;
-  const calendar = buildCalendar();
+  const { roles, nav } = useApp();
+  const isStaff = roles.some((role) => role === 'staff' || role === 'class_advisor');
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [sessions, setSessions] = useState<AttendanceSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const calColors: Record<string, { bg: string; c: string }> = {
-    p: { bg: 'rgba(52,211,153,.16)', c: '#10b981' },
-    a: { bg: 'rgba(248,113,113,.16)', c: '#ef4444' },
-    od: { bg: 'rgba(96,165,250,.18)', c: '#3b82f6' },
-    off: { bg: '#15171d', c: '#c7cad4' },
-  };
+  useEffect(() => {
+    const request = isStaff ? getAttendanceSessions() : getMyAttendanceSummary();
+    request.then((response) => {
+      if (isStaff) setSessions((response as Awaited<ReturnType<typeof getAttendanceSessions>>).data.sessions);
+      else setSummary((response as Awaited<ReturnType<typeof getMyAttendanceSummary>>).data);
+    }).catch((cause) => setError(cause instanceof Error ? cause.message : 'Attendance could not be loaded')).finally(() => setLoading(false));
+  }, [isStaff]);
 
-  return (
-    <div className="sc-page">
-      <div className="sc-grid-2col-narrow">
-        {/* Donut */}
-        <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ alignSelf: 'flex-start', fontWeight: 700, fontSize: 15, marginBottom: 8 }}>Overall</div>
-          <div className="sc-donut" style={{ width: 170, height: 170, margin: '8px 0' }}>
-            <svg width="170" height="170" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
-              <circle cx="60" cy="60" r="52" fill="none" stroke="#eceef4" strokeWidth="12" />
-              <circle cx="60" cy="60" r="52" fill="none" stroke={attColor} strokeWidth="12" strokeLinecap="round"
-                strokeDasharray={circ.toFixed(1)} strokeDashoffset={offset} />
-              <circle cx="60" cy="60" r="52" fill="none" stroke="#141527" strokeWidth="12"
-                strokeDasharray={`2 ${circ.toFixed(1)}`} strokeDashoffset={thrOffset} opacity="0.55" />
-            </svg>
-            <div className="sc-donut__center">
-              <div className="sc-donut__val" style={{ color: attColor }}>{pct}%</div>
-              <div className="sc-donut__sub">428 classes</div>
-            </div>
-          </div>
-          <div className="sc-badge" style={{ background: attColor + '22', color: attColor, fontWeight: 700, fontSize: 12, padding: '5px 13px', borderRadius: 20 }}>{attLabel}</div>
-          <div className="sc-empty__sub" style={{ marginTop: 10, textAlign: 'center', lineHeight: 1.5 }}>Dark tick = 75% threshold.<br />Approved OD/Leave counts as attended.</div>
-        </Card>
+  if (loading) return <div className="sc-page"><Card><div style={{ padding: 30, textAlign: 'center' }}>Loading attendance…</div></Card></div>;
 
-        {/* Bars */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <Card>
-            <div className="sc-card__title" style={{ marginBottom: 16 }}>Theory / Classroom</div>
-            {THEORY_BARS.map(b => (
-              <div key={b.name} style={{ marginBottom: 13 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3a3d4a' }}>{b.name}</span>
-                  <span style={{ fontWeight: 700, fontSize: 12, fontFamily: "'JetBrains Mono'", color: b.color }}>{b.label}</span>
-                </div>
-                <div style={{ height: 8, background: '#eceef4', borderRadius: 6, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: b.w, background: b.color, borderRadius: 6 }} />
-                </div>
-              </div>
-            ))}
-          </Card>
-          <Card>
-            <div className="sc-card__title" style={{ marginBottom: 16 }}>Lab / Practical</div>
-            {LAB_BARS.map(b => (
-              <div key={b.name} style={{ marginBottom: 13 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3a3d4a' }}>{b.name}</span>
-                  <span style={{ fontWeight: 700, fontSize: 12, fontFamily: "'JetBrains Mono'", color: b.color }}>{b.label}</span>
-                </div>
-                <div style={{ height: 8, background: '#eceef4', borderRadius: 6, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: b.w, background: b.color, borderRadius: 6 }} />
-                </div>
-              </div>
-            ))}
-          </Card>
-        </div>
-      </div>
+  if (isStaff) return <div className="sc-page">
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginBottom: 18 }}><div><div style={{ color: '#776cf5', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 12 }}>Faculty attendance</div><h2 style={{ margin: '5px 0 0' }}>Published attendance</h2><p style={{ color: '#6c7280', margin: '5px 0 0' }}>Attendance starts from a class in your published timetable.</p></div><div style={{ flex: 1 }} /><button onClick={() => nav('timetable')} style={{ border: 0, borderRadius: 9, background: '#181a25', color: '#fff', padding: '10px 15px', fontWeight: 800 }}>Open timetable</button></div>
+    {error && <div className="sc-alert sc-alert--red" style={{ marginBottom: 16 }}>{error}</div>}
+    <Card style={{ padding: 0, overflow: 'hidden' }}>{sessions.length === 0 ? <div style={{ padding: 30, textAlign: 'center', color: '#6c7280' }}>No attendance has been published yet.</div> : sessions.map((session, index) => <div key={session.id} style={{ padding: '15px 18px', borderTop: index ? '1px solid #eef0f5' : 'none', display: 'flex', alignItems: 'center', gap: 14 }}><div style={{ width: 44, height: 44, borderRadius: 10, background: '#776cf514', color: '#5b4fe4', display: 'grid', placeItems: 'center', fontWeight: 900 }}>✓</div><div><b>{session.subjectName}</b><div style={{ color: '#6c7280', fontSize: 12, marginTop: 4 }}>{new Date(`${session.heldOn}T00:00:00`).toLocaleDateString()} · {session.periodLabel}</div></div><div style={{ flex: 1 }} /><span className="sc-badge" style={{ background: session.status === 'draft' ? '#f59e0b18' : '#10b98118', color: session.status === 'draft' ? '#b45309' : '#047857' }}>{session.status === 'draft' ? 'Draft' : 'Published'}</span></div>)}</Card>
+  </div>;
 
-      {/* Calendar */}
-      <Card style={{ marginTop: 18 }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-          <div className="sc-card__title">July 2026</div>
-          <div style={{ flex: 1 }} />
-          <div style={{ display: 'flex', gap: 16, fontSize: 11.5, fontWeight: 600 }}>
-            <span style={{ color: '#10b981' }}>● Present</span>
-            <span style={{ color: '#ef4444' }}>● Absent</span>
-            <span style={{ color: '#3b82f6' }}>● OD / Leave</span>
-          </div>
-        </div>
-        <div className="sc-calendar">
-          {calendar.map(({ d, state }) => {
-            const cs = calColors[state];
-            return (
-              <div key={d} style={{ aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 9, font: "600 12px 'JetBrains Mono'", background: cs.bg, color: cs.c }}>
-                {d}
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* Condonation */}
-      <div className="sc-alert sc-alert--red" style={{ marginTop: 18 }}>
-        <div className="sc-alert__icon" style={{ background: 'rgba(248,113,113,.16)' }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
-            <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
-          </svg>
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>Condonation required</div>
-          <div style={{ fontSize: 12.5, color: '#6c7280', marginTop: 3 }}>Attendance is below 65%. Submit a condonation request with supporting documents to remain eligible.</div>
-          {cond === 'none' && (
-            <AppNotice>Submit a condonation request from the Super Campus mobile app.</AppNotice>
-          )}
-          {cond === 'pending' && (
-            <div style={{ marginTop: 14 }}>
-              <span style={{ display: 'inline-flex', fontWeight: 700, fontSize: 11, padding: '5px 12px', borderRadius: 20, background: 'rgba(251,191,36,.14)', color: '#d97706' }}>Pending review</span>
-            </div>
-          )}
-          {cond === 'approved' && (
-            <div style={{ marginTop: 14, fontSize: 12.5, color: '#10b981', fontWeight: 600 }}>✓ Condonation approved — attendance recalculated for eligibility.</div>
-          )}
-        </div>
-      </div>
+  const percentage = summary?.percentage ?? 0;
+  const color = percentage >= 75 ? '#10b981' : percentage >= 65 ? '#d97706' : '#ef4444';
+  return <div className="sc-page">
+    <div style={{ marginBottom: 18 }}><div style={{ color: '#776cf5', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 12 }}>My academics</div><h2 style={{ margin: '5px 0 0' }}>Attendance</h2><p style={{ color: '#6c7280', margin: '5px 0 0' }}>Live records published by your faculty.</p></div>
+    {error && <div className="sc-alert sc-alert--red" style={{ marginBottom: 16 }}>{error}</div>}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 14, marginBottom: 18 }}>
+      <Card><div style={{ color: '#6c7280', fontSize: 12 }}>Overall</div><div style={{ fontSize: 34, fontWeight: 900, color, marginTop: 6 }}>{percentage}%</div></Card>
+      <Card><div style={{ color: '#6c7280', fontSize: 12 }}>Classes attended</div><div style={{ fontSize: 28, fontWeight: 900, marginTop: 9 }}>{summary?.attendedClasses ?? 0}<span style={{ color: '#9096a4', fontSize: 15 }}> / {summary?.totalClasses ?? 0}</span></div></Card>
+      <Card><div style={{ color: '#6c7280', fontSize: 12 }}>Absences</div><div style={{ fontSize: 28, fontWeight: 900, marginTop: 9 }}>{summary?.absences ?? 0}</div></Card>
     </div>
-  );
+    <Card style={{ padding: 0, overflow: 'hidden' }}><div style={{ padding: '14px 18px', background: '#f7f8fb', fontWeight: 800 }}>Recent classes</div>{(summary?.records ?? []).length === 0 ? <div style={{ padding: 30, textAlign: 'center', color: '#6c7280' }}>Your published attendance will appear here.</div> : summary?.records.map((record, index) => <div key={`${record.sessionId}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderTop: '1px solid #eef0f5' }}><div><b>{record.subjectName}</b><div style={{ color: '#6c7280', fontSize: 12, marginTop: 4 }}>{new Date(`${record.heldOn}T00:00:00`).toLocaleDateString()} · {record.periodLabel}</div></div><div style={{ flex: 1 }} /><span className="sc-badge" style={{ textTransform: 'capitalize', background: record.status === 'present' ? '#10b98118' : record.status === 'absent' ? '#ef444418' : '#3b82f618', color: record.status === 'present' ? '#047857' : record.status === 'absent' ? '#b91c1c' : '#1d4ed8' }}>{record.status}</span></div>)}</Card>
+  </div>;
 }
