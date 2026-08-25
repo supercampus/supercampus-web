@@ -135,7 +135,10 @@ export function availableStaffSettings(permissions: readonly string[]): StaffSet
   // Read is enough to open it: the panel renders the fence read-only without
   // the update grant, which is worth showing to anyone who needs to know where
   // the boundary is without being able to move it.
-  if (hasPermission(permissions, 'platform.configuration.read')) {
+  if (hasAnyPermission(permissions, [
+    'platform.configuration.read',
+    'timetable.config.read',
+  ])) {
     settings.push('campus');
   }
   return settings;

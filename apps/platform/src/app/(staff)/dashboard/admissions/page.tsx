@@ -17,6 +17,7 @@ import {
   availableStaffSettings,
   canOpenStaffNavigation,
   dashboardCapabilities,
+  hasAnyPermission,
   hasPermission,
   NAVIGATION_ORDER,
   SETTINGS_ORDER,
@@ -5765,7 +5766,10 @@ export default function AdmissionsPage() {
             )}
 
             {settingsSection === 'campus' && (
-              <CampusGeofenceSettings canEdit={hasPermission(permissions, 'platform.configuration.update')} />
+              <CampusGeofenceSettings canEdit={hasAnyPermission(permissions, [
+                'platform.configuration.update',
+                'timetable.config.update',
+              ])} />
             )}
 
             {settingsSection === 'theme' && (
