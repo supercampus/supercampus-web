@@ -176,7 +176,7 @@ const CRM_ROOT = '/v1/crm';
 export type CrmAssistantIntent = 'general' | 'summarize' | 'extract' | 'follow_up' | 'next_actions';
 
 export interface CrmAssistantActionProposal {
-  actionType: 'add_lead_note' | 'create_lead_task' | 'move_lead';
+  actionType: 'add_lead_note' | 'create_lead_task' | 'move_lead' | 'start_application';
   leadId: string;
   leadName: string;
   description: string;
