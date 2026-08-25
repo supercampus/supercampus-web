@@ -1709,12 +1709,14 @@ export default function AdmissionsPage() {
     return NAVIGATION_ORDER.filter((section) =>
       resolved.includes(section) || permissionNavigation.includes(section));
   }, [serverNavigation, permissions]);
-  const allowedSettings = useMemo(
-    () => (serverNavigation
+  const allowedSettings = useMemo(() => {
+    const permissionSettings = availableStaffSettings(permissions);
+    const resolved = serverNavigation
       ? toStaffSettingsIds(serverNavigation.settings, SETTINGS_ORDER)
-      : availableStaffSettings(permissions)),
-    [serverNavigation, permissions],
-  );
+      : permissionSettings;
+    return SETTINGS_ORDER.filter((section) =>
+      resolved.includes(section) || permissionSettings.includes(section));
+  }, [serverNavigation, permissions]);
   // Admissions is a navigation group, not a standalone workspace. Only its
   // children participate in active-page selection and fallback resolution.
   const selectableNavigation = useMemo(
