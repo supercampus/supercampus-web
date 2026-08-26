@@ -396,15 +396,96 @@ export function deleteTimetableEntry(entryId: string) {
   });
 }
 
-export function generateTimetableVersion(versionId: string, input: {
+type GenerateResult = { versionId: string; scheduledPeriods: number; unscheduled: Array<{ subjectOfferingId: string; remainingPeriods: number }>; engine: string; aiStatus: 'applied' | 'fallback' | 'not_configured' };
+
+async function generateSelectedSectionWithLegacyApi(versionId: string, sectionId: string, prioritizeHighCredits: boolean) {
+  const context = (await getTimetableContext()).data;
+  const version = context.versions.find((item) => item.id === versionId);
+  const configuration = context.configurations.find((item) => item.id === version?.configurationId);
+  const section = context.sections.find((item) => item.id === sectionId);
+  if (!version || !configuration || !section) throw new Error('The selected timetable or class is no longer available.');
+
+  const slots = context.slots
+    .filter((item) => item.configurationId === configuration.id && item.slotType === 'instructional')
+    .sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.sequence - b.sequence);
+  const oldEntries = context.entries.filter((entry) => entry.versionId === versionId && entry.sectionId === sectionId);
+  const fixedEntries = context.entries.filter((entry) => entry.versionId === versionId && entry.sectionId !== sectionId);
+  const offerings = context.subjectOfferings.filter((offering) => offering.sectionId === sectionId);
+  const requirements = offerings.flatMap((offering) => {
+    const saved = context.workloadRequirements.filter((item) => item.subjectOfferingId === offering.id);
+    return (saved.length ? saved : [{ deliveryType: 'class' as const, periodsPerWeek: Math.max(2, Math.ceil(offering.credits || 3)), blockSize: 1, maxBlocksPerDay: 1, requiredRoomTypes: [] as TimetableRoom['roomType'][] }])
+      .map((requirement) => ({ offering, requirement }));
+  }).sort((a, b) => prioritizeHighCredits
+    ? b.requirement.blockSize - a.requirement.blockSize || b.offering.credits - a.offering.credits || b.requirement.periodsPerWeek - a.requirement.periodsPerWeek
+    : a.offering.code.localeCompare(b.offering.code));
+
+  const facultyBusy = new Set(fixedEntries.map((entry) => `${entry.facultyUserId}:${entry.slotId}`));
+  const roomBusy = new Set(fixedEntries.map((entry) => `${entry.roomId}:${entry.slotId}`));
+  const facultyDaily = new Map<string, number>();
+  for (const entry of fixedEntries) {
+    const day = slots.find((slot) => slot.id === entry.slotId)?.dayOfWeek;
+    if (day == null) continue;
+    const key = `${entry.facultyUserId}:${day}`;
+    facultyDaily.set(key, (facultyDaily.get(key) ?? 0) + 1);
+  }
+  const subjectDayBlocks = new Map<string, number>();
+  const planned: Array<Parameters<typeof createTimetableEntry>[0]> = [];
+
+  for (const { offering, requirement } of requirements) {
+    const assignment = context.teachingAssignments.find((item) => item.subjectOfferingId === offering.id);
+    if (!assignment) throw new Error(`${offering.code} needs a faculty assignment before generation.`);
+    let remaining = requirement.periodsPerWeek;
+    while (remaining > 0) {
+      const length = Math.min(requirement.blockSize, remaining);
+      let chosen: { window: TimetableSlot[]; room: TimetableRoom } | null = null;
+      const days = [...new Set(slots.map((slot) => slot.dayOfWeek))]
+        .sort((a, b) => (subjectDayBlocks.get(`${offering.id}:${a}`) ?? 0) - (subjectDayBlocks.get(`${offering.id}:${b}`) ?? 0) || a - b);
+      for (const day of days) {
+        if ((subjectDayBlocks.get(`${offering.id}:${day}`) ?? 0) >= requirement.maxBlocksPerDay) continue;
+        const daySlots = slots.filter((slot) => slot.dayOfWeek === day);
+        for (let start = 0; start <= daySlots.length - length; start += 1) {
+          const window = daySlots.slice(start, start + length);
+          if (!window.slice(1).every((slot, index) => slot.sequence === window[index].sequence + 1 && window[index].endsAt === slot.startsAt)) continue;
+          const dailyKey = `${assignment.facultyUserId}:${day}`;
+          if ((facultyDaily.get(dailyKey) ?? 0) + length > configuration.maxFacultyPeriodsPerDay) continue;
+          if (window.some((slot) => facultyBusy.has(`${assignment.facultyUserId}:${slot.id}`))) continue;
+          const room = context.rooms.find((candidate) => candidate.capacity >= (section.capacity ?? 0)
+            && (!requirement.requiredRoomTypes.length || requirement.requiredRoomTypes.includes(candidate.roomType))
+            && window.every((slot) => !roomBusy.has(`${candidate.id}:${slot.id}`)));
+          if (room) { chosen = { window, room }; break; }
+        }
+        if (chosen) break;
+      }
+      if (!chosen) throw new Error(`${offering.code} has ${remaining} periods that cannot be placed without a faculty or room conflict.`);
+      const blockId = crypto.randomUUID();
+      chosen.window.forEach((slot, index) => {
+        planned.push({ versionId, slotId: slot.id, subjectOfferingId: offering.id, teachingAssignmentId: assignment.id, roomId: chosen!.room.id, deliveryType: requirement.deliveryType, sessionBlockId: blockId, blockSequence: index + 1, blockLength: length });
+        facultyBusy.add(`${assignment.facultyUserId}:${slot.id}`);
+        roomBusy.add(`${chosen!.room.id}:${slot.id}`);
+      });
+      const day = chosen.window[0].dayOfWeek;
+      facultyDaily.set(`${assignment.facultyUserId}:${day}`, (facultyDaily.get(`${assignment.facultyUserId}:${day}`) ?? 0) + length);
+      subjectDayBlocks.set(`${offering.id}:${day}`, (subjectDayBlocks.get(`${offering.id}:${day}`) ?? 0) + 1);
+      remaining -= length;
+    }
+  }
+
+  for (const entry of oldEntries) await deleteTimetableEntry(entry.id);
+  for (const entry of planned) await createTimetableEntry(entry);
+  return { data: { versionId, scheduledPeriods: planned.length, unscheduled: [], engine: 'browser-constraint-optimizer-v1', aiStatus: 'fallback' as const } satisfies GenerateResult };
+}
+
+export async function generateTimetableVersion(versionId: string, input: {
   sectionId?: string;
   preserveExisting?: boolean;
   prioritizeHighCredits?: boolean;
 } = {}) {
-  return apiRequest<{ data: { versionId: string; scheduledPeriods: number; unscheduled: Array<{ subjectOfferingId: string; remainingPeriods: number }>; engine: string; aiStatus: 'applied' | 'fallback' | 'not_configured' } }>(
-    `${ROOT}/versions/${encodeURIComponent(versionId)}/generate`,
-    { method: 'POST', body: JSON.stringify(input) },
-  );
+  try {
+    return await apiRequest<{ data: GenerateResult }>(`${ROOT}/versions/${encodeURIComponent(versionId)}/generate`, { method: 'POST', body: JSON.stringify(input) });
+  } catch (error) {
+    if (!input.sectionId || !(error instanceof Error) || !error.message.includes('sectionId')) throw error;
+    return generateSelectedSectionWithLegacyApi(versionId, input.sectionId, input.prioritizeHighCredits ?? true);
+  }
 }
 
 export function publishTimetableVersion(versionId: string) {
