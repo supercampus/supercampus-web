@@ -83,7 +83,10 @@ export function PrincipalTimetableSheet() {
   const [assignmentId, setAssignmentId] = useState('');
   const [roomId, setRoomId] = useState('');
   const [deliveryType, setDeliveryType] = useState<TimetableDeliveryType>('class');
-  const [setupName, setSetupName] = useState('MEC Semester Timetable 2026-27');
+  const [isCombinedClass, setIsCombinedClass] = useState(false);
+  const [combinedClassCode, setCombinedClassCode] = useState('');
+  const [combinedClassName, setCombinedClassName] = useState('');
+  const [setupName, setSetupName] = useState('Semester timetable');
   const [setupYearId, setSetupYearId] = useState('');
   const [setupTermId, setSetupTermId] = useState('');
   const [showRules, setShowRules] = useState(true);
@@ -383,6 +386,7 @@ export function PrincipalTimetableSheet() {
     teachingAssignmentId: entry.teachingAssignmentId, roomId: entry.roomId,
     electiveGroupId: entry.electiveGroupId, deliveryType: entry.deliveryType,
     sessionBlockId: entry.sessionBlockId, blockSequence: entry.blockSequence, blockLength: entry.blockLength,
+    combinedClassCode: entry.combinedClassCode, combinedClassName: entry.combinedClassName,
   });
 
   const automaticRoom = (offering: TimetableContext['subjectOfferings'][number]) => {
@@ -418,11 +422,20 @@ export function PrincipalTimetableSheet() {
     setEditorSlotId(slotId); setEditorEntryId(entry?.id ?? null);
     setOfferingId(entry?.subjectOfferingId ?? ''); setAssignmentId(entry?.teachingAssignmentId ?? '');
     setRoomId(entry?.roomId ?? ''); setDeliveryType(entry?.deliveryType ?? 'class');
+    setIsCombinedClass(Boolean(entry?.combinedClassCode));
+    setCombinedClassCode(entry?.combinedClassCode ?? '');
+    setCombinedClassName(entry?.combinedClassName ?? '');
   };
 
   const saveEditor = () => run(async () => {
     if (!editorSlotId || !versionId || !offeringId || !assignmentId || !roomId) throw new Error('Choose a subject, faculty member, and room.');
-    const input = { versionId, slotId: editorSlotId, subjectOfferingId: offeringId, teachingAssignmentId: assignmentId, roomId, deliveryType };
+    if (isCombinedClass && !combinedClassCode.trim()) throw new Error('Enter a shared group code, then use the same code in the other class.');
+    const input = {
+      versionId, slotId: editorSlotId, subjectOfferingId: offeringId,
+      teachingAssignmentId: assignmentId, roomId, deliveryType,
+      combinedClassCode: isCombinedClass ? combinedClassCode.trim().toUpperCase() : null,
+      combinedClassName: isCombinedClass ? combinedClassName.trim() || null : null,
+    };
     if (editorEntryId) await updateTimetableEntry(editorEntryId, input); else await createTimetableEntry(input);
     setEditorSlotId(null); setEditorEntryId(null);
   }, 'Cell saved.');
@@ -445,11 +458,9 @@ export function PrincipalTimetableSheet() {
   </div>;
 
   return <div className="flex h-[calc(100vh-2rem)] min-h-0 w-full min-w-0 flex-col overflow-hidden border border-slate-300 bg-white shadow-sm">
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-3">
+    <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-3">
       <div><h1 className="text-xl font-semibold text-slate-900">Build your class timetable</h1><p className="mt-1 text-xs text-slate-500">Set up the week, assign course periods, then review and publish.</p></div>
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="text-[10px] font-medium text-slate-500">Plan<select value={configurationId} onChange={(event) => setConfigurationId(event.target.value)} className={`${selectClass} ml-2 min-w-56`} aria-label="Timetable plan">{configurations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-        <label className="text-[10px] font-medium text-slate-500">Version<select value={versionId} onChange={(event) => setVersionId(event.target.value)} className={`${selectClass} ml-2 min-w-48`} aria-label="Timetable version">{versions.map((item) => <option key={item.id} value={item.id}>{item.label} · {item.status}</option>)}</select></label>
+      <div className="flex items-center gap-2">
         {versions.length === 0 && <button type="button" disabled={busy} onClick={() => void run(async () => { await createTimetableVersion(configurationId, 'Principal working sheet'); }, 'Draft created.')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={14} className="inline" /> Create draft</button>}
         <button type="button" onClick={() => void refresh()} className="grid h-9 w-9 place-items-center rounded border border-slate-300" aria-label="Refresh"><RefreshCw size={14} /></button>
       </div>
@@ -551,7 +562,7 @@ export function PrincipalTimetableSheet() {
               const entry = slot && entries.find((item) => item.slotId === slot.id);
               const activeDrop = slot?.id === dropSlotId;
               return <button key={`${day}-${column.sequence}`} type="button" disabled={!slot || !sectionId} draggable={Boolean(entry) && selectedVersion?.status === 'draft'} onDragStart={() => entry && setDragItem({ kind: 'entry', entryId: entry.id })} onDragEnd={() => { setDragItem(null); setDropSlotId(null); }} onDragOver={(event) => { if (selectedVersion?.status === 'draft') { event.preventDefault(); if (slot) setDropSlotId(slot.id); } }} onDragLeave={() => setDropSlotId((current) => current === slot?.id ? null : current)} onDrop={(event) => { event.preventDefault(); if (slot) dropOnCell(slot.id); }} onClick={() => { if (!slot || selectedVersion?.status !== 'draft') return; if (dragItem?.kind === 'subject') dropOnCell(slot.id); else openEditor(slot.id, entry); }} className={`group min-h-24 border-b border-r p-1.5 text-left transition ${activeDrop ? 'border-emerald-500 bg-emerald-50 ring-2 ring-inset ring-emerald-500' : entry ? 'border-slate-400 bg-white hover:bg-emerald-50/40' : 'border-slate-400 bg-white hover:bg-slate-50'} disabled:cursor-default`} title={entry ? `Drag or click to edit ${entry.subjectName}` : 'Drop a subject here'}>
-                {entry ? <div className={`flex h-full flex-col justify-center border-l-4 px-2 py-1.5 ${entry.deliveryType === 'laboratory' ? 'border-violet-600 bg-violet-50' : entry.deliveryType === 'activity' ? 'border-amber-500 bg-amber-50' : 'border-emerald-600 bg-emerald-50'}`}><div className="flex items-start justify-between gap-1"><strong className="text-xs text-slate-900">{entry.subjectCode}{entry.deliveryType === 'laboratory' ? ' · Lab' : ''}</strong><GripVertical size={12} className="text-slate-400 opacity-0 group-hover:opacity-100" /></div><p className="mt-1 truncate text-[9px] text-slate-600">{entry.facultyName}</p><p className="mt-1 text-[9px] text-slate-500">{entry.roomCode}</p></div> : <span className="flex h-full items-center justify-center text-[10px] text-slate-300 group-hover:text-slate-500">Drop</span>}
+                {entry ? <div className={`flex h-full flex-col justify-center border-l-4 px-2 py-1.5 ${entry.deliveryType === 'laboratory' ? 'border-violet-600 bg-violet-50' : entry.deliveryType === 'activity' ? 'border-amber-500 bg-amber-50' : 'border-emerald-600 bg-emerald-50'}`}><div className="flex items-start justify-between gap-1"><strong className="text-xs text-slate-900">{entry.subjectCode}{entry.deliveryType === 'laboratory' ? ' · Lab' : ''}</strong><GripVertical size={12} className="text-slate-400 opacity-0 group-hover:opacity-100" /></div>{entry.combinedClassCode && <span className="mt-1 w-fit rounded bg-indigo-100 px-1.5 py-0.5 text-[8px] font-semibold uppercase text-indigo-700">Shared · {entry.combinedClassName || entry.combinedClassCode}</span>}<p className="mt-1 truncate text-[9px] text-slate-600">{entry.facultyName}</p><p className="mt-1 text-[9px] text-slate-500">{entry.roomCode}</p></div> : <span className="flex h-full items-center justify-center text-[10px] text-slate-300 group-hover:text-slate-500">Drop</span>}
               </button>;
             }),
           ];})}
@@ -597,6 +608,12 @@ export function PrincipalTimetableSheet() {
           <EditorSelect label="Faculty" value={assignmentId} onChange={setAssignmentId}><option value="">Choose faculty</option>{assignments.map((item) => <option key={item.id} value={item.id}>{item.facultyName}</option>)}</EditorSelect>
           <EditorSelect label="Room" value={roomId} onChange={setRoomId}><option value="">Choose room</option>{data.rooms.map((item) => <option key={item.id} value={item.id}>{item.code} · {item.name} ({item.capacity})</option>)}</EditorSelect>
           <EditorSelect label="Delivery type" value={deliveryType} onChange={(value) => setDeliveryType(value as TimetableDeliveryType)}>{['class', 'laboratory', 'tutorial', 'project', 'activity'].map((item) => <option key={item} value={item}>{item}</option>)}</EditorSelect>
+          <label className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 text-sm text-slate-800"><span className="flex items-center gap-3"><input type="checkbox" checked={isCombinedClass} onChange={(event) => setIsCombinedClass(event.target.checked)} className="h-4 w-4 accent-indigo-700" /><span><strong className="block">Shared with another class</strong><span className="mt-1 block text-xs leading-5 text-slate-500">Use this when two sections attend the same faculty period together.</span></span></span></label>
+          {isCombinedClass && <div className="grid gap-4 rounded-lg border border-slate-200 p-4">
+            <label className="text-xs text-slate-500">Shared group code<input value={combinedClassCode} onChange={(event) => setCombinedClassCode(event.target.value.toUpperCase())} placeholder="Example: AIML-CSBS-JP" className={`${selectClass} mt-1 w-full`} /></label>
+            <label className="text-xs text-slate-500">Name shown to staff<input value={combinedClassName} onChange={(event) => setCombinedClassName(event.target.value)} placeholder="Example: AIML + CSBS" className={`${selectClass} mt-1 w-full`} /></label>
+            <p className="text-xs leading-5 text-slate-500">Open the matching cell in the other class and enter the same group code, faculty, room, day, and period. Staff will see one class; both student sections will see it.</p>
+          </div>}
         </div>
         <div className="mt-6 flex gap-2">{editorEntryId && <button type="button" disabled={busy} onClick={() => void run(async () => { await deleteTimetableEntry(editorEntryId); setEditorSlotId(null); setEditorEntryId(null); }, 'Cell cleared.')} className="inline-flex h-11 items-center gap-2 rounded border border-red-200 px-4 text-xs text-red-700"><Trash2 size={14} /> Clear</button>}<button type="button" disabled={busy} onClick={() => void saveEditor()} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded bg-slate-900 text-xs text-white"><Save size={14} /> Save cell</button></div>
       </aside>

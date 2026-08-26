@@ -107,6 +107,8 @@ export interface TimetableEntry {
   sessionBlockId: string;
   blockSequence: number;
   blockLength: number;
+  combinedClassCode: string | null;
+  combinedClassName: string | null;
 }
 
 export interface FacultySubstitution {
@@ -328,6 +330,8 @@ export function createTimetableEntry(input: {
   sessionBlockId?: string;
   blockSequence?: number;
   blockLength?: number;
+  combinedClassCode?: string | null;
+  combinedClassName?: string | null;
 }) {
   return apiRequest<{ data: Record<string, unknown> }>(`${ROOT}/entries`, {
     method: 'POST',
@@ -346,6 +350,8 @@ export function updateTimetableEntry(entryId: string, input: {
   sessionBlockId?: string;
   blockSequence?: number;
   blockLength?: number;
+  combinedClassCode?: string | null;
+  combinedClassName?: string | null;
 }) {
   return apiRequest<{ data: Record<string, unknown> }>(`${ROOT}/entries/${encodeURIComponent(entryId)}`, {
     method: 'PUT', body: JSON.stringify(input),
