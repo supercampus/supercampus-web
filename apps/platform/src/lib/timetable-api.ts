@@ -312,10 +312,10 @@ export function createElectiveGroup(input: {
   );
 }
 
-export function createTimetableVersion(configurationId: string, label: string) {
+export function createTimetableVersion(configurationId: string, label: string, sourceVersionId?: string) {
   return apiRequest<{ data: Record<string, unknown> }>(`${ROOT}/versions`, {
     method: 'POST',
-    body: JSON.stringify({ configurationId, label }),
+    body: JSON.stringify({ configurationId, label, sourceVersionId }),
   });
 }
 

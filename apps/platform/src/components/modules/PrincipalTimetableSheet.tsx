@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Building2,
@@ -108,6 +108,7 @@ export function PrincipalTimetableSheet() {
   const [newSectionCode, setNewSectionCode] = useState('A');
   const [newSectionName, setNewSectionName] = useState('Section A');
   const [newSectionCapacity, setNewSectionCapacity] = useState(60);
+  const draftCreationRef = useRef('');
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -155,11 +156,32 @@ export function PrincipalTimetableSheet() {
   const assignments = useMemo(() => (data?.teachingAssignments ?? []).filter((item) => item.subjectOfferingId === offeringId), [data, offeringId]);
 
   useEffect(() => {
-    setVersionId((current) => versions.some((item) => item.id === current) ? current : versions.find((item) => item.status === 'draft')?.id ?? versions[0]?.id ?? '');
+    setVersionId((current) => versions.find((item) => item.status === 'draft')?.id
+      ?? (versions.some((item) => item.id === current) ? current : versions[0]?.id ?? ''));
   }, [versions]);
+  useEffect(() => {
+    if (!data?.canManage || !configurationId || versions.length === 0
+      || versions.some((item) => item.status === 'draft')
+      || draftCreationRef.current === configurationId) return;
+    const source = versions.find((item) => item.status === 'published') ?? versions[0];
+    draftCreationRef.current = configurationId;
+    setBusy(true);
+    setError(null);
+    void createTimetableVersion(configurationId, 'Working timetable', source.id)
+      .then((created) => {
+        const id = String(created.data.id ?? '');
+        if (!id) throw new Error('The editable timetable could not be created.');
+        setVersionId(id);
+        setNotice('An editable working copy is ready. The published timetable remains unchanged until you publish.');
+        return refresh();
+      })
+      .catch((cause) => setError(cause instanceof Error ? cause.message : 'The editable timetable could not be created.'))
+      .finally(() => setBusy(false));
+  }, [configurationId, data?.canManage, refresh, versions]);
   useEffect(() => {
     setSectionId((current) => sections.some((item) => item.id === current) ? current : sections[0]?.id ?? '');
   }, [sections]);
+  useEffect(() => { setError(null); setNotice(null); }, [sectionId]);
   useEffect(() => {
     if (!selectedConfiguration) return;
     const firstDay = selectedConfiguration.workingDays[0] ?? allSlots[0]?.dayOfWeek;
@@ -343,8 +365,19 @@ export function PrincipalTimetableSheet() {
     setAcademicSetup(null);
   }, 'Class saved and selected.');
 
+  const ensureDraftVersion = async () => {
+    if (selectedVersion?.status === 'draft') return versionId;
+    if (!configurationId || !selectedVersion) throw new Error('No timetable is available to edit.');
+    const created = await createTimetableVersion(configurationId, 'Working timetable', selectedVersion.id);
+    const id = String(created.data.id ?? '');
+    if (!id) throw new Error('The editable timetable could not be created.');
+    setVersionId(id);
+    return id;
+  };
+
   const applyRulesAndGenerate = () => run(async () => {
-    if (!versionId || !sectionId) throw new Error('Choose a section and a draft timetable.');
+    if (!versionId || !sectionId) throw new Error('Choose a section and a timetable first.');
+    const editableVersionId = await ensureDraftVersion();
     const total = offerings.reduce((sum, offering) => sum + courseTotal(courseRules[offering.id]), 0);
     if (total !== weeklyCapacity) throw new Error(`Weekly workload is ${total}. It must equal the ${weeklyCapacity} teaching periods in the principal's layout.`);
     const savedDeliveries = new Set((data?.workloadRequirements ?? []).map((requirement) =>
@@ -368,7 +401,7 @@ export function PrincipalTimetableSheet() {
         await upsertTimetableWorkloadRequirement({ subjectOfferingId: offering.id, deliveryType: option.value, periodsPerWeek: plan.periods, blockSize: plan.blockSize, maxBlocksPerDay: plan.maxBlocksPerDay });
       }
     }
-    const generated = await generateTimetableVersion(versionId, { sectionId, preserveExisting: false, prioritizeHighCredits: true });
+    const generated = await generateTimetableVersion(editableVersionId, { sectionId, preserveExisting: false, prioritizeHighCredits: true });
     if (generated.data.unscheduled.length) {
       const remaining = generated.data.unscheduled.reduce((sum, item) => sum + item.remainingPeriods, 0);
       throw new Error(`${remaining} periods could not be placed. Check faculty limits, consecutive periods, and room availability.`);
@@ -380,6 +413,10 @@ export function PrincipalTimetableSheet() {
     : result.aiStatus === 'fallback'
       ? 'AI was temporarily unavailable, so the timetable was generated safely with the built-in constraint engine.'
       : 'Timetable generated with the built-in constraint engine. Add the timetable AI settings to enable JarvisLabs.');
+
+  const createWorkingCopy = () => run(async () => {
+    await ensureDraftVersion();
+  }, 'An editable working copy is ready. Your published timetable remains unchanged until you publish.');
 
   const entryInput = (entry: TimetableEntry, slotId: string) => ({
     versionId: entry.versionId, slotId, subjectOfferingId: entry.subjectOfferingId,
@@ -461,7 +498,8 @@ export function PrincipalTimetableSheet() {
     <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-3">
       <div><h1 className="text-xl font-semibold text-slate-900">Build your class timetable</h1><p className="mt-1 text-xs text-slate-500">Set up the week, assign course periods, then review and publish.</p></div>
       <div className="flex items-center gap-2">
-        {versions.length === 0 && <button type="button" disabled={busy} onClick={() => void run(async () => { await createTimetableVersion(configurationId, 'Principal working sheet'); }, 'Draft created.')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={14} className="inline" /> Create draft</button>}
+        {versions.length === 0 && <button type="button" disabled={busy} onClick={() => void run(async () => { await createTimetableVersion(configurationId, 'Working timetable'); }, 'Draft created.')} className="h-9 rounded border border-slate-300 px-3 text-xs"><Plus size={14} className="inline" /> Create draft</button>}
+        {selectedVersion && selectedVersion.status !== 'draft' && <button type="button" disabled={busy} onClick={() => void createWorkingCopy()} className="inline-flex h-9 items-center gap-2 rounded bg-slate-900 px-4 text-xs font-medium text-white disabled:opacity-40"><Save size={14} /> Edit timetable</button>}
         <button type="button" onClick={() => void refresh()} className="grid h-9 w-9 place-items-center rounded border border-slate-300" aria-label="Refresh"><RefreshCw size={14} /></button>
       </div>
     </header>
@@ -472,7 +510,7 @@ export function PrincipalTimetableSheet() {
       <button type="button" onClick={() => setShowRules(true)} className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-medium ${showRules ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-500'}`}><span className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold ${showRules ? 'bg-white/20' : 'bg-emerald-100 text-emerald-800'}`}>2</span><Sparkles size={13} /> Set course periods {workloadDifference === 0 && <Check size={13} className={showRules ? 'text-emerald-300' : 'text-emerald-600'} />}</button>
       <span className="text-slate-300">→</span>
       <button type="button" onClick={() => setShowRules(false)} className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-medium ${!showRules ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-500'}`}><span className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold ${!showRules ? 'bg-white/20' : 'bg-slate-100 text-slate-600'}`}>3</span> Review timetable</button>
-      <div className="ml-auto flex items-center gap-2">{data.rooms.length === 0 && <span className="text-[11px] text-amber-700">Rooms must be added before generation</span>}{!showRules && entries.length !== weeklyCapacity && <span className="text-[11px] text-amber-700">Generate all {weeklyCapacity} periods for this class before publishing</span>}{!showRules && selectedVersion?.status === 'draft' && <button type="button" disabled={busy || weeklyCapacity === 0 || entries.length !== weeklyCapacity} onClick={() => void run(async () => { await publishTimetableVersion(versionId); }, 'Timetable published.')} className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-xs font-medium text-white disabled:opacity-40"><Rocket size={14} /> Publish timetable</button>}</div>
+      <div className="ml-auto flex items-center gap-2">{data.rooms.length === 0 && <span className="text-[11px] text-amber-700">Rooms must be added before generation</span>}{!showRules && entries.length !== weeklyCapacity && <span className="text-[11px] text-amber-700">Generate all {weeklyCapacity} periods for this class before publishing</span>}{!showRules && <button type="button" title={selectedVersion?.status !== 'draft' ? 'Choose Edit timetable to create a working copy first.' : entries.length !== weeklyCapacity ? `Complete all ${weeklyCapacity} periods for this class first.` : 'Publish this timetable'} disabled={busy || selectedVersion?.status !== 'draft' || weeklyCapacity === 0 || entries.length !== weeklyCapacity} onClick={() => void run(async () => { await publishTimetableVersion(versionId); }, 'Timetable published.')} className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-xs font-medium text-white disabled:opacity-40"><Rocket size={14} /> Publish timetable</button>}</div>
     </nav>
 
     <div className="flex flex-wrap items-center gap-2 border-b border-slate-300 bg-slate-50 px-4 py-2">
@@ -531,7 +569,7 @@ export function PrincipalTimetableSheet() {
           {sectionId && offerings.length === 0 && <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">No courses are assigned to this section yet.</div>}
         </div>
 
-        <div className="sticky bottom-0 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur"><p className="text-xs text-slate-500">The total must match the {weeklyCapacity} teaching periods in the weekly layout.</p><button type="button" disabled={busy || selectedVersion?.status !== 'draft' || data.rooms.length === 0 || offerings.length === 0 || weeklyCapacity === 0 || workloadDifference !== 0} onClick={() => void applyRulesAndGenerate()} className="inline-flex h-11 items-center gap-2 rounded-lg bg-violet-700 px-5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"><Sparkles size={14} /> Generate timetable</button></div>
+        <div className="sticky bottom-0 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur"><p className="text-xs text-slate-500">The total must match the {weeklyCapacity} teaching periods in the weekly layout.</p><button type="button" disabled={busy || data.rooms.length === 0 || offerings.length === 0 || weeklyCapacity === 0 || workloadDifference !== 0} onClick={() => void applyRulesAndGenerate()} className="inline-flex h-11 items-center gap-2 rounded-lg bg-violet-700 px-5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"><Sparkles size={14} /> Generate timetable</button></div>
       </div>
     </section>}
 
