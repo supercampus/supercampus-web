@@ -312,11 +312,43 @@ export function createElectiveGroup(input: {
   );
 }
 
-export function createTimetableVersion(configurationId: string, label: string, sourceVersionId?: string) {
-  return apiRequest<{ data: Record<string, unknown> }>(`${ROOT}/versions`, {
-    method: 'POST',
-    body: JSON.stringify({ configurationId, label, sourceVersionId }),
-  });
+export async function createTimetableVersion(configurationId: string, label: string, sourceVersionId?: string) {
+  try {
+    return await apiRequest<{ data: Record<string, unknown> }>(`${ROOT}/versions`, {
+      method: 'POST',
+      body: JSON.stringify({ configurationId, label, sourceVersionId }),
+    });
+  } catch (error) {
+    // Older API revisions can create versions but do not yet accept the clone
+    // field. Keep Edit timetable usable during a rolling deployment by copying
+    // the source entries through the stable entry endpoint.
+    if (!sourceVersionId || !(error instanceof Error) || !error.message.includes('sourceVersionId')) throw error;
+    const created = await apiRequest<{ data: Record<string, unknown> }>(`${ROOT}/versions`, {
+      method: 'POST',
+      body: JSON.stringify({ configurationId, label }),
+    });
+    const versionId = String(created.data.id ?? '');
+    if (!versionId) throw new Error('The editable timetable could not be created.');
+    const context = (await getTimetableContext()).data;
+    const sourceEntries = context.entries.filter((entry) => entry.versionId === sourceVersionId);
+    for (const entry of sourceEntries) {
+      await createTimetableEntry({
+        versionId,
+        slotId: entry.slotId,
+        subjectOfferingId: entry.subjectOfferingId,
+        teachingAssignmentId: entry.teachingAssignmentId,
+        roomId: entry.roomId,
+        electiveGroupId: entry.electiveGroupId,
+        deliveryType: entry.deliveryType,
+        sessionBlockId: entry.sessionBlockId,
+        blockSequence: entry.blockSequence,
+        blockLength: entry.blockLength,
+        ...(entry.combinedClassCode ? { combinedClassCode: entry.combinedClassCode } : {}),
+        ...(entry.combinedClassName ? { combinedClassName: entry.combinedClassName } : {}),
+      });
+    }
+    return created;
+  }
 }
 
 export function createTimetableEntry(input: {
