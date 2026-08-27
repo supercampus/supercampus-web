@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Building2,
   Check,
-  LoaderCircle,
   Plus,
   RefreshCw,
   Rocket,
@@ -15,6 +14,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { TimetableSheetSkeleton } from '@/components/ui/skeletons';
 import {
   createTimetableConfiguration,
   createTimetableEntry,
@@ -153,7 +153,7 @@ export function TimetableAllocatorWorkspace() {
     setDeliveryType(entry?.deliveryType ?? 'class');
   };
 
-  if (loading && !context) return <div className="mt-4 flex min-h-80 items-center justify-center gap-2 text-sm text-[var(--crm-muted)]"><LoaderCircle className="animate-spin" size={18} /> Loading timetable allocator...</div>;
+  if (loading && !context) return <div className="mt-4"><TimetableSheetSkeleton /></div>;
 
   return (
     <div className="mt-4 min-w-0">

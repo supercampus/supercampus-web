@@ -122,6 +122,18 @@ export function createAcademicSubject(input: {
   });
 }
 
+export function updateAcademicSubject(subjectId: string, input: {
+  departmentId: string;
+  code: string;
+  name: string;
+  credits?: number | null;
+}) {
+  return apiRequest<{ data: AcademicSubject }>(`${ROOT}/subjects/${encodeURIComponent(subjectId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
 export function createSubjectOffering(input: {
   subjectId: string;
   academicYearId: string;

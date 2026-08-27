@@ -7,7 +7,6 @@ import {
   CircleDollarSign,
   ClipboardCheck,
   DoorOpen,
-  LoaderCircle,
   Plus,
   QrCode,
   RefreshCw,
@@ -19,6 +18,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { DataWorkspaceSkeleton } from '@/components/ui/skeletons';
 import { ApiRequestError } from '@/lib/api';
 import {
   createAttendanceReport,
@@ -69,7 +69,7 @@ function StatePill({ children }: { children: React.ReactNode }) {
 }
 
 function Status({ loading, error, onRetry }: { loading: boolean; error: string | null; onRetry: () => void }) {
-  if (loading) return <div className="flex min-h-64 items-center justify-center gap-2 text-xs text-[var(--crm-muted)]"><LoaderCircle className="animate-spin" size={16} />Loading live operations...</div>;
+  if (loading) return <DataWorkspaceSkeleton rows={4} />;
   if (!error) return null;
   return <div role="alert" className="m-5 flex items-center justify-between gap-4 rounded-md border border-red-200 bg-red-50 p-4 text-xs text-red-800"><span>{error}</span><button type="button" onClick={onRetry} className="inline-flex h-9 items-center gap-2 rounded-md border border-red-200 bg-white px-3 font-semibold"><RefreshCw size={14} />Retry</button></div>;
 }

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pencil, Plus, RefreshCw, Save, Store, Trash2, UserRoundCog, X } from 'lucide-react';
+import { DataWorkspaceSkeleton } from '@/components/ui/skeletons';
 import {
   createCanteenShop,
   deleteCanteenShop,
@@ -125,7 +126,7 @@ export function VendorShopsWorkspace({ users, query }: { users: UserOption[]; qu
     });
   };
 
-  if (loading) return <div className="grid min-h-[420px] place-items-center text-sm text-[var(--crm-muted)]">Loading shop configuration...</div>;
+  if (loading) return <DataWorkspaceSkeleton rows={5} />;
 
   return <div className="flex min-h-0 flex-1 flex-col bg-[var(--crm-card)]">
     <style jsx global>{`

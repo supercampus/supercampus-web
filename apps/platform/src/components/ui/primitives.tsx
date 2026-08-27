@@ -93,6 +93,31 @@ export function Card({ children, className = '', style }: CardProps) {
   );
 }
 
+interface SkeletonProps {
+  width?: React.CSSProperties['width'];
+  height?: React.CSSProperties['height'];
+  radius?: React.CSSProperties['borderRadius'];
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+/** Layout-preserving loading surface that mirrors the final element's box. */
+export function Skeleton({
+  width = '100%',
+  height = 16,
+  radius = 8,
+  className = '',
+  style,
+}: SkeletonProps) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`sc-skeleton ${className}`}
+      style={{ width, height, borderRadius: radius, ...style }}
+    />
+  );
+}
+
 interface SectionTitleProps { children: React.ReactNode }
 export function SectionTitle({ children }: SectionTitleProps) {
   return <div className="sc-section-title">{children}</div>;
