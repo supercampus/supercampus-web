@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '@/lib/context';
 import { Card } from '@/components/ui/primitives';
+import { DataWorkspaceSkeleton } from '@/components/ui/skeletons';
 import { getAttendanceSessions, getMyAttendanceSummary, type AttendanceSession } from '@/lib/campus-operations-api';
 
 type Summary = Awaited<ReturnType<typeof getMyAttendanceSummary>>['data'];
@@ -23,7 +24,7 @@ export default function AttendancePage() {
     }).catch((cause) => setError(cause instanceof Error ? cause.message : 'Attendance could not be loaded')).finally(() => setLoading(false));
   }, [isStaff]);
 
-  if (loading) return <div className="sc-page"><Card><div style={{ padding: 30, textAlign: 'center' }}>Loading attendance…</div></Card></div>;
+  if (loading) return <div className="sc-page"><DataWorkspaceSkeleton /></div>;
 
   if (isStaff) return <div className="sc-page">
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginBottom: 18 }}><div><div style={{ color: '#776cf5', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 12 }}>Faculty attendance</div><h2 style={{ margin: '5px 0 0' }}>Published attendance</h2><p style={{ color: '#6c7280', margin: '5px 0 0' }}>Attendance starts from a class in your published timetable.</p></div><div style={{ flex: 1 }} /><button onClick={() => nav('timetable')} style={{ border: 0, borderRadius: 9, background: '#181a25', color: '#fff', padding: '10px 15px', fontWeight: 800 }}>Open timetable</button></div>

@@ -11,7 +11,7 @@ import {
   Clock3,
   GripVertical,
   GraduationCap,
-  LoaderCircle,
+  Pencil,
   Plus,
   RefreshCw,
   Rocket,
@@ -20,6 +20,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { TimetableSheetSkeleton } from '@/components/ui/skeletons';
 import {
   createTimetableConfiguration,
   createTimetableClass,
@@ -40,6 +41,15 @@ import {
   type TimetableDeliveryType,
   type TimetableEntry,
 } from '@/lib/timetable-api';
+import {
+  assignFacultyTeaching,
+  createAcademicSubject,
+  createSubjectOffering,
+  getAcademicAssignmentContext,
+  removeFacultyTeaching,
+  updateAcademicSubject,
+  type AcademicAssignmentContext,
+} from '@/lib/academic-assignments-api';
 
 const DAY_OPTIONS = [[1, 'Monday'], [2, 'Tuesday'], [3, 'Wednesday'], [4, 'Thursday'], [5, 'Friday'], [6, 'Saturday'], [7, 'Sunday']] as const;
 
@@ -67,6 +77,7 @@ const selectClass = 'h-9 rounded border border-slate-300 bg-white px-3 text-xs t
 
 export function PrincipalTimetableSheet() {
   const [data, setData] = useState<TimetableContext | null>(null);
+  const [assignmentData, setAssignmentData] = useState<AcademicAssignmentContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,13 +119,24 @@ export function PrincipalTimetableSheet() {
   const [newSectionCode, setNewSectionCode] = useState('A');
   const [newSectionName, setNewSectionName] = useState('Section A');
   const [newSectionCapacity, setNewSectionCapacity] = useState(60);
+  const [courseEditorOfferingId, setCourseEditorOfferingId] = useState<string | null>(null);
+  const [courseCode, setCourseCode] = useState('');
+  const [courseName, setCourseName] = useState('');
+  const [courseCredits, setCourseCredits] = useState(3);
+  const [courseFacultyUserId, setCourseFacultyUserId] = useState('');
+  const [courseRoomId, setCourseRoomId] = useState('');
   const draftCreationRef = useRef('');
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const next = (await getTimetableContext()).data;
+      const [timetableResponse, assignmentResponse] = await Promise.all([
+        getTimetableContext(),
+        getAcademicAssignmentContext(),
+      ]);
+      const next = timetableResponse.data;
       setData(next);
+      setAssignmentData(assignmentResponse.data);
       setConfigurationId((current) => next.configurations.some((item) => item.id === current) ? current : next.configurations[0]?.id ?? '');
       setSetupYearId((current) => current || next.academicYears.find((item) => item.status === 'active')?.id || next.academicYears[0]?.id || '');
       setError(null);
@@ -429,9 +451,112 @@ export function PrincipalTimetableSheet() {
   const automaticRoom = (offering: TimetableContext['subjectOfferings'][number]) => {
     const requirement = data?.workloadRequirements.find((item) => item.subjectOfferingId === offering.id);
     const capacity = selectedSection?.capacity ?? 0;
+    const preferredRoomId = typeof requirement?.metadata?.preferredRoomId === 'string'
+      ? requirement.metadata.preferredRoomId
+      : '';
+    const preferred = data?.rooms.find((room) => room.id === preferredRoomId
+      && room.capacity >= capacity
+      && (!requirement?.requiredRoomTypes.length || requirement.requiredRoomTypes.includes(room.roomType)));
+    if (preferred) return preferred;
     return data?.rooms.find((room) => room.capacity >= capacity && (!requirement?.requiredRoomTypes.length || requirement.requiredRoomTypes.includes(room.roomType)))
       ?? data?.rooms.find((room) => room.capacity >= capacity)
       ?? data?.rooms[0];
+  };
+
+  const openCourseEditor = (offering?: TimetableContext['subjectOfferings'][number]) => {
+    const currentAssignment = offering
+      ? data?.teachingAssignments.find((item) => item.subjectOfferingId === offering.id && item.assignmentType === 'primary')
+        ?? data?.teachingAssignments.find((item) => item.subjectOfferingId === offering.id)
+      : undefined;
+    setCourseEditorOfferingId(offering?.id ?? '');
+    setCourseCode(offering?.code ?? '');
+    setCourseName(offering?.name ?? '');
+    setCourseCredits(Math.max(1, offering?.credits || 3));
+    setCourseFacultyUserId(currentAssignment?.facultyUserId ?? '');
+    setCourseRoomId(offering ? automaticRoom(offering)?.id ?? '' : data?.rooms[0]?.id ?? '');
+  };
+
+  const saveCourse = () => run(async () => {
+    if (!selectedSection || !selectedConfiguration) throw new Error('Choose a class before adding a subject.');
+    if (!courseCode.trim() || !courseName.trim()) throw new Error('Enter the subject code and name.');
+    if (!courseFacultyUserId) throw new Error('Choose the staff member who teaches this subject.');
+    if (!courseRoomId) throw new Error('Choose the default room for this subject.');
+    const faculty = assignmentData?.eligibleFaculty.find((item) => item.id === courseFacultyUserId);
+    if (!faculty) throw new Error('The selected staff member is no longer available.');
+
+    let subjectOfferingId = courseEditorOfferingId ?? '';
+    let subjectId = offerings.find((item) => item.id === courseEditorOfferingId)?.subjectId ?? '';
+    if (courseEditorOfferingId) {
+      if (!subjectId) throw new Error('The selected subject is no longer available.');
+      await updateAcademicSubject(subjectId, {
+        departmentId: selectedSection.departmentId,
+        code: courseCode.trim().toUpperCase(),
+        name: courseName.trim(),
+        credits: courseCredits,
+      });
+    } else {
+      const existingSubject = assignmentData?.subjects.find((item) => item.departmentId === selectedSection.departmentId
+        && item.code.trim().toUpperCase() === courseCode.trim().toUpperCase());
+      if (existingSubject) {
+        subjectId = existingSubject.id;
+        await updateAcademicSubject(subjectId, {
+          departmentId: selectedSection.departmentId,
+          code: courseCode.trim().toUpperCase(),
+          name: courseName.trim(),
+          credits: courseCredits,
+        });
+      } else {
+        const subject = await createAcademicSubject({
+          departmentId: selectedSection.departmentId,
+          code: courseCode.trim().toUpperCase(),
+          name: courseName.trim(),
+          credits: courseCredits,
+        });
+        subjectId = subject.data.id;
+      }
+      const offering = await createSubjectOffering({
+        subjectId,
+        academicYearId: selectedConfiguration.academicYearId,
+        termId: selectedConfiguration.termId,
+        sectionId: selectedSection.id,
+      });
+      subjectOfferingId = offering.data.id;
+    }
+
+    const existingAssignments = data?.teachingAssignments.filter((item) => item.subjectOfferingId === subjectOfferingId) ?? [];
+    for (const assignment of existingAssignments) {
+      if (assignment.facultyUserId !== courseFacultyUserId || assignment.assignmentType !== 'primary') await removeFacultyTeaching(assignment.id);
+    }
+    if (!existingAssignments.some((item) => item.facultyUserId === courseFacultyUserId && item.assignmentType === 'primary')) {
+      await assignFacultyTeaching({
+        facultyUserId: courseFacultyUserId,
+        facultyDepartmentId: faculty.departmentId || selectedSection.departmentId,
+        subjectOfferingId,
+        assignmentType: 'primary',
+      });
+    }
+
+    const existingRequirement = data?.workloadRequirements.find((item) => item.subjectOfferingId === subjectOfferingId && item.deliveryType === 'class');
+    const localPlan = courseRules[subjectOfferingId]?.deliveries.class;
+    await upsertTimetableWorkloadRequirement({
+      subjectOfferingId,
+      deliveryType: 'class',
+      periodsPerWeek: localPlan?.periods ?? existingRequirement?.periodsPerWeek ?? Math.max(1, Math.round(courseCredits)),
+      blockSize: localPlan?.blockSize ?? existingRequirement?.blockSize ?? 1,
+      maxBlocksPerDay: localPlan?.maxBlocksPerDay ?? existingRequirement?.maxBlocksPerDay ?? 1,
+      requiredRoomTypes: existingRequirement?.requiredRoomTypes ?? [],
+      metadata: { ...existingRequirement?.metadata, preferredRoomId: courseRoomId },
+    });
+    setCourseEditorOfferingId(null);
+  }, courseEditorOfferingId ? 'Subject setup updated.' : 'Subject added to this class.');
+
+  const prepareEditorForOffering = (nextOfferingId: string) => {
+    const offering = offerings.find((item) => item.id === nextOfferingId);
+    const assignment = data?.teachingAssignments.find((item) => item.subjectOfferingId === nextOfferingId && item.assignmentType === 'primary')
+      ?? data?.teachingAssignments.find((item) => item.subjectOfferingId === nextOfferingId);
+    setOfferingId(nextOfferingId);
+    setAssignmentId(assignment?.id ?? '');
+    setRoomId(offering ? automaticRoom(offering)?.id ?? '' : '');
   };
 
   const dropOnCell = (slotId: string) => {
@@ -446,7 +571,15 @@ export function PrincipalTimetableSheet() {
       const offering = offerings.find((item) => item.id === dragItem.offeringId);
       const assignment = data?.teachingAssignments.find((item) => item.subjectOfferingId === offering?.id);
       const room = offering && automaticRoom(offering);
-      if (!offering || !assignment || !room) { setError('Assign a faculty member and prepare at least one suitable room before placing this subject.'); setDragItem(null); setDropSlotId(null); return; }
+      if (!offering) { setDragItem(null); setDropSlotId(null); return; }
+      if (!assignment || !room) {
+        openCourseEditor(offering);
+        setError(null);
+        setNotice(`Complete ${offering.code}'s faculty and room setup, then place it in the sheet.`);
+        setDragItem(null);
+        setDropSlotId(null);
+        return;
+      }
       const input = { versionId, slotId, subjectOfferingId: offering.id, teachingAssignmentId: assignment.id, roomId: room.id, deliveryType: 'class' as const };
       void run(async () => {
         if (target) await updateTimetableEntry(target.id, input); else await createTimetableEntry(input);
@@ -457,15 +590,27 @@ export function PrincipalTimetableSheet() {
 
   const openEditor = (slotId: string, entry?: TimetableEntry) => {
     setEditorSlotId(slotId); setEditorEntryId(entry?.id ?? null);
-    setOfferingId(entry?.subjectOfferingId ?? ''); setAssignmentId(entry?.teachingAssignmentId ?? '');
-    setRoomId(entry?.roomId ?? ''); setDeliveryType(entry?.deliveryType ?? 'class');
+    if (entry) {
+      setOfferingId(entry.subjectOfferingId); setAssignmentId(entry.teachingAssignmentId);
+      setRoomId(entry.roomId);
+    } else {
+      const ready = offerings.find((item) => data?.teachingAssignments.some((assignment) => assignment.subjectOfferingId === item.id) && automaticRoom(item));
+      prepareEditorForOffering(ready?.id ?? '');
+    }
+    setDeliveryType(entry?.deliveryType ?? 'class');
     setIsCombinedClass(Boolean(entry?.combinedClassCode));
     setCombinedClassCode(entry?.combinedClassCode ?? '');
     setCombinedClassName(entry?.combinedClassName ?? '');
   };
 
   const saveEditor = () => run(async () => {
-    if (!editorSlotId || !versionId || !offeringId || !assignmentId || !roomId) throw new Error('Choose a subject, faculty member, and room.');
+    if (!editorSlotId || !versionId) throw new Error('Choose a timetable period first.');
+    if (!offeringId) throw new Error('Choose a subject for this period.');
+    if (!assignmentId || !roomId) {
+      const offering = offerings.find((item) => item.id === offeringId);
+      if (offering) openCourseEditor(offering);
+      throw new Error('Complete this subject’s faculty and room setup first.');
+    }
     if (isCombinedClass && !combinedClassCode.trim()) throw new Error('Enter a shared group code, then use the same code in the other class.');
     const input = {
       versionId, slotId: editorSlotId, subjectOfferingId: offeringId,
@@ -477,7 +622,7 @@ export function PrincipalTimetableSheet() {
     setEditorSlotId(null); setEditorEntryId(null);
   }, 'Cell saved.');
 
-  if (loading && !data) return <div className="grid min-h-[70vh] flex-1 place-items-center text-sm text-slate-500"><span className="flex items-center gap-2"><LoaderCircle className="animate-spin" size={18} /> Loading timetable sheet…</span></div>;
+  if (loading && !data) return <TimetableSheetSkeleton />;
   if (!data?.canManage) return <div className="m-auto rounded border border-slate-300 bg-white p-8 text-sm text-slate-600">Only the principal can edit the timetable.</div>;
 
   if (configurations.length === 0) return <div className="m-auto w-full max-w-2xl border border-slate-300 bg-white p-8 shadow-sm">
@@ -531,7 +676,7 @@ export function PrincipalTimetableSheet() {
     {showRules && <section className="min-h-0 flex-1 overflow-y-auto border-b border-slate-300 bg-slate-50 p-4">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-700">Step 2 · Course periods</p><h2 className="mt-1 text-lg font-semibold text-slate-900">How many times should each course meet this week?</h2><p className="mt-1 text-xs text-slate-500">This is the total for the whole week—not the same number every day. The generator spreads these periods across the selected working days.</p><button type="button" onClick={suggestBalancedWorkload} className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"><Sparkles size={14} /> Suggest a balanced workload from credits</button></div>
+          <div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-700">Step 2 · Course periods</p><h2 className="mt-1 text-lg font-semibold text-slate-900">How many times should each course meet this week?</h2><p className="mt-1 text-xs text-slate-500">Add or edit subjects here, choose the staff member and default room once, then set the weekly periods.</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={!sectionId} onClick={() => openCourseEditor()} className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-900 px-3 text-xs font-semibold text-white disabled:opacity-40"><Plus size={14} /> Add subject</button><button type="button" onClick={suggestBalancedWorkload} className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"><Sparkles size={14} /> Balance periods from credits</button></div></div>
           <div className="min-w-72">
             <div className="flex items-center justify-between text-xs"><span className="font-medium text-slate-600">Planned periods</span><strong className={workloadDifference === 0 ? 'text-emerald-700' : workloadDifference > 0 ? 'text-amber-700' : 'text-red-700'}>{plannedPeriods} of {weeklyCapacity}</strong></div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full transition-all ${workloadDifference === 0 ? 'bg-emerald-500' : workloadDifference > 0 ? 'bg-amber-400' : 'bg-red-500'}`} style={{ width: `${Math.min(100, weeklyCapacity ? (plannedPeriods / weeklyCapacity) * 100 : 0)}%` }} /></div>
@@ -548,7 +693,7 @@ export function PrincipalTimetableSheet() {
             return <article key={offering.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="rounded bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white">{offering.code}</span><h3 className="font-semibold text-slate-900">{offering.name}</h3><span className="text-[11px] text-slate-400">{offering.credits || '—'} credits</span></div><p className="mt-2 text-xs text-slate-500">{faculty}</p></div>
-                <div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-2"><button type="button" onClick={() => setCourseWeeklyTotal(offering.id, Math.max(1, courseTotal(rule) - 1))} className="grid h-8 w-8 place-items-center rounded bg-white text-lg text-emerald-800 shadow-sm" aria-label={`Reduce ${offering.code} weekly periods`}>−</button><label className="text-center"><input aria-label={`${offering.code} total periods in the whole week`} type="number" min={1} max={weeklyCapacity} value={courseTotal(rule)} onChange={(event) => setCourseWeeklyTotal(offering.id, Math.max(1, Number(event.target.value)))} className="h-8 w-14 border-0 bg-transparent text-center text-lg font-semibold text-emerald-800 outline-none" /><span className="block text-[9px] font-semibold uppercase tracking-wider text-emerald-700">in the whole week</span></label><button type="button" onClick={() => setCourseWeeklyTotal(offering.id, courseTotal(rule) + 1)} className="grid h-8 w-8 place-items-center rounded bg-white text-lg text-emerald-800 shadow-sm" aria-label={`Increase ${offering.code} weekly periods`}>+</button></div>
+                <div className="flex items-center gap-2"><button type="button" onClick={() => openCourseEditor(offering)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 hover:border-emerald-500"><Pencil size={13} /> Edit subject</button><div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-2"><button type="button" onClick={() => setCourseWeeklyTotal(offering.id, Math.max(1, courseTotal(rule) - 1))} className="grid h-8 w-8 place-items-center rounded bg-white text-lg text-emerald-800 shadow-sm" aria-label={`Reduce ${offering.code} weekly periods`}>−</button><label className="text-center"><input aria-label={`${offering.code} total periods in the whole week`} type="number" min={1} max={weeklyCapacity} value={courseTotal(rule)} onChange={(event) => setCourseWeeklyTotal(offering.id, Math.max(1, Number(event.target.value)))} className="h-8 w-14 border-0 bg-transparent text-center text-lg font-semibold text-emerald-800 outline-none" /><span className="block text-[9px] font-semibold uppercase tracking-wider text-emerald-700">in the whole week</span></label><button type="button" onClick={() => setCourseWeeklyTotal(offering.id, courseTotal(rule) + 1)} className="grid h-8 w-8 place-items-center rounded bg-white text-lg text-emerald-800 shadow-sm" aria-label={`Increase ${offering.code} weekly periods`}>+</button></div></div>
               </div>
 
               <details className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
@@ -579,12 +724,12 @@ export function PrincipalTimetableSheet() {
     </section>}
 
     {!showRules && <section className="border-b border-slate-300 bg-white px-4 py-3">
-      <div className="mb-2 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase tracking-wider text-slate-600">Subject tray</h2><span className="text-[10px] text-slate-400">Higher-credit subjects appear first</span></div>
+      <div className="mb-2 flex items-center justify-between gap-3"><div><h2 className="text-xs font-semibold uppercase tracking-wider text-slate-600">Subject tray</h2><span className="text-[10px] text-slate-400">Drag to place · use the pencil to edit staff, room, or subject details</span></div><button type="button" disabled={!sectionId} onClick={() => openCourseEditor()} className="inline-flex h-8 shrink-0 items-center gap-2 rounded-lg bg-slate-900 px-3 text-[11px] font-semibold text-white disabled:opacity-40"><Plus size={13} /> Add subject</button></div>
       <div className="flex min-h-16 gap-2 overflow-x-auto pb-1">
         {offerings.map((offering) => {
           const faculty = data.teachingAssignments.find((item) => item.subjectOfferingId === offering.id)?.facultyName ?? 'Faculty not assigned';
           const selected = dragItem?.kind === 'subject' && dragItem.offeringId === offering.id;
-          return <button key={offering.id} type="button" draggable={selectedVersion?.status === 'draft'} onClick={() => selectedVersion?.status === 'draft' && setDragItem(selected ? null : { kind: 'subject', offeringId: offering.id })} onDragStart={() => setDragItem({ kind: 'subject', offeringId: offering.id })} onDragEnd={() => setDropSlotId(null)} className={`flex w-52 shrink-0 cursor-grab items-center gap-2 rounded border px-3 py-2 text-left shadow-sm active:cursor-grabbing ${selected ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-200' : 'border-slate-300 bg-white'}`}><GripVertical size={14} className="shrink-0 text-slate-400" /><span className="min-w-0"><strong className="block truncate text-xs text-slate-800">{offering.code} · {offering.name}</strong><small className="mt-1 block truncate text-[10px] text-slate-500">{faculty} · {offering.credits || '—'} credits</small></span></button>;
+          return <article key={offering.id} className={`flex w-56 shrink-0 items-center rounded border shadow-sm ${selected ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-200' : 'border-slate-300 bg-white'}`}><button type="button" draggable={selectedVersion?.status === 'draft'} onClick={() => selectedVersion?.status === 'draft' && setDragItem(selected ? null : { kind: 'subject', offeringId: offering.id })} onDragStart={() => setDragItem({ kind: 'subject', offeringId: offering.id })} onDragEnd={() => setDropSlotId(null)} className="flex min-w-0 flex-1 cursor-grab items-center gap-2 px-3 py-2 text-left active:cursor-grabbing"><GripVertical size={14} className="shrink-0 text-slate-400" /><span className="min-w-0"><strong className="block truncate text-xs text-slate-800">{offering.code} · {offering.name}</strong><small className="mt-1 block truncate text-[10px] text-slate-500">{faculty} · {offering.credits || '—'} credits</small></span></button><button type="button" onClick={() => openCourseEditor(offering)} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-emerald-700" aria-label={`Edit ${offering.code}`} title={`Edit ${offering.code}`}><Pencil size={14} /></button></article>;
         })}
         {sectionId && offerings.length === 0 && <p className="py-4 text-xs text-slate-500">No subject offerings are assigned to this section yet.</p>}
       </div>
@@ -634,6 +779,23 @@ export function PrincipalTimetableSheet() {
       </div>
     </div>}
 
+    {courseEditorOfferingId !== null && <div className="fixed inset-0 z-[180] flex justify-end bg-black/30" onMouseDown={(event) => { if (event.target === event.currentTarget) setCourseEditorOfferingId(null); }}>
+      <aside className="h-full w-full max-w-lg overflow-y-auto bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700">Subject setup</p><h2 className="mt-1 text-xl">{courseEditorOfferingId ? 'Edit subject' : 'Add a subject'}</h2><p className="mt-2 text-xs leading-5 text-slate-500">Set the subject, assigned staff, and default room once. After publishing, this staff member automatically sees the class in the mobile app.</p></div><button type="button" onClick={() => setCourseEditorOfferingId(null)} className="grid h-9 w-9 place-items-center"><X size={18} /></button></div>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <label className="text-xs text-slate-500">Subject code<input value={courseCode} onChange={(event) => setCourseCode(event.target.value.toUpperCase())} placeholder="Example: CS25C09" className={`${selectClass} mt-1 w-full`} /></label>
+          <label className="text-xs text-slate-500">Credits<input type="number" min={1} step={0.5} value={courseCredits} onChange={(event) => setCourseCredits(Math.max(1, Number(event.target.value)))} className={`${selectClass} mt-1 w-full`} /></label>
+          <label className="text-xs text-slate-500 sm:col-span-2">Subject name<input value={courseName} onChange={(event) => setCourseName(event.target.value)} placeholder="Example: Java Programming" className={`${selectClass} mt-1 w-full`} /></label>
+          <EditorSelect label="Faculty member" value={courseFacultyUserId} onChange={setCourseFacultyUserId}><option value="">Choose staff</option>{(assignmentData?.eligibleFaculty ?? []).map((item) => <option key={item.id} value={item.id}>{item.name} · {item.email}</option>)}</EditorSelect>
+          <EditorSelect label="Default room" value={courseRoomId} onChange={setCourseRoomId}><option value="">Choose room</option>{data.rooms.map((item) => <option key={item.id} value={item.id}>{item.code} · {item.name} ({item.capacity})</option>)}</EditorSelect>
+        </div>
+        {(assignmentData?.eligibleFaculty.length ?? 0) === 0 && <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">No active staff accounts are available. Add the staff account first, then return here.</p>}
+        {data.rooms.length === 0 && <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">No rooms exist for this tenant yet. Add a room before scheduling the subject.</p>}
+        <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-xs leading-5 text-emerald-900"><strong className="block">Automatic staff reflection</strong>The published timetable is the only source for the staff schedule. There is no separate attendance assignment step.</div>
+        <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setCourseEditorOfferingId(null)} className="h-11 rounded-lg border border-slate-300 px-4 text-xs text-slate-600">Cancel</button><button type="button" disabled={busy || !courseCode.trim() || !courseName.trim() || !courseFacultyUserId || !courseRoomId} onClick={() => void saveCourse()} className="inline-flex h-11 items-center gap-2 rounded-lg bg-slate-900 px-5 text-xs font-semibold text-white disabled:opacity-40"><Save size={14} /> {courseEditorOfferingId ? 'Save subject' : 'Add subject'}</button></div>
+      </aside>
+    </div>}
+
     {showLayout && <div className="fixed inset-0 z-[160] flex justify-end bg-black/30" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowLayout(false); }}>
       <aside className="h-full w-full max-w-3xl overflow-y-auto bg-white p-6 shadow-2xl">
         <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700">Step 1 · Week setup</p><h2 className="mt-1 text-xl">Working days and bell times</h2><p className="mt-2 text-xs text-slate-500">Set when each period begins and ends. Subjects are assigned later and can be different on every day.</p></div><button type="button" onClick={() => setShowLayout(false)} className="grid h-9 w-9 place-items-center"><X size={18} /></button></div>
@@ -647,7 +809,7 @@ export function PrincipalTimetableSheet() {
       <aside className="h-full w-full max-w-md overflow-y-auto bg-white p-6 shadow-2xl">
         <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700">Cell editor</p><h2 className="mt-1 text-xl">Customize period</h2></div><button type="button" onClick={() => setEditorSlotId(null)} className="grid h-9 w-9 place-items-center"><X size={18} /></button></div>
         <div className="mt-6 grid gap-4">
-          <EditorSelect label="Subject" value={offeringId} onChange={(value) => { setOfferingId(value); setAssignmentId(''); }}><option value="">Choose subject</option>{offerings.map((item) => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</EditorSelect>
+          <EditorSelect label="Subject" value={offeringId} onChange={prepareEditorForOffering}><option value="">Choose subject</option>{offerings.map((item) => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</EditorSelect>
           <EditorSelect label="Faculty" value={assignmentId} onChange={setAssignmentId}><option value="">Choose faculty</option>{assignments.map((item) => <option key={item.id} value={item.id}>{item.facultyName}</option>)}</EditorSelect>
           <EditorSelect label="Room" value={roomId} onChange={setRoomId}><option value="">Choose room</option>{data.rooms.map((item) => <option key={item.id} value={item.id}>{item.code} · {item.name} ({item.capacity})</option>)}</EditorSelect>
           <EditorSelect label="Delivery type" value={deliveryType} onChange={(value) => setDeliveryType(value as TimetableDeliveryType)}>{['class', 'laboratory', 'tutorial', 'project', 'activity'].map((item) => <option key={item} value={item}>{item}</option>)}</EditorSelect>

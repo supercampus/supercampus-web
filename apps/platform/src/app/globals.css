@@ -150,6 +150,41 @@
   letter-spacing: 0;
 }
 
+/* Shape-matched loading surfaces with a soft light-purple shine. */
+.sc-skeleton {
+  position: relative;
+  display: block;
+  max-width: 100%;
+  flex: none;
+  overflow: hidden;
+  background: #eee9ff;
+  color: transparent;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sc-skeleton::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 18%, rgb(255 255 255 / 0.82) 44%, #f7f2ff 52%, transparent 78%);
+  content: '';
+  transform: translateX(-110%);
+  animation: sc-skeleton-shine 1.45s ease-in-out infinite;
+}
+
+@keyframes sc-skeleton-shine {
+  to { transform: translateX(110%); }
+}
+
+[data-theme="dark"] .sc-skeleton { background: #29223d; }
+[data-theme="dark"] .sc-skeleton::after {
+  background: linear-gradient(105deg, transparent 18%, rgb(181 155 255 / 0.2) 50%, transparent 78%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-skeleton::after { animation: none; }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;

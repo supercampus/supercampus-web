@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/lib/context';
 import { Card } from '@/components/ui/primitives';
+import { PublishedTimetableSkeleton, RosterSkeleton } from '@/components/ui/skeletons';
 import { getTimetableContext, type TimetableContext, type TimetableEntry, type TimetableSlot } from '@/lib/timetable-api';
 import { createAttendanceSession, getAttendanceRoster, publishAttendanceSession, saveAttendanceEntries, type AttendanceStudent } from '@/lib/campus-operations-api';
 
@@ -73,7 +74,7 @@ export default function TimetablePage() {
       {context?.versions[0]?.publishedAt && <span className="sc-badge" style={{ background: '#10b98118', color: '#047857' }}>Live · published {new Date(context.versions[0].publishedAt).toLocaleDateString()}</span>}
     </div>
     {error && <div className="sc-alert sc-alert--red" style={{ marginBottom: 16 }}>{error}</div>}
-    {loading && <Card><div style={{ padding: 30, textAlign: 'center', color: '#6c7280' }}>Loading the published timetable…</div></Card>}
+    {loading && <PublishedTimetableSkeleton />}
     {!loading && days.length === 0 && <Card><div style={{ padding: 30, textAlign: 'center' }}><b>No published classes yet</b><div style={{ color: '#6c7280', marginTop: 7 }}>The schedule will appear here immediately after the principal publishes it.</div></div></Card>}
     <div style={{ display: 'grid', gap: 14 }}>{days.map(({ day, classes }) => <Card key={day} style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '13px 17px', background: day === new Date().getDay() ? '#776cf512' : '#f7f8fb', borderBottom: '1px solid #e8eaf1', fontWeight: 800 }}>{DAYS[day]}</div>
@@ -87,7 +88,7 @@ export default function TimetablePage() {
 
     {(selected || rosterLoading) && <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#0d102080', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}><div style={{ width: 'min(760px, 100%)', maxHeight: '88vh', overflow: 'auto', background: '#fff', borderRadius: 18, boxShadow: '0 24px 80px #11142b44' }}>
       <div style={{ padding: 20, borderBottom: '1px solid #e8eaf1', display: 'flex', gap: 12 }}><div><div style={{ fontSize: 20, fontWeight: 800 }}>Mark attendance</div><div style={{ color: '#6c7280', marginTop: 4 }}>{selected?.entry.subjectName} · {selected?.entry.sectionName} · {selected?.slot.label}</div></div><div style={{ flex: 1 }} /><button onClick={() => setSelected(null)} style={{ border: 0, background: 'transparent', fontSize: 25, cursor: 'pointer' }}>×</button></div>
-      {rosterLoading ? <div style={{ padding: 40, textAlign: 'center' }}>Loading students…</div> : <><div style={{ padding: '12px 20px', background: '#f7f8fb', fontSize: 12 }}><b>{roster.length} students</b><span style={{ color: '#6c7280' }}> · Everyone starts as present. Change only exceptions.</span></div>
+      {rosterLoading ? <RosterSkeleton /> : <><div style={{ padding: '12px 20px', background: '#f7f8fb', fontSize: 12 }}><b>{roster.length} students</b><span style={{ color: '#6c7280' }}> · Everyone starts as present. Change only exceptions.</span></div>
         <div style={{ padding: '0 20px' }}>{roster.map((student) => <div key={student.studentUserId} style={{ display: 'grid', gridTemplateColumns: 'minmax(150px,1fr) auto', gap: 12, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #eef0f5' }}><div><b>{student.studentName}</b><div style={{ color: '#9096a4', fontSize: 11.5, marginTop: 3 }}>{student.studentNumber}</div></div><div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{(['present', 'absent', 'od', 'leave'] as AttendanceStatus[]).map((status) => <button key={status} onClick={() => setStatuses((current) => ({ ...current, [student.studentUserId]: status }))} style={{ border: '1px solid', borderColor: statuses[student.studentUserId] === status ? '#776cf5' : '#dfe2ea', background: statuses[student.studentUserId] === status ? '#776cf514' : '#fff', color: statuses[student.studentUserId] === status ? '#5b4fe4' : '#6c7280', borderRadius: 8, padding: '6px 8px', cursor: 'pointer', textTransform: 'capitalize', fontWeight: 700 }}>{status === 'od' ? 'OD' : status}</button>)}</div></div>)}</div>
         <div style={{ padding: 20, display: 'flex', justifyContent: 'flex-end', gap: 10 }}><button onClick={() => setSelected(null)} style={{ border: '1px solid #dfe2ea', background: '#fff', borderRadius: 9, padding: '10px 16px' }}>Cancel</button><button disabled={publishing || roster.length === 0} onClick={publishAttendance} style={{ border: 0, background: '#181a25', color: '#fff', borderRadius: 9, padding: '10px 18px', fontWeight: 800, opacity: publishing || roster.length === 0 ? .55 : 1 }}>{publishing ? 'Publishing…' : 'Publish attendance'}</button></div></>}
     </div></div>}
