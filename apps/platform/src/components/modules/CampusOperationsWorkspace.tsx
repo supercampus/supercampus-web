@@ -37,7 +37,7 @@ import { VendorShopsWorkspace } from './VendorShopsWorkspace';
 import { ApiRequestError } from '@/lib/api';
 import { topUpCanteenWallet, type WalletTopUpResult } from '@/lib/campus-operations-api';
 import { availableErpWorkspaceTabs } from '@/lib/staff-access';
-import { listStudentMaster, setStudentPhoto, uploadStudentPhoto, type StudentMasterRow } from '@/lib/student-master-api';
+import { listStudentMaster, setStudentPhoto, setStudentResidency, uploadStudentPhoto, type StudentMasterRow } from '@/lib/student-master-api';
 
 export type OperationsSection = 'students' | 'academics' | 'fees' | 'erp' | 'reports' | 'users';
 
@@ -266,15 +266,15 @@ function StudentsView({ query, tab, selected, setSelected, notify, refreshVersio
 
     {loadError && <div role="alert" className="flex items-center justify-between gap-4 border-b border-red-200 bg-red-50 px-5 py-2 text-[11px] text-red-800"><span>{loadError}</span><button type="button" onClick={() => { setLoading(true); setLoadError(null); setRetryVersion((version) => version + 1); }} className="inline-flex h-8 shrink-0 items-center gap-2 rounded-md border border-red-200 bg-white px-3 font-semibold hover:bg-red-100"><RefreshCw size={13} />Retry</button></div>}
     <div className="min-h-[520px] flex-1 overflow-x-auto bg-[var(--crm-card)]">
-      <div className="grid min-w-[900px] grid-cols-[1.2fr_.85fr_1fr_.9fr_1.2fr_.55fr] border-b border-[var(--crm-border)] px-5 py-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--crm-muted)]">
-        <span>Name</span><span>Roll No</span><span>Department</span><span>Mobile number</span><span>Email</span><span>Status</span>
+      <div className="grid min-w-[1040px] grid-cols-[1.2fr_.85fr_1fr_.8fr_.9fr_1.2fr_.55fr] border-b border-[var(--crm-border)] px-5 py-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--crm-muted)]">
+        <span>Name</span><span>Roll No</span><span>Department</span><span>Residency</span><span>Mobile number</span><span>Email</span><span>Status</span>
       </div>
       {loading && <div className="px-5 py-12 text-center text-xs text-[var(--crm-muted)]">Loading Student Master...</div>}
       {!loading && rows.length === 0 && <div className="px-5 py-12 text-center text-xs text-[var(--crm-muted)]">No students match this view.</div>}
       {!loading && rows.map((row) => (
-        <button type="button" key={row.id} title="Double-click to open student record" onDoubleClick={() => setSelected(row.id)} onKeyDown={(event) => { if (event.key === 'Enter') setSelected(row.id); }} className="grid min-w-[900px] w-full cursor-pointer grid-cols-[1.2fr_.85fr_1fr_.9fr_1.2fr_.55fr] items-center border-b border-[var(--crm-border)] px-5 py-4 text-left text-xs transition-colors hover:bg-[var(--crm-panel)] focus-visible:bg-[var(--crm-panel)] focus-visible:outline-none">
+        <button type="button" key={row.id} title="Double-click to open student record" onDoubleClick={() => setSelected(row.id)} onKeyDown={(event) => { if (event.key === 'Enter') setSelected(row.id); }} className="grid min-w-[1040px] w-full cursor-pointer grid-cols-[1.2fr_.85fr_1fr_.8fr_.9fr_1.2fr_.55fr] items-center border-b border-[var(--crm-border)] px-5 py-4 text-left text-xs transition-colors hover:bg-[var(--crm-panel)] focus-visible:bg-[var(--crm-panel)] focus-visible:outline-none">
           <span className="flex items-center gap-3"><StudentAvatar name={row.name} photoUrl={row.photoUrl} size={36} /><strong className="truncate font-medium">{row.name}</strong></span>
-          <span className="font-medium">{row.rollNo}</span><span>{row.department}</span><span>{row.mobileNumber}</span><span className="truncate">{row.email}</span><span><Pill>{row.status}</Pill></span>
+          <span className="font-medium">{row.rollNo}</span><span>{row.department}</span><span><Pill>{row.residency === 'hosteller' ? 'Hosteller' : 'Day scholar'}</Pill></span><span>{row.mobileNumber}</span><span className="truncate">{row.email}</span><span><Pill>{row.status}</Pill></span>
         </button>
       ))}
     </div>
@@ -282,7 +282,7 @@ function StudentsView({ query, tab, selected, setSelected, notify, refreshVersio
     {student && <div className="fixed inset-0 z-[320] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true" aria-label={`${student.name} student record`} onMouseDown={(event) => { if (event.currentTarget === event.target) setSelected(null); }}>
       <section className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-[var(--crm-border)] bg-[var(--crm-card)] shadow-2xl">
         <header className="flex items-center justify-between border-b border-[var(--crm-border)] px-5 py-4"><div className="flex min-w-0 items-center gap-3"><StudentAvatar name={student.name} photoUrl={student.photoUrl} size={44} /><div className="min-w-0"><h2 className="truncate text-lg font-semibold">{student.name}</h2><p className="text-xs text-[var(--crm-muted)]">{student.rollNo}</p></div></div><button type="button" onClick={() => setSelected(null)} aria-label="Close student record" title="Close" className="grid h-9 w-9 place-items-center rounded-md border border-[var(--crm-border)] text-[var(--crm-muted)] hover:bg-[var(--crm-panel)] hover:text-[var(--crm-text)]"><X size={17} /></button></header>
-        <div className="overflow-y-auto px-5 py-5"><StudentRecordSection title="Student details" entries={[["Name", student.name], ["Roll No", student.rollNo], ["Department", student.department], ["Status", student.status]]} /><StudentPhotoControl student={student} notify={notify} onChanged={(photoUrl) => setStudents((current) => current.map((item) => item.id === student.id ? { ...item, photoUrl } : item))} /><StudentRecordSection title="Contact details" entries={[["Mobile number", student.mobileNumber], ["Email", student.email]]} className="mt-6" /></div>
+        <div className="overflow-y-auto px-5 py-5"><StudentRecordSection title="Student details" entries={[["Name", student.name], ["Roll No", student.rollNo], ["Department", student.department], ["Status", student.status]]} /><StudentResidencyControl student={student} notify={notify} onChanged={(residency) => setStudents((current) => current.map((item) => item.id === student.id ? { ...item, residency } : item))} /><StudentPhotoControl student={student} notify={notify} onChanged={(photoUrl) => setStudents((current) => current.map((item) => item.id === student.id ? { ...item, photoUrl } : item))} /><StudentRecordSection title="Contact details" entries={[["Mobile number", student.mobileNumber], ["Email", student.email]]} className="mt-6" /></div>
         <footer className="flex items-center justify-end gap-2 border-t border-[var(--crm-border)] px-5 py-4"><button type="button" onClick={() => notify(`Message prepared for ${student.name}`)} className="h-9 rounded-md border border-[var(--crm-border)] px-4 text-xs font-medium hover:bg-[var(--crm-panel)]">Message student</button><button type="button" onClick={() => setSelected(null)} className="h-9 rounded-md bg-black px-4 text-xs font-semibold text-white">Close</button></footer>
       </section>
     </div>}
@@ -417,6 +417,58 @@ function StudentPhotoControl({
         className="hidden"
         onChange={(event) => void pick(event.target.files?.[0])}
       />
+    </section>
+  );
+}
+
+function StudentResidencyControl({
+  student,
+  onChanged,
+  notify,
+}: {
+  student: StudentMasterRow;
+  onChanged: (residency: StudentMasterRow['residency']) => void;
+  notify: (message: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function change(residency: StudentMasterRow['residency']) {
+    if (residency === student.residency || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await setStudentResidency(student.id, residency);
+      onChanged(response.data.residency);
+      notify(`${student.name} changed to ${residency === 'hosteller' ? 'Hosteller' : 'Day scholar'}`);
+    } catch {
+      setError('Residency could not be updated. Check your access and retry.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="mt-6">
+      <h3 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--crm-muted)]">Residency & service access</h3>
+      <div className="mt-2 rounded-md border border-[var(--crm-border)] bg-[var(--crm-panel)] p-4">
+        <p className="text-xs font-medium">Choose the student type</p>
+        <p className="mt-1 text-[11px] leading-5 text-[var(--crm-muted)]">This controls hostel outpass eligibility and the services that use the student residency profile.</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {([['day_scholar', 'Day scholar'], ['hosteller', 'Hosteller']] as const).map(([value, label]) => (
+            <button
+              type="button"
+              key={value}
+              disabled={busy}
+              onClick={() => void change(value)}
+              className={`h-10 rounded-md border text-xs font-semibold transition-colors disabled:opacity-60 ${student.residency === value ? 'border-black bg-black text-white' : 'border-[var(--crm-border)] bg-[var(--crm-card)] hover:border-black'}`}
+            >
+              {busy && student.residency !== value ? 'Saving...' : label}
+            </button>
+          ))}
+        </div>
+        {error && <p role="alert" className="mt-2 text-xs text-red-700">{error}</p>}
+      </div>
     </section>
   );
 }

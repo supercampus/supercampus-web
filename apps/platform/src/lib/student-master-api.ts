@@ -10,6 +10,7 @@ export type StudentMasterRow = {
   email: string;
   status: string;
   photoUrl: string | null;
+  residency: 'day_scholar' | 'hosteller';
   createdAt: string;
   updatedAt: string;
 };
@@ -34,6 +35,16 @@ export function setStudentPhoto(studentId: string, photoUrl: string | null) {
   return apiRequest<{ data: { id: string; name: string; photoUrl: string | null } }>(
     `/v1/student-master/${encodeURIComponent(studentId)}/photo`,
     { method: 'PUT', body: JSON.stringify({ photoUrl }) },
+  );
+}
+
+export function setStudentResidency(
+  studentId: string,
+  residency: StudentMasterRow['residency'],
+) {
+  return apiRequest<{ data: { id: string; name: string; residency: StudentMasterRow['residency'] } }>(
+    `/v1/student-master/${encodeURIComponent(studentId)}/residency`,
+    { method: 'PUT', body: JSON.stringify({ residency }) },
   );
 }
 
