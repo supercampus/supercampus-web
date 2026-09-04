@@ -10,6 +10,10 @@ const assignmentsApi = readFileSync(
   new URL('../src/lib/academic-assignments-api.ts', import.meta.url),
   'utf8',
 );
+const timetableApi = readFileSync(
+  new URL('../src/lib/timetable-api.ts', import.meta.url),
+  'utf8',
+);
 
 test('the principal can add and edit tenant subjects with staff and room setup', () => {
   assert.match(sheet, /> Add subject</);
@@ -31,4 +35,17 @@ test('missing staff or room opens setup instead of leaving a dead-end placement 
   assert.match(sheet, /Complete this subject’s faculty and room setup first/);
   assert.doesNotMatch(sheet, /Assign a faculty member and prepare at least one suitable room before placing this subject/);
   assert.doesNotMatch(sheet, /Choose a subject, faculty member, and room\./);
+});
+
+test('generation and publication remain scoped to the principal-selected class', () => {
+  assert.match(sheet, /generateTimetableVersion\(editableVersionId, \{ sectionId,/);
+  assert.match(sheet, /entries\.length !== weeklyCapacity/);
+  assert.match(timetableApi, /sectionId\?: string/);
+  assert.match(timetableApi, /body: JSON\.stringify\(input\)/);
+});
+
+test('optional workload cleanup is requested only for rules already stored by the API', () => {
+  assert.match(sheet, /const savedDeliveries = new Set/);
+  assert.match(sheet, /if \(savedDeliveries\.has\(`/);
+  assert.match(sheet, /deleteTimetableWorkloadRequirement/);
 });
