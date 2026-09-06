@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const loginPage = await readFile(new URL('../src/components/auth/LoginPage.tsx', import.meta.url), 'utf8');
 const appContext = await readFile(new URL('../src/lib/context.tsx', import.meta.url), 'utf8');
+const api = await readFile(new URL('../src/lib/api.ts', import.meta.url), 'utf8');
 
 test('login inputs do not expose seeded credentials', () => {
   assert.match(loginPage, /const \[email, setEmail\] = useState\(''\);/);
@@ -22,4 +23,11 @@ test('login failures cannot create an authenticated frontend session', () => {
   assert.match(loginBlock, /catch \(error\)[\s\S]*setStudent\(null\)/);
   assert.match(loginBlock, /catch \(error\)[\s\S]*setAuthStatus\('unauthenticated'\)/);
   assert.match(loginBlock, /catch \(error\)[\s\S]*throw error/);
+});
+
+test('web login derives the tenant from the hostname without a tenant field', () => {
+  assert.match(api, /const DEFAULT_TENANT_ID = 'mec'/);
+  assert.match(api, /window\.location\.hostname/);
+  assert.match(api, /headers: \{ 'x-tenant-id': resolveTenantId\(\) \}/);
+  assert.doesNotMatch(loginPage, /tenant[ -]?id/i);
 });
