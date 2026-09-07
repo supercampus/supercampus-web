@@ -49,3 +49,9 @@ test('optional workload cleanup is requested only for rules already stored by th
   assert.match(sheet, /if \(savedDeliveries\.has\(`/);
   assert.match(sheet, /deleteTimetableWorkloadRequirement/);
 });
+
+test('week and bell-time setup opens as a full-screen workspace', () => {
+  assert.match(sheet, /data-timetable-layout="full-screen"/);
+  assert.match(sheet, /className="h-screen w-screen max-w-none overflow-y-auto bg-white p-6"/);
+  assert.doesNotMatch(sheet, /className="h-full w-full max-w-3xl overflow-y-auto bg-white p-6 shadow-2xl"/);
+});
