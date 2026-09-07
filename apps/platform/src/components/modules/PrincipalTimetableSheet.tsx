@@ -796,8 +796,8 @@ export function PrincipalTimetableSheet() {
       </aside>
     </div>}
 
-    {showLayout && <div className="fixed inset-0 z-[160] flex justify-end bg-black/30" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowLayout(false); }}>
-      <aside className="h-full w-full max-w-3xl overflow-y-auto bg-white p-6 shadow-2xl">
+    {showLayout && <div data-timetable-layout="full-screen" className="fixed inset-0 z-[160] bg-white" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowLayout(false); }}>
+      <aside className="h-screen w-screen max-w-none overflow-y-auto bg-white p-6">
         <div className="flex items-start justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700">Step 1 · Week setup</p><h2 className="mt-1 text-xl">Working days and bell times</h2><p className="mt-2 text-xs text-slate-500">Set when each period begins and ends. Subjects are assigned later and can be different on every day.</p></div><button type="button" onClick={() => setShowLayout(false)} className="grid h-9 w-9 place-items-center"><X size={18} /></button></div>
         <div className="mt-6"><StructureEditor days={layoutDays} setDays={setLayoutDays} slots={layoutSlots} setSlots={setLayoutSlots} maxDaily={layoutMaxDaily} setMaxDaily={setLayoutMaxDaily} maxConsecutive={layoutMaxConsecutive} setMaxConsecutive={setLayoutMaxConsecutive} addSlot={addLayoutSlot} moveSlot={moveLayoutSlot} /></div>
         {configurationEntryCount > 0 && <div className="mt-6 rounded border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">This draft currently contains {configurationEntryCount} generated class placements. Saving new bell times will clear those placements and regenerate them later. Your courses, faculty assignments, and workload settings will remain saved.</div>}

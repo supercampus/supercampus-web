@@ -32,3 +32,9 @@ test('missing staff or room opens setup instead of leaving a dead-end placement 
   assert.doesNotMatch(sheet, /Assign a faculty member and prepare at least one suitable room before placing this subject/);
   assert.doesNotMatch(sheet, /Choose a subject, faculty member, and room\./);
 });
+
+test('week and bell-time setup opens as a full-screen workspace', () => {
+  assert.match(sheet, /data-timetable-layout="full-screen"/);
+  assert.match(sheet, /className="h-screen w-screen max-w-none overflow-y-auto bg-white p-6"/);
+  assert.doesNotMatch(sheet, /className="h-full w-full max-w-3xl overflow-y-auto bg-white p-6 shadow-2xl"/);
+});
