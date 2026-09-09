@@ -31,7 +31,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { BulkStudentImportDialog } from './BulkStudentImportDialog';
+import { StudentAccountImportDialog as BulkStudentImportDialog } from './StudentAccountImportDialog';
 import { LiveCampusServiceConsole } from './LiveCampusServiceConsole';
 import { VendorShopsWorkspace } from './VendorShopsWorkspace';
 import { ApiRequestError } from '@/lib/api';
