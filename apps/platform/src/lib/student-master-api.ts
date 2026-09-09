@@ -6,6 +6,8 @@ export type StudentMasterRow = {
   name: string;
   rollNo: string;
   department: string;
+  yearOfStudy: number | string | null;
+  section: string | null;
   mobileNumber: string;
   email: string;
   status: string;

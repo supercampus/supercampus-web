@@ -235,6 +235,22 @@ function studentMasterErrorMessage(error: unknown) {
   return error.message;
 }
 
+function studentYearNumber(value: StudentMasterRow['yearOfStudy']) {
+  if (typeof value === 'number' && value > 0 && value < 7) return value;
+  const text = String(value ?? '').toLowerCase();
+  const digit = text.match(/\b([1-6])(?:st|nd|rd|th)?\b/);
+  if (digit) return Number(digit[1]);
+  const words = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth'];
+  const index = words.findIndex((word) => text.includes(word));
+  return index >= 0 ? index + 1 : null;
+}
+
+function studentYearLabel(year: number | null) {
+  if (year === null) return 'Year not assigned';
+  const suffix = year === 1 ? 'st' : year === 2 ? 'nd' : year === 3 ? 'rd' : 'th';
+  return `${year}${suffix} year students`;
+}
+
 function StudentsView({ query, tab, selected, setSelected, notify, refreshVersion }: { query: string; tab: string; selected: string | null; setSelected: (id: string | null) => void; notify: (message: string) => void; refreshVersion: number }) {
   const [students, setStudents] = useState<StudentMasterRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -257,6 +273,18 @@ function StudentsView({ query, tab, selected, setSelected, notify, refreshVersio
     if (tab === 'New intake') return new Date(student.createdAt).getTime() >= NEW_INTAKE_CUTOFF;
     return true;
   }), [students, query, tab]);
+  const yearGroups = useMemo(() => {
+    const grouped = new Map<number | null, StudentMasterRow[]>();
+    rows.forEach((row) => {
+      const year = studentYearNumber(row.yearOfStudy);
+      grouped.set(year, [...(grouped.get(year) ?? []), row]);
+    });
+    return [...grouped.entries()].sort(([left], [right]) => {
+      if (left === null) return 1;
+      if (right === null) return -1;
+      return left - right;
+    });
+  }, [rows]);
   const student = students.find((item) => item.id === selected);
   const departments = new Set(students.map((item) => item.department).filter(Boolean)).size;
   const completeContacts = students.filter((item) => item.email && item.mobileNumber).length;
@@ -271,11 +299,18 @@ function StudentsView({ query, tab, selected, setSelected, notify, refreshVersio
       </div>
       {loading && <div className="px-5 py-12 text-center text-xs text-[var(--crm-muted)]">Loading Student Master...</div>}
       {!loading && rows.length === 0 && <div className="px-5 py-12 text-center text-xs text-[var(--crm-muted)]">No students match this view.</div>}
-      {!loading && rows.map((row) => (
+      {!loading && yearGroups.map(([year, group]) => (
+        <React.Fragment key={year ?? 'unassigned'}>
+          <div className="flex min-w-[1040px] items-center justify-between border-b border-[var(--crm-border)] bg-[var(--crm-panel)] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider">
+            <span>{studentYearLabel(year)}</span><span className="text-[var(--crm-muted)]">{group.length}</span>
+          </div>
+          {group.map((row) => (
         <button type="button" key={row.id} title="Double-click to open student record" onDoubleClick={() => setSelected(row.id)} onKeyDown={(event) => { if (event.key === 'Enter') setSelected(row.id); }} className="grid min-w-[1040px] w-full cursor-pointer grid-cols-[1.2fr_.85fr_1fr_.8fr_.9fr_1.2fr_.55fr] items-center border-b border-[var(--crm-border)] px-5 py-4 text-left text-xs transition-colors hover:bg-[var(--crm-panel)] focus-visible:bg-[var(--crm-panel)] focus-visible:outline-none">
           <span className="flex items-center gap-3"><StudentAvatar name={row.name} photoUrl={row.photoUrl} size={36} /><strong className="truncate font-medium">{row.name}</strong></span>
           <span className="font-medium">{row.rollNo}</span><span>{row.department}</span><span><Pill>{row.residency === 'hosteller' ? 'Hosteller' : 'Day scholar'}</Pill></span><span>{row.mobileNumber}</span><span className="truncate">{row.email}</span><span><Pill>{row.status}</Pill></span>
-        </button>
+          </button>
+          ))}
+        </React.Fragment>
       ))}
     </div>
 
