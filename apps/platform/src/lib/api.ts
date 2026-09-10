@@ -5,7 +5,6 @@ const REQUEST_TIMEOUT_MS = 12_000;
 const UPLOAD_TIMEOUT_MS = 45_000;
 let refreshPromise: Promise<void> | null = null;
 const AUTH_REFRESH_LOCK = 'supercampus-auth-refresh';
-const DEFAULT_TENANT_ID = 'mec';
 
 type ApiRequestInit = RequestInit & { timeoutMs?: number };
 
@@ -119,30 +118,11 @@ export async function apiRequest<T>(path: string, init?: ApiRequestInit, retryAu
   return response.json() as Promise<T>;
 }
 
-/**
- * Resolves tenancy from the web origin, so the website never asks users for a
- * tenant id. The root domain temporarily serves MEC; tenant subdomains remain
- * ready for future campuses without changing the login form.
- */
-export function resolveTenantId(hostname?: string) {
-  const host = (hostname ?? (typeof window === 'undefined' ? '' : window.location.hostname))
-    .trim()
-    .toLowerCase()
-    .replace(/\.$/, '');
-  if (host.endsWith('.supercampus.ai')) {
-    const subdomain = host.slice(0, -'.supercampus.ai'.length).split('.').pop();
-    if (subdomain && subdomain !== 'www') return subdomain;
-  }
-  return DEFAULT_TENANT_ID;
-}
-
-
 export function login(credentials: LoginCredentials) {
   return apiRequest<{ data: { student: AuthStudent; roles: string[]; expiresAt: string } }>(
     '/auth/login',
     {
       method: 'POST',
-      headers: { 'x-tenant-id': resolveTenantId() },
       body: JSON.stringify(credentials),
     },
     false,

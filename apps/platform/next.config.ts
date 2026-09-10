@@ -44,6 +44,9 @@ const productionSecurityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The public root domain remains the marketing site. The authenticated web
+  // portal is mounted beneath the single canonical entry point `/login`.
+  basePath: "/login",
   output: "standalone",
   // Dev-only: allow HMR and other dev endpoints when the portal is opened over the LAN IP.
   allowedDevOrigins: ["172.168.2.230", "*.local"],

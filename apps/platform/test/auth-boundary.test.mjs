@@ -25,9 +25,13 @@ test('login failures cannot create an authenticated frontend session', () => {
   assert.match(loginBlock, /catch \(error\)[\s\S]*throw error/);
 });
 
-test('web login derives the tenant from the hostname without a tenant field', () => {
-  assert.match(api, /const DEFAULT_TENANT_ID = 'mec'/);
-  assert.match(api, /window\.location\.hostname/);
-  assert.match(api, /headers: \{ 'x-tenant-id': resolveTenantId\(\) \}/);
+test('web login lets the API resolve the tenant from the globally unique identity', () => {
+  const start = api.indexOf('export function login');
+  const end = api.indexOf('export function forgotPassword', start);
+  const loginBlock = api.slice(start, end);
+
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  assert.doesNotMatch(loginBlock, /DEFAULT_TENANT_ID|resolveTenantId|x-tenant-id/);
   assert.doesNotMatch(loginPage, /tenant[ -]?id/i);
 });

@@ -32,7 +32,7 @@ function DashboardContent() {
 
   useEffect(() => {
     if (shouldOpenStaffWorkspace) {
-      window.location.assign('/dashboard/admissions');
+      window.location.assign('/login/dashboard/admissions');
     }
   }, [shouldOpenStaffWorkspace]);
 
