@@ -56,5 +56,5 @@ test("container health requires connectivity to the Rust API", () => {
   assert.match(healthSource, /target\.pathname = target\.pathname\.replace/);
   assert.match(healthSource, /"\/health"/);
   assert.match(healthSource, /status: 503/);
-  assert.match(dockerSource, /127\.0\.0\.1:3000\/health/);
+  assert.match(dockerSource, /127\.0\.0\.1:3000\/login\/health/);
 });

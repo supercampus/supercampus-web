@@ -10,7 +10,7 @@ from `supercampus-backend` as a separate service.
 | Docker Context Path | `.` |
 | Dockerfile Path | `Dockerfile` |
 | Container Port | `3000` |
-| Health path | `/health` |
+| Health path | `/login/health` |
 
 Build the browser bundle against the same-origin API route:
 
