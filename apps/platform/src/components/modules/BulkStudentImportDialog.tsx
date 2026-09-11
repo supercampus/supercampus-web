@@ -4,7 +4,8 @@ import React, { useMemo, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Upload, X } from 'lucide-react';
 import { importStudentMaster, type StudentImportRow } from '@/lib/student-master-api';
 
-const STUDENT_HEADERS = ['Name', 'Roll No', 'Department', 'Mobile number', 'Email'] as const;
+const REQUIRED_STUDENT_HEADERS = ['Name', 'Roll No', 'Department', 'Mobile number', 'Email'] as const;
+const STUDENT_HEADERS = [...REQUIRED_STUDENT_HEADERS, 'Parent / guardian name', 'Parent WhatsApp number', 'Relationship'] as const;
 const TEMPLATE_LIBRARY = [
   { name: 'Students', file: 'students-import-template.csv', headers: STUDENT_HEADERS },
   { name: 'Users and roles', file: 'users-and-roles-import-template.csv', headers: ['Name', 'Email', 'Role', 'Team', 'Temporary password'] },
@@ -44,6 +45,7 @@ function downloadTemplate(file: string, headers: readonly string[]) {
     const values: Record<string, string> = {
       Name: 'Aarav Kumar', 'Roll No': 'SC2026001', Department: 'Computer Science',
       'Mobile number': '9876543210', Email: 'aarav@college.edu', Role: 'student', Team: 'Students',
+      'Parent / guardian name': 'Meena Kumar', 'Parent WhatsApp number': '+91 98765 43210', Relationship: 'Mother',
       'Temporary password': 'ChangeMe@2026', 'Subject Code': 'CS301', 'Subject Name': 'Data Structures',
       Semester: '3', Credits: '4', 'Fee Type': 'Tuition', Amount: '42500', 'Due Date': '2026-09-15',
       'Academic Year': '2026-27',
@@ -78,24 +80,32 @@ export function BulkStudentImportDialog({ onClose, onImported }: { onClose: () =
     const parsed = parseCsv(await file.text());
     if (!parsed.length) { setRows([]); setErrors(['The selected file is empty.']); return; }
     const headers = parsed[0].map((header) => header.replace(/^\uFEFF/, '').trim().toLowerCase());
-    const expected = STUDENT_HEADERS.map((header) => header.toLowerCase());
-    if (expected.some((header, index) => headers[index] !== header)) {
+    const required = REQUIRED_STUDENT_HEADERS.map((header) => header.toLowerCase());
+    const optional = STUDENT_HEADERS.slice(REQUIRED_STUDENT_HEADERS.length).map((header) => header.toLowerCase());
+    const hasRequired = required.every((header, index) => headers[index] === header);
+    const hasAllGuardianColumns = optional.every((header, index) => headers[index + required.length] === header);
+    const hasNoGuardianColumns = headers.length === required.length;
+    if (!hasRequired || (!hasNoGuardianColumns && !hasAllGuardianColumns)) {
       setRows([]);
-      setErrors([`Use the exact columns: ${STUDENT_HEADERS.join(', ')}.`]);
+      setErrors([`Use the downloaded columns. Older five-column student templates are also accepted.`]);
       return;
     }
 
     const nextRows = parsed.slice(1).map((values, index) => ({
       name: values[0]?.trim() ?? '', rollNo: values[1]?.trim() ?? '', department: values[2]?.trim() ?? '',
       mobileNumber: values[3]?.trim() ?? '', email: values[4]?.trim().toLowerCase() ?? '', sourceRow: index + 2,
+      guardianName: values[5]?.trim() || undefined, guardianPhone: values[6]?.trim() || undefined,
+      guardianRelationship: values[7]?.trim() || undefined,
     }));
     const nextErrors: string[] = [];
     const seen = new Set<string>();
     nextRows.forEach((row) => {
-      const missing = STUDENT_HEADERS.filter((_, index) => ![row.name, row.rollNo, row.department, row.mobileNumber, row.email][index]);
+      const missing = REQUIRED_STUDENT_HEADERS.filter((_, index) => ![row.name, row.rollNo, row.department, row.mobileNumber, row.email][index]);
       if (missing.length) nextErrors.push(`Row ${row.sourceRow}: missing ${missing.join(', ')}.`);
       if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) nextErrors.push(`Row ${row.sourceRow}: invalid email address.`);
       if (row.mobileNumber && !/^\+?[0-9][0-9 -]{7,14}$/.test(row.mobileNumber)) nextErrors.push(`Row ${row.sourceRow}: invalid mobile number.`);
+      if (Boolean(row.guardianName) !== Boolean(row.guardianPhone)) nextErrors.push(`Row ${row.sourceRow}: include both guardian name and WhatsApp number.`);
+      if (row.guardianPhone && !/^\+?[0-9][0-9 -]{7,16}$/.test(row.guardianPhone)) nextErrors.push(`Row ${row.sourceRow}: invalid parent WhatsApp number.`);
       const roll = row.rollNo.toLowerCase();
       if (roll && seen.has(roll)) nextErrors.push(`Row ${row.sourceRow}: duplicate roll number ${row.rollNo}.`);
       seen.add(roll);
@@ -114,6 +124,9 @@ export function BulkStudentImportDialog({ onClose, onImported }: { onClose: () =
         department: row.department,
         mobileNumber: row.mobileNumber,
         email: row.email,
+        guardianName: row.guardianName,
+        guardianPhone: row.guardianPhone,
+        guardianRelationship: row.guardianRelationship,
       })));
       const message = `${response.data.inserted} added, ${response.data.updated} updated`;
       setResult(message);
@@ -145,7 +158,7 @@ export function BulkStudentImportDialog({ onClose, onImported }: { onClose: () =
             {errors.length > 0 && <div className="mt-4 border-l-2 border-red-500 bg-red-50 px-4 py-3 text-xs text-red-700"><p className="flex items-center gap-2 font-semibold"><AlertCircle size={15} />Fix {errors.length} issue{errors.length === 1 ? '' : 's'}</p><ul className="mt-2 space-y-1">{errors.slice(0, 8).map((error) => <li key={error}>{error}</li>)}</ul>{errors.length > 8 && <p className="mt-2">And {errors.length - 8} more.</p>}</div>}
             {result && <div className="mt-4 flex items-center gap-2 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700"><CheckCircle2 size={15} />Import complete: {result}</div>}
 
-            {rows.length > 0 ? <div className="mt-5 overflow-x-auto border-y border-[var(--crm-border)]"><table className="w-full min-w-[720px] text-left text-xs"><thead><tr className="text-[10px] uppercase text-[var(--crm-muted)]">{STUDENT_HEADERS.map((header) => <th key={header} className="px-3 py-3 font-semibold">{header}</th>)}</tr></thead><tbody>{rows.slice(0, 10).map((row) => <tr key={`${row.sourceRow}-${row.rollNo}`} className="border-t border-[var(--crm-border)]"><td className="px-3 py-3 font-medium">{row.name}</td><td className="px-3 py-3">{row.rollNo}</td><td className="px-3 py-3">{row.department}</td><td className="px-3 py-3">{row.mobileNumber}</td><td className="px-3 py-3">{row.email}</td></tr>)}</tbody></table>{rows.length > 10 && <p className="border-t border-[var(--crm-border)] px-3 py-2 text-[10px] text-[var(--crm-muted)]">Previewing 10 of {rows.length} rows</p>}</div> : <button type="button" onClick={() => inputRef.current?.click()} className="mt-5 flex min-h-52 w-full flex-col items-center justify-center border border-dashed border-[var(--crm-border)] text-center hover:bg-[var(--crm-panel)]"><FileSpreadsheet size={28} className="text-[var(--crm-muted)]" /><strong className="mt-3 text-sm">Select the completed CSV</strong><span className="mt-1 text-xs text-[var(--crm-muted)]">All five columns are required.</span></button>}
+            {rows.length > 0 ? <div className="mt-5 overflow-x-auto border-y border-[var(--crm-border)]"><table className="w-full min-w-[980px] text-left text-xs"><thead><tr className="text-[10px] uppercase text-[var(--crm-muted)]">{STUDENT_HEADERS.map((header) => <th key={header} className="px-3 py-3 font-semibold">{header}</th>)}</tr></thead><tbody>{rows.slice(0, 10).map((row) => <tr key={`${row.sourceRow}-${row.rollNo}`} className="border-t border-[var(--crm-border)]"><td className="px-3 py-3 font-medium">{row.name}</td><td className="px-3 py-3">{row.rollNo}</td><td className="px-3 py-3">{row.department}</td><td className="px-3 py-3">{row.mobileNumber}</td><td className="px-3 py-3">{row.email}</td><td className="px-3 py-3">{row.guardianName ?? '—'}</td><td className="px-3 py-3">{row.guardianPhone ?? '—'}</td><td className="px-3 py-3">{row.guardianRelationship ?? '—'}</td></tr>)}</tbody></table>{rows.length > 10 && <p className="border-t border-[var(--crm-border)] px-3 py-2 text-[10px] text-[var(--crm-muted)]">Previewing 10 of {rows.length} rows</p>}</div> : <button type="button" onClick={() => inputRef.current?.click()} className="mt-5 flex min-h-52 w-full flex-col items-center justify-center border border-dashed border-[var(--crm-border)] text-center hover:bg-[var(--crm-panel)]"><FileSpreadsheet size={28} className="text-[var(--crm-muted)]" /><strong className="mt-3 text-sm">Select the completed CSV</strong><span className="mt-1 text-xs text-[var(--crm-muted)]">Student columns are required; parent WhatsApp columns are recommended.</span></button>}
           </div>
 
           <aside className="border-t border-[var(--crm-border)] bg-[var(--crm-panel)] p-5 lg:border-l lg:border-t-0">

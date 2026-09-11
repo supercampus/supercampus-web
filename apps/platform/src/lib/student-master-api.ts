@@ -9,15 +9,47 @@ export type StudentMasterRow = {
   mobileNumber: string;
   email: string;
   status: string;
+  yearOfStudy: string | null;
+  section: string | null;
+  residency: 'day_scholar' | 'hosteller' | null;
+  guardianName: string | null;
+  guardianPhone: string | null;
+  guardianRelationship: string | null;
   photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
 };
 
-export type StudentImportRow = Pick<StudentMasterRow, 'name' | 'rollNo' | 'department' | 'mobileNumber' | 'email'>;
+export type StudentImportRow = Pick<StudentMasterRow, 'name' | 'rollNo' | 'department' | 'mobileNumber' | 'email'> & {
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianRelationship?: string;
+};
 
 export function listStudentMaster() {
   return apiRequest<{ data: StudentMasterRow[] }>('/v1/student-master', { timeoutMs: 30_000 });
+}
+
+export type UpdateStudentMasterInput = {
+  name: string;
+  rollNo: string;
+  department: string;
+  mobileNumber: string;
+  email: string;
+  status: string;
+  yearOfStudy: number;
+  section: string;
+  residency: 'day_scholar' | 'hosteller';
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianRelationship?: string;
+};
+
+export function updateStudentMaster(studentId: string, input: UpdateStudentMasterInput) {
+  return apiRequest<{ data: StudentMasterRow }>(`/v1/student-master/${encodeURIComponent(studentId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
 }
 
 export function importStudentMaster(rows: StudentImportRow[]) {
