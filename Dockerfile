@@ -46,7 +46,9 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 supercamp
 COPY --from=builder --chown=supercampus:nodejs /app/apps/platform/.next/standalone ./
 COPY --from=builder --chown=supercampus:nodejs /app/apps/platform/public ./apps/platform/public
 COPY --from=builder --chown=supercampus:nodejs /app/apps/platform/.next/static ./apps/platform/.next/static
+COPY --from=builder --chown=supercampus:nodejs /app/deployment/gateway.mjs ./gateway.mjs
+COPY --from=builder --chown=supercampus:nodejs /app/deployment/landing ./landing
 USER supercampus
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=8s --start-period=30s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/login/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
-CMD ["node", "apps/platform/server.js"]
+CMD ["node", "gateway.mjs"]

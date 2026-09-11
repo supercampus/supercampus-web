@@ -1,11 +1,24 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useSyncExternalStore } from 'react';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, Mail, MailCheck, ShieldCheck, UsersRound } from 'lucide-react';
 import { useApp } from '@/lib/context';
 import { forgotPassword } from '@/lib/api';
 
 type Mode = 'signin' | 'forgot';
+
+function subscribeToLocationChange(callback: () => void) {
+  window.addEventListener('popstate', callback);
+  return () => window.removeEventListener('popstate', callback);
+}
+
+function currentLocationSearch() {
+  return window.location.search;
+}
+
+function serverLocationSearch() {
+  return '';
+}
 
 export default function LoginPage() {
   const { login, backendStatus } = useApp();
@@ -16,6 +29,9 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const locationSearch = useSyncExternalStore(subscribeToLocationChange, currentLocationSearch, serverLocationSearch);
+  const campus = new URLSearchParams(locationSearch).get('campus');
+  const campusName = campus?.toLowerCase() === 'mec' ? 'Madras Engineering College' : '';
 
   function switchMode(next: Mode) {
     setMode(next);
@@ -57,8 +73,8 @@ export default function LoginPage() {
       <section className="sc-login__visual" aria-label="SuperCampus unified access">
         <div className="sc-login__brand"><span className="sc-login__brand-mark">SC</span> <span className="sc-login__brand-name sc-font-secondary">SuperCampus</span></div>
         <div className="sc-login__visual-copy">
-          <span className="sc-login__eyebrow">Unified campus access</span>
-          <h1>One login for every campus workflow.</h1>
+          <span className="sc-login__eyebrow">{campusName || 'Unified campus access'}</span>
+          <h1>{campusName ? `Welcome to ${campusName}.` : 'One login for every campus workflow.'}</h1>
           <p>Students, admission teams, managers, and administrators use the same secure workspace. Your institution controls the modules and actions available after sign-in.</p>
           <div className="sc-login__roles" aria-label="Supported user roles">
             <span><UsersRound size={14} /> Students</span><span>Managers</span><span>Admissions</span><span>Admins</span>
@@ -85,7 +101,7 @@ export default function LoginPage() {
           <form className="sc-login-card" onSubmit={handleSubmit}>
             <div className="sc-login-card__mobile-brand"><span className="sc-login-card__mobile-mark">SC</span> <span className="sc-font-secondary">SuperCampus</span></div>
             <div className="sc-login-card__heading"><span className={`sc-login-card__status sc-login-card__status--${backendStatus}`} /> Secure access</div>
-            <h2>Sign in</h2>
+            <h2>{campusName ? `${campusName} sign in` : 'Sign in'}</h2>
             <p className="sc-login-card__sub">Use the email address and password issued by your institution administrator.</p>
 
             <label className="sc-field"><span>Email</span>
