@@ -141,7 +141,7 @@ export interface AuthStudent extends Student {
   tenantId: string;
   email: string;
   role: string;
-  portalFamilies: Array<'student' | 'parent' | 'staff' | 'admin'>;
+  portalFamilies: Array<'student' | 'parent' | 'staff' | 'admin' | 'platform-control'>;
   team: string;
   access: string[];
   fullCollege: string;

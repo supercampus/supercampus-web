@@ -30,7 +30,9 @@ function DashboardContent() {
   const academicAppUser = roles.some((role) => role === 'staff' || role === 'class_advisor');
   const shouldOpenStaffWorkspace = destination === 'staff' && !academicAppUser;
   const authenticatedPath = student && destination
-    ? tenantPortalPath(student, shouldOpenStaffWorkspace ? '/dashboard/admissions' : '')
+    ? destination === 'platform-control'
+      ? '/control'
+      : tenantPortalPath(student, shouldOpenStaffWorkspace ? '/dashboard/admissions' : '')
     : null;
 
   useEffect(() => {
@@ -48,6 +50,9 @@ function DashboardContent() {
   if (authStatus === 'unauthenticated') return <LoginPage />;
   if (shouldOpenStaffWorkspace) {
     return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">SC</div><span>Opening your staff workspace...</span></div>;
+  }
+  if (destination === 'platform-control') {
+    return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">SC</div><span>Opening SuperCampus Control...</span></div>;
   }
   if (destination && destination !== 'student' && !academicAppUser) {
     return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">SC</div><span>This portal is not available in this app yet.</span></div>;

@@ -8,6 +8,7 @@ export function portalDestination(
   identity: Pick<AuthStudent, 'portalFamilies' | 'role'>,
 ): PortalDestination {
   const families = identity.portalFamilies ?? [];
+  if (families.includes('platform-control')) return 'platform-control';
   if (families.includes('student')) return 'student';
   if (families.includes('staff') || families.includes('admin')) return 'staff';
   if (families.includes('parent')) return 'parent';
