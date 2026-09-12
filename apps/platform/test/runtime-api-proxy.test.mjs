@@ -18,6 +18,10 @@ const dockerSource = await readFile(
   new URL("../../../Dockerfile", import.meta.url),
   "utf8",
 );
+const gatewaySource = await readFile(
+  new URL("../../../deployment/gateway.mjs", import.meta.url),
+  "utf8",
+);
 
 test("API requests use a runtime route instead of a build-time rewrite", () => {
   assert.match(routeSource, /process\.env\.API_PROXY_TARGET/);
@@ -48,6 +52,12 @@ test("runtime proxy preserves streaming requests and upstream responses", () => 
   assert.match(routeSource, /upstream\.body/);
   assert.match(routeSource, /redirect: "manual"/);
   assert.match(routeSource, /"expect"/);
+});
+
+test("public API requests are rewritten beneath the portal base path", () => {
+  assert.match(gatewaySource, /url\.pathname === '\/api'/);
+  assert.match(gatewaySource, /`\/login\$\{url\.pathname\}\$\{url\.search\}`/);
+  assert.match(gatewaySource, /proxyToPortal\(request, response, upstreamPath = request\.url\)/);
 });
 
 test("container health requires connectivity to the Rust API", () => {

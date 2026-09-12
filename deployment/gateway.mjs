@@ -56,12 +56,12 @@ function sendRedirect(response, location) {
   response.end(`Continue to ${location}`);
 }
 
-function proxyToPortal(request, response) {
+function proxyToPortal(request, response, upstreamPath = request.url) {
   const upstream = proxyRequest({
     hostname: '127.0.0.1',
     port: portalPort,
     method: request.method,
-    path: request.url,
+    path: upstreamPath,
     headers: {
       ...request.headers,
       'x-forwarded-host': request.headers.host || '',
@@ -113,8 +113,13 @@ const server = createServer((request, response) => {
     return;
   }
 
-  if (url.pathname === '/login' || url.pathname.startsWith('/login/') || url.pathname === '/api' || url.pathname.startsWith('/api/')) {
+  if (url.pathname === '/login' || url.pathname.startsWith('/login/')) {
     proxyToPortal(request, response);
+    return;
+  }
+
+  if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
+    proxyToPortal(request, response, `/login${url.pathname}${url.search}`);
     return;
   }
 
