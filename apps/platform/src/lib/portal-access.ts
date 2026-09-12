@@ -20,3 +20,24 @@ export function canOpenStaffWorkspace(
 ) {
   return portalDestination(identity) === 'staff';
 }
+
+/**
+ * Returns the public, human-readable campus slug supplied by the authenticated
+ * tenant record. The database tenant UUID remains private to the API/session.
+ */
+export function tenantSlug(identity: Pick<AuthStudent, 'tenant'>) {
+  const slug = identity.tenant.code
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'campus';
+}
+
+export function tenantPortalPath(
+  identity: Pick<AuthStudent, 'tenant'>,
+  destination = '',
+) {
+  const suffix = destination ? `/${destination.replace(/^\/+/, '')}` : '';
+  return `/${tenantSlug(identity)}${suffix}`;
+}

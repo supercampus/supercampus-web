@@ -5,6 +5,8 @@ import { readFile } from 'node:fs/promises';
 const loginPage = await readFile(new URL('../src/components/auth/LoginPage.tsx', import.meta.url), 'utf8');
 const appContext = await readFile(new URL('../src/lib/context.tsx', import.meta.url), 'utf8');
 const api = await readFile(new URL('../src/lib/api.ts', import.meta.url), 'utf8');
+const homePage = await readFile(new URL('../src/app/page.tsx', import.meta.url), 'utf8');
+const portalAccess = await readFile(new URL('../src/lib/portal-access.ts', import.meta.url), 'utf8');
 
 test('login inputs do not expose seeded credentials', () => {
   assert.match(loginPage, /const \[email, setEmail\] = useState\(''\);/);
@@ -34,4 +36,16 @@ test('web login lets the API resolve the tenant from the globally unique identit
   assert.notEqual(end, -1);
   assert.doesNotMatch(loginBlock, /DEFAULT_TENANT_ID|resolveTenantId|x-tenant-id/);
   assert.doesNotMatch(loginPage, /tenant[ -]?id/i);
+});
+
+test('authenticated URLs use the tenant code and keep the database tenant id private', () => {
+  const slugStart = portalAccess.indexOf('export function tenantSlug');
+  const slugBlock = portalAccess.slice(slugStart);
+
+  assert.notEqual(slugStart, -1);
+  assert.match(slugBlock, /identity\.tenant\.code/);
+  assert.doesNotMatch(slugBlock, /tenantId/);
+  assert.match(homePage, /tenantPortalPath\(student/);
+  assert.match(homePage, /window\.location\.replace\(authenticatedPath\)/);
+  assert.doesNotMatch(homePage, /\/login\/dashboard/);
 });

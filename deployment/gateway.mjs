@@ -7,6 +7,19 @@ const publicPort = Number(process.env.PORT || 3000);
 const portalPort = Number(process.env.PORTAL_PORT || 3001);
 const landingRoot = resolve(process.env.LANDING_ROOT || '/app/landing');
 const portalServer = process.env.PORTAL_SERVER || 'apps/platform/server.js';
+const cleanTenantSlug = (value) => String(value || '')
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+const configuredTenantSlugs = (process.env.TENANT_SLUGS || 'mec')
+  .split(',')
+  .map(cleanTenantSlug)
+  .filter(Boolean);
+const defaultTenantSlug = cleanTenantSlug(
+  process.env.DEFAULT_TENANT_SLUG || configuredTenantSlugs[0] || 'mec',
+);
+const tenantSlugs = new Set([...configuredTenantSlugs, defaultTenantSlug]);
 let shuttingDown = false;
 
 const contentTypes = new Map([
@@ -103,23 +116,56 @@ function landingFile(pathname) {
   return candidate;
 }
 
+function tenantPortalRoute(pathname) {
+  const [tenantSlug, ...segments] = pathname.split('/').filter(Boolean);
+  if (!tenantSlug || !tenantSlugs.has(tenantSlug.toLowerCase())) return null;
+  return {
+    tenantSlug: tenantSlug.toLowerCase(),
+    upstreamPath: segments.length > 0 ? `/${segments.join('/')}` : '/',
+  };
+}
+
 const server = createServer((request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
 
-  // `/mec` is a stable tenant shortcut. Tenant selection remains server-side;
-  // the query value only provides clear Madras Engineering College branding.
-  if (url.pathname === '/mec' || url.pathname === '/mec/') {
-    sendRedirect(response, '/login?campus=mec');
+  // `/login` is authentication-only. Old dashboard URLs are moved to the
+  // canonical tenant namespace instead of retaining "login" after sign-in.
+  if (url.pathname === '/login' || url.pathname === '/login/') {
+    proxyToPortal(request, response, `/${url.search}`);
     return;
   }
 
-  if (url.pathname === '/login' || url.pathname.startsWith('/login/')) {
-    proxyToPortal(request, response);
+  if (url.pathname.startsWith('/login/')) {
+    sendRedirect(response, `/${defaultTenantSlug}${url.pathname.slice('/login'.length)}${url.search}`);
     return;
   }
 
   if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
-    proxyToPortal(request, response, `/login${url.pathname}${url.search}`);
+    proxyToPortal(request, response, `${url.pathname}${url.search}`);
+    return;
+  }
+
+  if (url.pathname === '/_next' || url.pathname.startsWith('/_next/')) {
+    proxyToPortal(request, response, `${url.pathname}${url.search}`);
+    return;
+  }
+
+  if (
+    url.pathname === '/health'
+    || url.pathname === '/ready'
+    || url.pathname === '/reset-password'
+    || url.pathname.startsWith('/apply/')
+  ) {
+    proxyToPortal(request, response, `${url.pathname}${url.search}`);
+    return;
+  }
+
+  const tenantRoute = tenantPortalRoute(url.pathname);
+  if (tenantRoute) {
+    const campusQuery = tenantRoute.upstreamPath === '/'
+      ? `${url.search ? `${url.search}&` : '?'}campus=${encodeURIComponent(tenantRoute.tenantSlug)}`
+      : url.search;
+    proxyToPortal(request, response, `${tenantRoute.upstreamPath}${campusQuery}`);
     return;
   }
 

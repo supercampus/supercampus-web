@@ -54,10 +54,20 @@ test("runtime proxy preserves streaming requests and upstream responses", () => 
   assert.match(routeSource, /"expect"/);
 });
 
-test("public API requests are rewritten beneath the portal base path", () => {
+test("public API requests and assets are proxied to the root-mounted portal", () => {
   assert.match(gatewaySource, /url\.pathname === '\/api'/);
-  assert.match(gatewaySource, /`\/login\$\{url\.pathname\}\$\{url\.search\}`/);
+  assert.match(gatewaySource, /url\.pathname === '\/_next'/);
+  assert.match(gatewaySource, /`\$\{url\.pathname\}\$\{url\.search\}`/);
   assert.match(gatewaySource, /proxyToPortal\(request, response, upstreamPath = request\.url\)/);
+  assert.doesNotMatch(configSource, /basePath\s*:/);
+});
+
+test("login and authenticated tenant routes have separate public namespaces", () => {
+  assert.match(gatewaySource, /url\.pathname === '\/login'/);
+  assert.match(gatewaySource, /url\.pathname\.startsWith\('\/login\/'\)/);
+  assert.match(gatewaySource, /tenantPortalRoute\(url\.pathname\)/);
+  assert.match(gatewaySource, /DEFAULT_TENANT_SLUG/);
+  assert.match(gatewaySource, /sendRedirect\(response, `\/\$\{defaultTenantSlug\}/);
 });
 
 test("container health requires connectivity to the Rust API", () => {
@@ -66,5 +76,5 @@ test("container health requires connectivity to the Rust API", () => {
   assert.match(healthSource, /target\.pathname = target\.pathname\.replace/);
   assert.match(healthSource, /"\/health"/);
   assert.match(healthSource, /status: 503/);
-  assert.match(dockerSource, /127\.0\.0\.1:3000\/login\/health/);
+  assert.match(dockerSource, /127\.0\.0\.1:3000\/health/);
 });

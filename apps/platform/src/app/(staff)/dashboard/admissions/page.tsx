@@ -2099,10 +2099,10 @@ export default function AdmissionsPage() {
   }, [activeNav, canCreateLeads, canReadForms, canReadPermissionCatalog, canReadRoles, canReadUsers, settingsSection, showToast]);
 
   useEffect(() => {
-    if (authStatus === 'unauthenticated') window.location.assign('/');
+    if (authStatus === 'unauthenticated') window.location.assign('/login');
     if (authStatus !== 'authenticated') return;
     if (student && !canOpenStaffWorkspace(student)) {
-      window.location.assign('/');
+      window.location.assign('/login');
       return;
     }
     const frame = window.requestAnimationFrame(() => {
@@ -2532,7 +2532,7 @@ export default function AdmissionsPage() {
     try {
       await logout();
     } finally {
-      window.location.assign('/');
+      window.location.assign('/login');
     }
   }, [logout]);
 

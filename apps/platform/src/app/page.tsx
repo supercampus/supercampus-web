@@ -20,7 +20,7 @@ import DocumentsPage from '@/components/modules/DocumentsPage';
 import ProfilePage from '@/components/modules/ProfilePage';
 import QRPage from '@/components/modules/QRPage';
 import LoginPage from '@/components/auth/LoginPage';
-import { portalDestination } from '@/lib/portal-access';
+import { portalDestination, tenantPortalPath } from '@/lib/portal-access';
 
 function DashboardContent() {
   const { state, authStatus, student, roles } = useApp();
@@ -29,12 +29,18 @@ function DashboardContent() {
     : null;
   const academicAppUser = roles.some((role) => role === 'staff' || role === 'class_advisor');
   const shouldOpenStaffWorkspace = destination === 'staff' && !academicAppUser;
+  const authenticatedPath = student && destination
+    ? tenantPortalPath(student, shouldOpenStaffWorkspace ? '/dashboard/admissions' : '')
+    : null;
 
   useEffect(() => {
-    if (shouldOpenStaffWorkspace) {
-      window.location.assign('/login/dashboard/admissions');
+    if (!authenticatedPath) return;
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    const onLoginPage = currentPath === '/login' || currentPath === '/';
+    if (onLoginPage || (shouldOpenStaffWorkspace && currentPath !== authenticatedPath)) {
+      window.location.replace(authenticatedPath);
     }
-  }, [shouldOpenStaffWorkspace]);
+  }, [authenticatedPath, shouldOpenStaffWorkspace]);
 
   if (authStatus === 'checking') {
     return <div className="sc-auth-loading"><div className="sc-auth-loading__mark">SC</div><span>Securing your workspace...</span></div>;

@@ -44,9 +44,10 @@ const productionSecurityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // The public root domain remains the marketing site. The authenticated web
-  // portal is mounted beneath the single canonical entry point `/login`.
-  basePath: "/login",
+  // The public root domain remains the marketing site. The gateway owns public
+  // routing. Next runs at its normal root internally so
+  // an authenticated campus can use a database-derived path such as `/mec`
+  // instead of baking `/login` into every client bundle and dashboard URL.
   output: "standalone",
   // Dev-only: allow HMR and other dev endpoints when the portal is opened over the LAN IP.
   allowedDevOrigins: ["172.168.2.230", "*.local"],

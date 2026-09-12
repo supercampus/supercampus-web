@@ -16,7 +16,7 @@ const V1 = '/v1';
  * root rather than the API client's usual base path.
  */
 export function getHealth() {
-  return fetch('/login/health').then((response) => response.json() as Promise<{
+  return fetch('/health').then((response) => response.json() as Promise<{
     status: string; service: string; version: string;
   }>);
 }
