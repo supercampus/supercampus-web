@@ -7,6 +7,7 @@ const publicPort = Number(process.env.PORT || 3000);
 const portalPort = Number(process.env.PORTAL_PORT || 3001);
 const landingRoot = resolve(process.env.LANDING_ROOT || '/app/landing');
 const portalServer = process.env.PORTAL_SERVER || 'apps/platform/server.js';
+const platformControlMode = process.env.PORTAL_MODE === 'platform-control';
 const cleanTenantSlug = (value) => String(value || '')
   .trim()
   .toLowerCase()
@@ -127,6 +128,17 @@ function tenantPortalRoute(pathname) {
 
 const server = createServer((request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
+
+  // A dedicated SuperCampus operations deployment serves only the protected
+  // control portal. It must never expose the public landing page or tenant
+  // namespace routing used by supercampus.ai.
+  if (platformControlMode) {
+    const upstreamPath = url.pathname === '/login' || url.pathname === '/login/'
+      ? `/${url.search}`
+      : `${url.pathname}${url.search}`;
+    proxyToPortal(request, response, upstreamPath);
+    return;
+  }
 
   // `/login` is authentication-only. Old dashboard URLs are moved to the
   // canonical tenant namespace instead of retaining "login" after sign-in.
