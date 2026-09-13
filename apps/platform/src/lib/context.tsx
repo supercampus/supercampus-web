@@ -148,6 +148,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     hydrated.current = true;
   }, []);
 
+  // The platform control plane has no tenant-owned app-state document. Its
+  // dashboard loads exclusively from the protected cross-tenant API, so do not
+  // attempt the normal student-state hydration after this identity signs in.
+  const isPlatformControlIdentity = useCallback((identity: AuthStudent) => (
+    identity.portalFamilies?.includes('platform-control') ?? false
+  ), []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -156,7 +163,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         setStudent(data.student);
         setRoles(data.roles ?? [data.student.role]);
-        await hydrateStudentState();
+        if (!isPlatformControlIdentity(data.student)) await hydrateStudentState();
         if (cancelled) return;
         setAuthStatus('authenticated'); setBackendStatus('online');
       } catch (error) {
@@ -167,7 +174,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [hydrateStudentState]);
+  }, [hydrateStudentState, isPlatformControlIdentity]);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setBackendStatus('connecting');
@@ -175,7 +182,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { data } = await loginRequest(credentials);
       setStudent(data.student);
       setRoles(data.roles ?? [data.student.role]);
-      await hydrateStudentState();
+      if (!isPlatformControlIdentity(data.student)) await hydrateStudentState();
       setAuthStatus('authenticated');
       setBackendStatus('online');
     } catch (error) {
@@ -186,7 +193,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setBackendStatus(error instanceof ApiRequestError && error.status < 500 ? 'online' : 'offline');
       throw error;
     }
-  }, [hydrateStudentState]);
+  }, [hydrateStudentState, isPlatformControlIdentity]);
 
   const logout = useCallback(async () => {
     try { await logoutRequest(); setBackendStatus('online'); }
