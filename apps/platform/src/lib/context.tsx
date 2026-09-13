@@ -152,7 +152,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // dashboard loads exclusively from the protected cross-tenant API, so do not
   // attempt the normal student-state hydration after this identity signs in.
   const isPlatformControlIdentity = useCallback((identity: AuthStudent) => (
-    identity.portalFamilies?.includes('platform-control') ?? false
+    identity.portalFamilies?.includes('platform-control') ||
+    identity.role === 'platform_super_admin' ||
+    identity.tenant?.slug === 'supercampus-control' ||
+    identity.tenant?.code === 'SC-CONTROL'
   ), []);
 
   useEffect(() => {

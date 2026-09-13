@@ -5,10 +5,17 @@ export type PortalDestination = 'student' | 'staff' | 'parent' | 'platform-contr
 const LEGACY_STUDENT_ROLES = new Set(['student', 'prospective_student']);
 
 export function portalDestination(
-  identity: Pick<AuthStudent, 'portalFamilies' | 'role'>,
+  identity: Pick<AuthStudent, 'portalFamilies' | 'role'> & { tenant?: { slug?: string; code?: string } },
 ): PortalDestination {
   const families = identity.portalFamilies ?? [];
-  if (families.includes('platform-control')) return 'platform-control';
+  if (
+    families.includes('platform-control') ||
+    identity.role === 'platform_super_admin' ||
+    identity.tenant?.slug === 'supercampus-control' ||
+    identity.tenant?.code === 'SC-CONTROL'
+  ) {
+    return 'platform-control';
+  }
   if (families.includes('student')) return 'student';
   if (families.includes('staff') || families.includes('admin')) return 'staff';
   if (families.includes('parent')) return 'parent';
