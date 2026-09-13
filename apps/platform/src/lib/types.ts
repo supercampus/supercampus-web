@@ -127,6 +127,7 @@ export interface Tenant {
   code: string;
   name: string;
   city: string;
+  slug?: string;
 }
 
 export interface TenantBrand {
