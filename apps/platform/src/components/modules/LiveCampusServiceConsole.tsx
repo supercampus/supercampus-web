@@ -15,6 +15,7 @@ import {
   Store,
   Trash2,
   UserCheck,
+  UserPlus,
   Users,
   X,
 } from 'lucide-react';
@@ -24,6 +25,8 @@ import {
   createAttendanceReport,
   createAttendanceSession,
   createCanteenMenuItem,
+  cancelVisitorPass,
+  createVisitorPass,
   decideGatepass,
   deleteCanteenMenuItem,
   getAttendanceReports,
@@ -31,6 +34,7 @@ import {
   getAttendanceSessions,
   getCanteenStore,
   getGatepassOverview,
+  getVisitorPasses,
   publishAttendanceSession,
   saveAttendanceEntries,
   scanCanteenOrder,
@@ -44,6 +48,7 @@ import {
   type AttendanceStudent,
   type CanteenStore,
   type GatepassOverview,
+  type VisitorPass,
 } from '@/lib/campus-operations-api';
 
 export type LiveCampusService = 'attendance' | 'canteen' | 'gatepass';
@@ -135,25 +140,330 @@ function ScannerPanel({ value, setValue, busy, actions }: { value: string; setVa
 
 function GatepassConsole({ query }: { query: string }) {
   const [data, setData] = useState<GatepassOverview | null>(null);
+  const [visitors, setVisitors] = useState<VisitorPass[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [view, setView] = useState<'requests' | 'scanner' | 'movements'>('requests');
+  const [view, setView] = useState<'requests' | 'visitors' | 'scanner' | 'movements'>('requests');
   const [scan, setScan] = useState({ qr: '', direction: 'exit' as 'entry' | 'exit', checkpoint: 'Main gate' });
-  const load = useCallback(async (quiet = false) => { if (!quiet) setLoading(true); try { setData((await getGatepassOverview()).data); setError(null); } catch (cause) { setError(errorText(cause)); } finally { if (!quiet) setLoading(false); } }, []);
-  useEffect(() => { void load(); const timer = window.setInterval(() => void load(true), 3000); return () => window.clearInterval(timer); }, [load]);
-  const act = async (operation: () => Promise<unknown>) => { setBusy(true); try { await operation(); await load(true); setError(null); } catch (cause) { setError(errorText(cause)); } finally { setBusy(false); } };
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    visitorName: '',
+    visitorPhone: '',
+    relationship: 'Guest',
+    purpose: '',
+    visitFrom: new Date().toISOString().slice(0, 16),
+    visitUntil: new Date(Date.now() + 4 * 3600 * 1000).toISOString().slice(0, 16),
+  });
+
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
+    try {
+      const [overviewRes, visitorsRes] = await Promise.allSettled([
+        getGatepassOverview(),
+        getVisitorPasses(),
+      ]);
+      if (overviewRes.status === 'fulfilled') setData(overviewRes.value.data);
+      if (visitorsRes.status === 'fulfilled') setVisitors(visitorsRes.value.data.visitors);
+      setError(null);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      if (!quiet) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => void load(true), 3000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
+  const act = async (operation: () => Promise<unknown>) => {
+    setBusy(true);
+    try {
+      await operation();
+      await load(true);
+      setError(null);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleInviteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await act(async () => {
+      await createVisitorPass({
+        visitorKind: 'guest',
+        visitorName: inviteForm.visitorName,
+        visitorPhone: inviteForm.visitorPhone,
+        purpose: inviteForm.purpose,
+        relationship: inviteForm.relationship,
+        visitFrom: new Date(inviteForm.visitFrom).toISOString(),
+        visitUntil: new Date(inviteForm.visitUntil).toISOString(),
+      });
+      setShowInviteModal(false);
+      setInviteForm({
+        visitorName: '',
+        visitorPhone: '',
+        relationship: 'Guest',
+        purpose: '',
+        visitFrom: new Date().toISOString().slice(0, 16),
+        visitUntil: new Date(Date.now() + 4 * 3600 * 1000).toISOString().slice(0, 16),
+      });
+    });
+  };
+
   const requests = useMemo(() => (data?.requests ?? []).filter((item) => `${item.requesterName} ${item.passType} ${item.state} ${item.destination}`.toLowerCase().includes(query.toLowerCase())), [data, query]);
+  const filteredVisitors = useMemo(() => visitors.filter((v) => `${v.visitorName} ${v.visitorPhone} ${v.purpose} ${v.hostName} ${v.state}`.toLowerCase().includes(query.toLowerCase())), [visitors, query]);
   const pending = requests.filter((item) => item.state.startsWith('pending_'));
+
   const metrics = [
     { icon: DoorOpen, label: 'Awaiting decision', value: pending.length },
-    { icon: ShieldCheck, label: 'Approved passes', value: requests.filter((item) => item.state === 'approved').length },
+    { icon: ShieldCheck, label: 'Visitor Invitations', value: visitors.filter((v) => ['approved', 'sent', 'active', 'checked_in'].includes(v.state)).length },
     { icon: QrCode, label: 'Gate movements', value: data?.movements.length ?? 0 },
   ];
-  return <div className="flex-1 bg-[var(--crm-card)]"><Status loading={loading} error={!data ? error : null} onRetry={() => void load()} />{data && <>{error && <div className="border-b border-red-200 bg-red-50 px-5 py-2 text-[11px] text-red-800">{error}</div>}<div className="grid border-b border-[var(--crm-border)] sm:grid-cols-3">{metrics.map(({ icon: Icon, label, value }) => <div key={label} className="flex items-center gap-3 border-r border-[var(--crm-border)] px-5 py-4"><Icon size={17}/><span><small className="block text-[10px] text-[var(--crm-muted)]">{label}</small><strong>{value}</strong></span></div>)}</div><div className="flex gap-1 border-b border-[var(--crm-border)] px-5 py-3">{(['requests', 'scanner', 'movements'] as const).map((item) => <button key={item} onClick={() => setView(item)} className={`h-8 rounded-md px-3 text-[10px] font-semibold capitalize ${view === item ? 'bg-black text-white' : 'bg-[var(--crm-panel)]'}`}>{item}</button>)}</div>
-    {view === 'requests' && <div className="overflow-x-auto"><div className="grid min-w-[900px] grid-cols-[1fr_.7fr_.8fr_1.1fr_1.1fr_.8fr] border-b border-[var(--crm-border)] px-5 py-3 text-[10px] uppercase text-[var(--crm-muted)]"><span>Requester</span><span>Pass</span><span>Residency</span><span>Travel</span><span>Reason</span><span>Decision</span></div>{requests.map((item) => <div key={item.id} className="grid min-w-[900px] grid-cols-[1fr_.7fr_.8fr_1.1fr_1.1fr_.8fr] items-center border-b border-[var(--crm-border)] px-5 py-4 text-xs"><strong>{item.requesterName}</strong><span>{item.passType.replace('_', ' ')}</span><span>{item.residency}</span><span><small className="block">{item.destination}</small><small className="text-[9px] text-[var(--crm-muted)]">{formatDate(item.departureAt)}</small></span><span className="truncate">{item.reason}</span><span className="flex items-center gap-1">{item.state.startsWith('pending_') && data.canManage ? <><button title="Approve" aria-label="Approve pass" disabled={busy} onClick={() => void act(() => decideGatepass(item.id, 'approved'))} className={iconButtonClass}><Check size={15}/></button><button title="Reject" aria-label="Reject pass" disabled={busy} onClick={() => void act(() => decideGatepass(item.id, 'rejected', 'Rejected by reviewer'))} className={`${iconButtonClass} text-red-600`}><X size={15}/></button></> : <StatePill>{item.state.replaceAll('_', ' ')}</StatePill>}</span></div>)}</div>}
-    {view === 'scanner' && <div className="mx-auto grid max-w-2xl gap-3 p-6"><QrCode size={28}/><h2 className="text-sm font-semibold">Gate scanner</h2><input className={fieldClass} placeholder="Scan pass or daily gate-in QR" value={scan.qr} onChange={(event) => setScan({ ...scan, qr: event.target.value })}/><div className="grid gap-3 sm:grid-cols-2"><select className={fieldClass} value={scan.direction} onChange={(event) => setScan({ ...scan, direction: event.target.value as 'entry' | 'exit' })}><option value="entry">Gate in</option><option value="exit">Gate out</option></select><input className={fieldClass} value={scan.checkpoint} onChange={(event) => setScan({ ...scan, checkpoint: event.target.value })}/></div><button disabled={busy || !scan.qr.trim()} onClick={() => void act(() => scanGatepass(scan.qr, scan.direction, scan.checkpoint))} className="h-10 rounded-md bg-black text-xs font-semibold text-white disabled:opacity-35">Record movement</button></div>}
-    {view === 'movements' && <div>{data.movements.map((item) => <div key={item.id} className="grid grid-cols-[1fr_.7fr_1fr_1fr] border-b border-[var(--crm-border)] px-5 py-4 text-xs"><span className="font-mono text-[10px]">{item.userId}</span><StatePill>{item.direction}</StatePill><span>{item.checkpoint}</span><span className="text-[var(--crm-muted)]">{formatDate(item.createdAt)}</span></div>)}</div>}</>}</div>;
+
+  return (
+    <div className="flex-1 bg-[var(--crm-card)]">
+      <Status loading={loading} error={!data ? error : null} onRetry={() => void load()} />
+      {data && (
+        <>
+          {error && <div className="border-b border-red-200 bg-red-50 px-5 py-2 text-[11px] text-red-800">{error}</div>}
+          <div className="grid border-b border-[var(--crm-border)] sm:grid-cols-3">
+            {metrics.map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-center gap-3 border-r border-[var(--crm-border)] px-5 py-4">
+                <Icon size={17}/>
+                <span>
+                  <small className="block text-[10px] text-[var(--crm-muted)]">{label}</small>
+                  <strong>{value}</strong>
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between border-b border-[var(--crm-border)] px-5 py-3">
+            <div className="flex gap-1">
+              {(['requests', 'visitors', 'scanner', 'movements'] as const).map((item) => (
+                <button
+                  key={item}
+                  onClick={() => setView(item)}
+                  className={`h-8 rounded-md px-3 text-[10px] font-semibold capitalize ${view === item ? 'bg-black text-white' : 'bg-[var(--crm-panel)]'}`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => { setView('visitors'); setShowInviteModal(true); }}
+              className="flex h-8 items-center gap-1.5 rounded-md bg-emerald-600 px-3 text-[11px] font-semibold text-white hover:bg-emerald-700"
+            >
+              <UserPlus size={14} /> Invite visitor
+            </button>
+          </div>
+
+          {showInviteModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-lg rounded-xl border border-[var(--crm-border)] bg-[var(--crm-card)] p-6 shadow-xl">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-sm font-bold">Invite Visitor via WhatsApp</h3>
+                  <button onClick={() => setShowInviteModal(false)} className="text-[var(--crm-muted)] hover:text-black">
+                    <X size={18} />
+                  </button>
+                </div>
+                <form onSubmit={handleInviteSubmit} className="grid gap-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-[var(--crm-muted)]">Visitor Name *</label>
+                    <input
+                      required
+                      className={`${fieldClass} w-full`}
+                      placeholder="e.g. Rajesh Kumar"
+                      value={inviteForm.visitorName}
+                      onChange={(e) => setInviteForm({ ...inviteForm, visitorName: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-[var(--crm-muted)]">Phone Number (WhatsApp) *</label>
+                      <input
+                        required
+                        className={`${fieldClass} w-full`}
+                        placeholder="+919876543210"
+                        value={inviteForm.visitorPhone}
+                        onChange={(e) => setInviteForm({ ...inviteForm, visitorPhone: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-[var(--crm-muted)]">Relationship</label>
+                      <input
+                        className={`${fieldClass} w-full`}
+                        placeholder="e.g. Guest / Vendor / Parent"
+                        value={inviteForm.relationship}
+                        onChange={(e) => setInviteForm({ ...inviteForm, relationship: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-[var(--crm-muted)]">Purpose of Visit *</label>
+                    <input
+                      required
+                      className={`${fieldClass} w-full`}
+                      placeholder="e.g. Official Meeting / Campus Inspection"
+                      value={inviteForm.purpose}
+                      onChange={(e) => setInviteForm({ ...inviteForm, purpose: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-[var(--crm-muted)]">Visit Start *</label>
+                      <input
+                        required
+                        type="datetime-local"
+                        className={`${fieldClass} w-full`}
+                        value={inviteForm.visitFrom}
+                        onChange={(e) => setInviteForm({ ...inviteForm, visitFrom: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-[var(--crm-muted)]">Visit End *</label>
+                      <input
+                        required
+                        type="datetime-local"
+                        className={`${fieldClass} w-full`}
+                        value={inviteForm.visitUntil}
+                        onChange={(e) => setInviteForm({ ...inviteForm, visitUntil: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowInviteModal(false)}
+                      className="h-9 rounded-md border border-[var(--crm-border)] px-4 text-xs font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={busy}
+                      className="flex h-9 items-center gap-1.5 rounded-md bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-35"
+                    >
+                      <Send size={14} /> Send invitation request
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {view === 'requests' && (
+            <div className="overflow-x-auto">
+              <div className="grid min-w-[900px] grid-cols-[1fr_.7fr_.8fr_1.1fr_1.1fr_.8fr] border-b border-[var(--crm-border)] px-5 py-3 text-[10px] uppercase text-[var(--crm-muted)]">
+                <span>Requester</span><span>Pass</span><span>Residency</span><span>Travel</span><span>Reason</span><span>Decision</span>
+              </div>
+              {requests.map((item) => (
+                <div key={item.id} className="grid min-w-[900px] grid-cols-[1fr_.7fr_.8fr_1.1fr_1.1fr_.8fr] items-center border-b border-[var(--crm-border)] px-5 py-4 text-xs">
+                  <strong>{item.requesterName}</strong>
+                  <span>{item.passType.replace('_', ' ')}</span>
+                  <span>{item.residency}</span>
+                  <span><small className="block">{item.destination}</small><small className="text-[9px] text-[var(--crm-muted)]">{formatDate(item.departureAt)}</small></span>
+                  <span className="truncate">{item.reason}</span>
+                  <span className="flex items-center gap-1">
+                    {item.state.startsWith('pending_') && data.canManage ? (
+                      <>
+                        <button title="Approve" aria-label="Approve pass" disabled={busy} onClick={() => void act(() => decideGatepass(item.id, 'approved'))} className={iconButtonClass}><Check size={15}/></button>
+                        <button title="Reject" aria-label="Reject pass" disabled={busy} onClick={() => void act(() => decideGatepass(item.id, 'rejected', 'Rejected by reviewer'))} className={`${iconButtonClass} text-red-600`}><X size={15}/></button>
+                      </>
+                    ) : (
+                      <StatePill>{item.state.replaceAll('_', ' ')}</StatePill>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {view === 'visitors' && (
+            <div className="overflow-x-auto">
+              <div className="grid min-w-[1000px] grid-cols-[1.1fr_1fr_.9fr_1.1fr_1.1fr_.8fr_.8fr_.6fr] border-b border-[var(--crm-border)] px-5 py-3 text-[10px] uppercase text-[var(--crm-muted)]">
+                <span>Visitor</span><span>Phone</span><span>Relation</span><span>Purpose</span><span>Host</span><span>Schedule</span><span>Status</span><span>Action</span>
+              </div>
+              {filteredVisitors.length === 0 ? (
+                <div className="p-8 text-center text-xs text-[var(--crm-muted)]">No visitor invitations found. Click "Invite Visitor" to dispatch a pass via WhatsApp.</div>
+              ) : (
+                filteredVisitors.map((v) => (
+                  <div key={v.id} className="grid min-w-[1000px] grid-cols-[1.1fr_1fr_.9fr_1.1fr_1.1fr_.8fr_.8fr_.6fr] items-center border-b border-[var(--crm-border)] px-5 py-4 text-xs">
+                    <div>
+                      <strong className="block">{v.visitorName}</strong>
+                      <small className="text-[9px] text-amber-600 font-semibold uppercase">{v.tier} pass</small>
+                    </div>
+                    <span className="font-mono text-[11px]">{v.visitorPhone}</span>
+                    <span>{v.relationship || 'Guest'}</span>
+                    <span className="truncate">{v.purpose}</span>
+                    <span>{v.hostName}</span>
+                    <span>
+                      <small className="block font-medium">{formatDate(v.visitFrom)}</small>
+                      <small className="text-[9px] text-[var(--crm-muted)]">until {formatDate(v.visitUntil)}</small>
+                    </span>
+                    <span className="flex flex-col gap-1">
+                      <StatePill>{v.state.replaceAll('_', ' ')}</StatePill>
+                      {v.deliveryState && (
+                        <small className={`text-[9px] ${v.deliveryState === 'sent' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          WA: {v.deliveryState}
+                        </small>
+                      )}
+                    </span>
+                    <span>
+                      {!['checked_in', 'checked_out', 'cancelled', 'expired'].includes(v.state) && (
+                        <button
+                          disabled={busy}
+                          onClick={() => void act(() => cancelVisitorPass(v.id))}
+                          className="h-7 rounded border border-red-200 px-2 text-[10px] font-semibold text-red-600 hover:bg-red-50 disabled:opacity-35"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {view === 'scanner' && (
+            <div className="mx-auto grid max-w-2xl gap-3 p-6">
+              <QrCode size={28}/>
+              <h2 className="text-sm font-semibold">Gate scanner</h2>
+              <input className={fieldClass} placeholder="Scan pass or daily gate-in QR" value={scan.qr} onChange={(event) => setScan({ ...scan, qr: event.target.value })}/>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select className={fieldClass} value={scan.direction} onChange={(event) => setScan({ ...scan, direction: event.target.value as 'entry' | 'exit' })}>
+                  <option value="entry">Gate in</option>
+                  <option value="exit">Gate out</option>
+                </select>
+                <input className={fieldClass} value={scan.checkpoint} onChange={(event) => setScan({ ...scan, checkpoint: event.target.value })}/>
+              </div>
+              <button disabled={busy || !scan.qr.trim()} onClick={() => void act(() => scanGatepass(scan.qr, scan.direction, scan.checkpoint))} className="h-10 rounded-md bg-black text-xs font-semibold text-white disabled:opacity-35">Record movement</button>
+            </div>
+          )}
+
+          {view === 'movements' && (
+            <div>
+              {data.movements.map((item) => (
+                <div key={item.id} className="grid grid-cols-[1fr_.7fr_1fr_1fr] border-b border-[var(--crm-border)] px-5 py-4 text-xs">
+                  <span className="font-mono text-[10px]">{item.userId}</span>
+                  <StatePill>{item.direction}</StatePill>
+                  <span>{item.checkpoint}</span>
+                  <span className="text-[var(--crm-muted)]">{formatDate(item.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 
 function AttendanceConsole({ query }: { query: string }) {

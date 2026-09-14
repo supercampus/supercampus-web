@@ -169,9 +169,44 @@ export const createCanteenMenuItem = (value: CanteenMenuItemInput) => apiRequest
 export const updateCanteenMenuItem = (id: string, value: CanteenMenuItemInput) => apiRequest(`/v1/operations/canteen/menu/${id}`, { method: 'PUT', body: JSON.stringify(value) });
 export const deleteCanteenMenuItem = (id: string) => apiRequest(`/v1/operations/canteen/menu/${id}`, { method: 'DELETE' });
 
+export type VisitorPass = {
+  id: string;
+  visitorKind: string;
+  visitorName: string;
+  visitorPhone: string;
+  purpose: string;
+  relationship?: string | null;
+  hostUserId: string;
+  hostName: string;
+  visitFrom: string;
+  visitUntil: string;
+  state: string;
+  deliveryState: string;
+  deliveryError?: string | null;
+  passImageUrl?: string | null;
+  checkedInAt?: string | null;
+  checkedOutAt?: string | null;
+  tier: 'gold' | 'silver';
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type VisitorPassInput = {
+  visitorKind: 'guest' | 'parent';
+  visitorName: string;
+  visitorPhone: string;
+  purpose: string;
+  relationship?: string;
+  visitFrom: string;
+  visitUntil: string;
+};
+
 export const getGatepassOverview = () => apiRequest<{ data: GatepassOverview }>('/v1/operations/gatepass/overview');
 export const decideGatepass = (id: string, decision: 'approved' | 'rejected', note?: string) => apiRequest(`/v1/operations/gatepass/requests/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, note }) });
 export const scanGatepass = (qrPayload: string, direction: 'entry' | 'exit', checkpoint: string) => apiRequest('/v1/operations/gatepass/scan', { method: 'POST', body: JSON.stringify({ qrPayload, direction, checkpoint }) });
+export const getVisitorPasses = () => apiRequest<{ data: { visitors: VisitorPass[]; canManage: boolean } }>('/v1/operations/gatepass/visitors');
+export const createVisitorPass = (input: VisitorPassInput) => apiRequest<{ data: VisitorPass }>('/v1/operations/gatepass/visitors', { method: 'POST', body: JSON.stringify(input) });
+export const cancelVisitorPass = (id: string) => apiRequest<{ data: VisitorPass }>(`/v1/operations/gatepass/visitors/${id}/cancel`, { method: 'POST' });
 
 export const getAttendanceRoster = (sectionId?: string) => apiRequest<{ data: { students: AttendanceStudent[] } }>(`/v1/operations/attendance/roster${sectionId ? `?sectionId=${encodeURIComponent(sectionId)}` : ''}`);
 export const getAttendanceSessions = () => apiRequest<{ data: { sessions: AttendanceSession[] } }>('/v1/operations/attendance/sessions');
