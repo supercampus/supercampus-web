@@ -146,6 +146,7 @@ export function CampusGeofenceMap({
   // Follow prop changes that came from somewhere other than the map itself —
   // the radius slider, the numeric inputs, switching campus.
   useEffect(() => {
+    const map = mapRef.current;
     const marker = markerRef.current;
     const circle = circleRef.current;
     if (!marker || !circle) return;
@@ -153,6 +154,9 @@ export function CampusGeofenceMap({
     marker.setLatLng(position);
     circle.setLatLng(position);
     circle.setRadius(geofence.radiusMetres);
+    if (map && !map.getBounds().contains(position)) {
+      map.panTo(position, { animate: true });
+    }
   }, [geofence.latitude, geofence.longitude, geofence.radiusMetres]);
 
   useEffect(() => {
