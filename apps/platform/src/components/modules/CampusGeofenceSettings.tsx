@@ -23,12 +23,9 @@ const CampusGeofenceMap = dynamic(
 /** Matches the bounds the API enforces; the slider cannot offer a value the
  *  server would reject. */
 const MIN_RADIUS = 50;
+const MAX_SLIDER_RADIUS = 50000;
 
-/** The slider's ceiling. The API accepts up to 20km, but a campus that needs
- *  more than 2km is better typed into the coordinate fields than dragged. */
-const MAX_SLIDER_RADIUS = 2000;
-
-const RADIUS_PRESETS = [100, 250, 500, 1000, 2000];
+const RADIUS_PRESETS = [100, 250, 500, 1000, 2000, 5000, 10000, 25000, 50000];
 
 /** Where the marker starts when a campus has no fence yet. Somewhere on land
  *  and obviously wrong beats 0,0, which looks like a real answer. */
@@ -366,7 +363,7 @@ export function CampusGeofenceSettings({ canEdit }: { canEdit: boolean }) {
                 <input
                   type="number"
                   min={MIN_RADIUS}
-                  max={20000}
+                  max={100000}
                   step={25}
                   value={draft.radiusMetres}
                   disabled={!canEdit || !fenceEnabled}
