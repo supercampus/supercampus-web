@@ -26,6 +26,9 @@ const CHEVRON = 'M9 6l6 6-6 6';
 const CARD_ICON = 'M2 7h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zM2 11h20';
 const HELP_ICON = 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM9.5 9a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1 1-1.1 1.8M12 17h.01';
 const SETTINGS_ICON = 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.4-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z';
+const SHIELD_ICON = 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z';
+const TERMS_ICON = 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8';
+const TRASH_ICON = 'M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6';
 
 function MenuList({ label, rows }: { label: string; rows: MenuRow[] }) {
   return (
@@ -248,8 +251,33 @@ export default function ProfilePage() {
       id: 'support',
       icon: HELP_ICON,
       title: 'Help & support',
-      sub: 'Reach campus administration',
-      onOpen: () => toast('Contact your campus administration office for support'),
+      sub: 'Reach campus administration and platform help',
+      onOpen: () => window.open('/contact', '_blank'),
+    },
+  ];
+
+  const legalRows: MenuRow[] = [
+    {
+      id: 'privacy-policy',
+      icon: SHIELD_ICON,
+      title: 'Privacy Policy',
+      sub: 'How your student and campus data is protected',
+      onOpen: () => window.open('/privacy', '_blank'),
+    },
+    {
+      id: 'terms-conditions',
+      icon: TERMS_ICON,
+      title: 'Terms & Conditions',
+      sub: 'Service rules, academic conduct and acceptable use',
+      onOpen: () => window.open('/terms', '_blank'),
+    },
+    {
+      id: 'delete-account',
+      icon: TRASH_ICON,
+      title: 'Delete account',
+      sub: 'Request account deactivation and personal data deletion',
+      tone: 'var(--danger)',
+      onOpen: () => window.open('/delete-account', '_blank'),
     },
   ];
 
@@ -310,6 +338,7 @@ export default function ProfilePage() {
         <MenuList label="Academics" rows={academicRows} />
         <MenuList label="Campus life" rows={campusRows} />
         <MenuList label="Account" rows={accountRows} />
+        <MenuList label="Legal & Settings" rows={legalRows} />
 
         {/* Kept, but demoted behind its own row — it is a settings task, not
             something a student reads on the way past. */}

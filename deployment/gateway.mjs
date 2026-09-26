@@ -20,6 +20,10 @@ const defaultTenantSlug = cleanTenantSlug(
   process.env.DEFAULT_TENANT_SLUG || configuredTenantSlugs[0] || 'mec',
 );
 const tenantSlugs = new Set([...configuredTenantSlugs, defaultTenantSlug]);
+// Public legal and support pages rendered by the portal. They must stay
+// reachable without signing in: their URLs are submitted to Google Play and
+// linked from the mobile app's settings.
+const publicPortalPages = new Set(['/privacy', '/terms', '/delete-account', '/contact']);
 let shuttingDown = false;
 
 const contentTypes = new Map([
@@ -153,7 +157,10 @@ const server = createServer((request, response) => {
   if (
     url.pathname === '/health'
     || url.pathname === '/ready'
+    // Portal pages link the portal's icon; the landing site has none here.
+    || url.pathname === '/favicon.ico'
     || url.pathname === '/reset-password'
+    || publicPortalPages.has(url.pathname.replace(/\/+$/, ''))
     || url.pathname.startsWith('/apply/')
   ) {
     proxyToPortal(request, response, `${url.pathname}${url.search}`);
