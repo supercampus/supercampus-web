@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Mail } from 'lucide-react';
+import { CONTACT_EMAIL } from '@/lib/legal-api';
 import styles from './legal.module.css';
 
 export function LegalFooter() {
@@ -22,7 +23,7 @@ export function LegalFooter() {
             </p>
             <div className={styles.footerContactItem}>
               <Mail size={14} />
-              <a href="mailto:support@supercampus.ai">support@supercampus.ai</a>
+              <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
             </div>
           </div>
 
@@ -47,7 +48,7 @@ export function LegalFooter() {
               </li>
               <li>
                 <Link href="/contact" className={styles.footerLink}>
-                  Data Protection Inquiries
+                  Contact & Support
                 </Link>
               </li>
             </ul>
@@ -87,13 +88,8 @@ export function LegalFooter() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:privacy@supercampus.ai" className={styles.footerLink}>
-                  privacy@supercampus.ai
-                </a>
-              </li>
-              <li>
-                <a href="mailto:support@supercampus.ai" className={styles.footerLink}>
-                  support@supercampus.ai
+                <a href={`mailto:${CONTACT_EMAIL}`} className={styles.footerLink}>
+                  {CONTACT_EMAIL}
                 </a>
               </li>
               <li>

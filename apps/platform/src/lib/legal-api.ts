@@ -8,8 +8,10 @@
  * submitted, queued or deleted from this module.
  */
 
-export const PRIVACY_EMAIL = 'privacy@supercampus.ai';
-export const SUPPORT_EMAIL = 'support@supercampus.ai';
+/** The one monitored SuperCampus mailbox: support, privacy, deletion and grievances. */
+export const CONTACT_EMAIL = 'dev@supercampus.ai';
+export const PRIVACY_EMAIL = CONTACT_EMAIL;
+export const SUPPORT_EMAIL = CONTACT_EMAIL;
 
 export interface DeletionRequestPayload {
   identifier: string; // Registered email or phone

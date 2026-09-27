@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { LegalPageLayout, TocItem } from '@/components/legal/LegalPageLayout';
 import { LegalSection } from '@/components/legal/LegalSection';
 import { ShieldAlert, Info, Mail } from 'lucide-react';
+import { CONTACT_EMAIL } from '@/lib/legal-api';
 import styles from '@/components/legal/legal.module.css';
 
 export const metadata: Metadata = {
   title: 'SuperCampus Terms & Conditions',
   description:
-    'Terms & Conditions for SuperCampus: acceptable use, institutional accounts, payments, intellectual property, service availability, and liability.',
+    'Terms & Conditions for using the SuperCampus app and web portal: accounts, acceptable use, payments, availability, liability and governing law.',
   alternates: {
     canonical: 'https://supercampus.ai/terms',
   },
@@ -16,324 +17,249 @@ export const metadata: Metadata = {
 
 const TOC: TocItem[] = [
   { id: 'acceptance', title: '1. Acceptance of Terms' },
-  { id: 'service-desc', title: '2. Description of Service' },
-  { id: 'user-accounts', title: '3. User Accounts & Security' },
-  { id: 'institutional', title: '4. Institutional Governance' },
-  { id: 'acceptable-use', title: '5. Acceptable Use & Conduct' },
-  { id: 'payments', title: '6. Fee Payments & Billing' },
-  { id: 'ip', title: '7. Intellectual Property Rights' },
-  { id: 'availability', title: '8. Service Availability & Maintenance' },
-  { id: 'third-parties', title: '9. Third-Party Integrations' },
+  { id: 'service-desc', title: '2. The Service' },
+  { id: 'user-accounts', title: '3. Your Account' },
+  { id: 'institutional', title: '4. Your College’s Role' },
+  { id: 'acceptable-use', title: '5. Acceptable Use' },
+  { id: 'payments', title: '6. Payments & Wallets' },
+  { id: 'ip', title: '7. Intellectual Property' },
+  { id: 'availability', title: '8. Availability & Changes' },
+  { id: 'third-parties', title: '9. Third-Party Services' },
   { id: 'termination', title: '10. Suspension & Termination' },
-  { id: 'disclaimer', title: '11. Warranty Disclaimer' },
+  { id: 'disclaimer', title: '11. Disclaimer' },
   { id: 'liability', title: '12. Limitation of Liability' },
   { id: 'changes', title: '13. Changes to these Terms' },
   { id: 'governing-law', title: '14. Governing Law & Jurisdiction' },
-  { id: 'contact', title: '15. Contact Information' },
+  { id: 'contact', title: '15. Contact' },
 ];
+
+const linkStyle = { color: '#0f766e', fontWeight: 700 } as const;
 
 export default function TermsPage() {
   return (
     <LegalPageLayout
       title="Terms & Conditions"
-      lead="These Terms & Conditions govern your access to and use of the SuperCampus platform, student mobile applications, faculty portals, and associated campus management digital services."
+      lead="These Terms govern your use of the SuperCampus mobile app, web portal and related campus services."
       badge="Terms of Service"
-      lastUpdated="September 24, 2026"
+      lastUpdated="September 28, 2026"
       breadcrumbs={[{ label: 'Terms & Conditions', href: '/terms' }]}
       tocItems={TOC}
     >
       {/* 1. Acceptance */}
       <LegalSection id="acceptance" number="1" title="Acceptance of Terms">
         <p>
-          By creating an account, downloading our mobile applications, logging into the web portal, or
-          otherwise using <strong>SuperCampus</strong> (available via{' '}
-          <code className={styles.refBadge} style={{ padding: '2px 8px', fontSize: '13px' }}>
-            supercampus.ai
-          </code>{' '}
-          and related digital domains), you agree to be bound by these Terms &amp; Conditions and our
-          accompanying{' '}
-          <Link href="/privacy" style={{ color: '#0f766e', fontWeight: 700 }}>
+          By signing in to or using <strong>SuperCampus</strong> (supercampus.ai and the SuperCampus
+          mobile app), you agree to these Terms and to our{' '}
+          <Link href="/privacy" style={linkStyle}>
             Privacy Policy
-          </Link>.
+          </Link>
+          . If you do not agree, please do not use SuperCampus.
         </p>
         <p>
-          If you do not agree to these Terms, you must not access or use the SuperCampus platform. If you
-          are using the service on behalf of an educational institution, department, or student organization,
-          you represent and warrant that you have the authority to bind that entity to these Terms.
+          If you use SuperCampus on behalf of a college or other organisation, you confirm that you are
+          authorised to accept these Terms for it.
         </p>
       </LegalSection>
 
-      {/* 2. Description of the Service */}
-      <LegalSection id="service-desc" number="2" title="Description of the Service">
+      {/* 2. Service */}
+      <LegalSection id="service-desc" number="2" title="The Service">
         <p>
-          SuperCampus is a comprehensive, multi-tenant educational campus management solution
-          incorporating student CRM and institutional ERP capabilities. The platform provides digital
-          tools including, but not limited to:
+          SuperCampus is a campus management platform provided to colleges. Depending on the modules your
+          college enables, it lets you:
         </p>
         <ul className={styles.bulletList}>
-          <li>Student, faculty, and administrative profiles with digital ID credentials.</li>
-          <li>Attendance tracking, classroom rosters, and condonation compliance monitoring.</li>
-          <li>Weekly course timetables, exam schedules, and academic record publication.</li>
-          <li>Fee payment facilitation, invoice displays, and digital transaction receipts.</li>
-          <li>Hostel room allotments, dining mess records, and night roll-call verifications.</li>
-          <li>Gatepass approvals, digital QR campus pass verification, and visitor management.</li>
-          <li>Library catalog searching, book issue tracking, and document certificate requests.</li>
-          <li>Campus canteen pre-ordering, digital tokens, and institutional announcement circulars.</li>
+          <li>view your profile and digital ID, attendance, timetable, and marks published by faculty;</li>
+          <li>view fee details and pay tuition fees online;</li>
+          <li>apply for leave passes and outpasses, use a daily campus entry QR, and invite visitors;</li>
+          <li>use hostel services such as mess tokens and service requests;</li>
+          <li>borrow and book from the library;</li>
+          <li>order and pay from the campus canteen, stationery and laundry using a store wallet;</li>
+          <li>read announcements, receive notifications, and send help requests.</li>
         </ul>
-      </LegalSection>
-
-      {/* 3. User Accounts */}
-      <LegalSection id="user-accounts" number="3" title="User Accounts & Security">
-        <p>To access SuperCampus features, you must maintain an authenticated account:</p>
-        <ul className={styles.bulletList}>
-          <li>
-            <strong>Accurate Information:</strong> You agree to provide truthful, accurate, and current
-            information during enrollment and to keep your institutional profile details updated.
-          </li>
-          <li>
-            <strong>Account Security:</strong> You are responsible for safeguarding the credentials
-            used to access your account, including passwords, OTPs, and biometric authentication keys.
-          </li>
-          <li>
-            <strong>Account Responsibility:</strong> You are solely responsible for any activity or
-            actions conducted under your credentials, whether authorized by you or not.
-          </li>
-          <li>
-            <strong>Prohibition of Sharing:</strong> You must not permit third parties or fellow students
-            to use your personal credentials. You must notify SuperCampus or your college administration
-            immediately upon discovering any unauthorized use.
-          </li>
-        </ul>
-      </LegalSection>
-
-      {/* 4. Institutional Accounts */}
-      <LegalSection id="institutional" number="4" title="Institutional Accounts & Governance">
         <p>
-          SuperCampus accounts are deployed in coordination with participating colleges and universities.
-          Certain privileges, modules, and academic records are governed by institutional administrators:
+          Staff use SuperCampus to manage these services, and prospective students use it to apply for
+          admission.
         </p>
+      </LegalSection>
+
+      {/* 3. Accounts */}
+      <LegalSection id="user-accounts" number="3" title="Your Account">
         <ul className={styles.bulletList}>
           <li>
-            Your institution determines student eligibility, departmental enrollment, and access permissions.
+            <strong>Accounts are issued by your college.</strong> Keep your details accurate and tell your
+            college if something is wrong.
           </li>
           <li>
-            Official marks, attendance thresholds, fee schedules, and hostel rules are set by your college,
-            not by SuperCampus.
+            <strong>Keep your password and wallet PIN secret.</strong> Do not let anyone else use your
+            account. You are responsible for activity under your account.
           </li>
           <li>
-            Campus administrators retain the right to suspend or adjust user access based on institutional
-            disciplinary codes, graduation, or academic status changes.
+            <strong>One device at a time.</strong> Signing in on a new device signs out the previous one.
+            Repeated wrong passwords lock the account for a short time.
+          </li>
+          <li>
+            If you think your account has been misused, change your password and contact us or your
+            college straight away.
           </li>
         </ul>
       </LegalSection>
 
-      {/* 5. Acceptable Use */}
-      <LegalSection id="acceptable-use" number="5" title="Acceptable Use & Conduct">
-        <p>
-          You agree to use SuperCampus strictly for lawful educational and campus operational purposes.
-          You must NOT, under any circumstances:
-        </p>
+      {/* 4. College's role */}
+      <LegalSection id="institutional" number="4" title="Your College’s Role">
         <ul className={styles.bulletList}>
+          <li>Your college decides who gets an account, which modules are available, and each person&apos;s access.</li>
           <li>
-            <strong>Attempt Unauthorized Access:</strong> Probe, scan, or test the vulnerability of any
-            system or network, or breach or circumvent any security or authentication controls.
+            Attendance rules, marks, fee amounts, due dates, refunds, hostel and gatepass rules are set by
+            your college, not by SuperCampus.
           </li>
+          <li>Your college may suspend or change your access, for example when you graduate or leave.</li>
+        </ul>
+      </LegalSection>
+
+      {/* 5. Acceptable use */}
+      <LegalSection id="acceptable-use" number="5" title="Acceptable Use">
+        <p>You must not:</p>
+        <ul className={styles.bulletList}>
+          <li>try to access accounts, data or systems you are not authorised to use, or bypass security;</li>
+          <li>disrupt the service, or upload viruses or other harmful files;</li>
+          <li>impersonate another person;</li>
           <li>
-            <strong>Disrupt or Abuse Services:</strong> Interfere with or disrupt the access of any user,
-            host, or network, including transmitting denial-of-service attacks, viruses, or worms.
+            alter or forge attendance, marks, gatepasses, QR codes, receipts or other records;
           </li>
-          <li>
-            <strong>Upload Malicious Content:</strong> Transmit software viruses, trojans, worms, or any
-            files designed to disrupt, damage, or limit the functionality of computer software or hardware.
-          </li>
-          <li>
-            <strong>Impersonate Others:</strong> Impersonate another student, faculty member, administrator,
-            or representative of SuperCampus or your college.
-          </li>
-          <li>
-            <strong>Falsify or Manipulate Records:</strong> Alter, forge, or manipulate attendance logs,
-            internal marks, exam scores, gatepass approvals, QR tokens, or payment receipts.
-          </li>
-          <li>
-            <strong>Harassment & Misconduct:</strong> Post or distribute abusive, defamatory, harassing,
-            or threatening content through campus notice boards, grievance portals, or messaging channels.
-          </li>
-          <li>
-            <strong>Commercial Exploitation:</strong> Resell, scrape, copy, or commercially exploit any
-            portion of the software or student directories without express written permission.
-          </li>
+          <li>post abusive, threatening or unlawful content; or</li>
+          <li>copy, scrape or resell any part of the service or its data.</li>
         </ul>
         <div className={`${styles.callout} ${styles.calloutDanger}`}>
           <ShieldAlert size={18} className={styles.calloutIcon} />
           <div className={styles.calloutText}>
-            <strong>Zero Tolerance for Academic Falsification</strong>
-            Any attempt to tamper with academic grades, falsify attendance records, or forge gatepass
-            authorizations will result in immediate account termination and formal escalation to college
-            disciplinary authorities.
+            <strong>Tampering with records</strong>
+            Attempts to falsify attendance, marks, gatepasses or payments may lead to your account being
+            suspended and reported to your college.
           </div>
         </div>
       </LegalSection>
 
       {/* 6. Payments */}
-      <LegalSection id="payments" number="6" title="Fee Payments & Billing">
-        <p>
-          When you pay college fees (tuition, examination fees, hostel rent, transport, or canteen tokens)
-          through SuperCampus:
-        </p>
+      <LegalSection id="payments" number="6" title="Payments & Wallets">
         <ul className={styles.bulletList}>
           <li>
-            <strong>Third-Party Processors:</strong> Payment transactions are executed through authorized,
-            regulated third-party payment gateways.
+            Online payments (tuition fees and wallet top-ups) are processed by Razorpay. Your card and UPI
+            details are entered with Razorpay and are not stored by SuperCampus.
           </li>
           <li>
-            <strong>Credential Security:</strong> SuperCampus does not store sensitive payment credentials,
-            card numbers, CVV codes, UPI PINs, or net banking passwords.
+            Fee amounts, due dates, late fees and refunds are decided by your college. Contact your
+            college accounts office about them.
           </li>
           <li>
-            <strong>Fee Amounts & Policies:</strong> All fee amounts, late fee surcharges, due dates, and
-            refund policies are governed exclusively by your educational institution.
+            Store wallet balances can be used only at your college&apos;s campus stores (canteen, stationery
+            and laundry) on SuperCampus. Purchases need your wallet PIN.
           </li>
-          <li>
-            <strong>Transaction Records:</strong> Digital receipts generated by the app serve as
-            acknowledgments of payment processing and are reconciled directly with your college accounts office.
-          </li>
+          <li>Receipts in the app confirm that a payment was recorded.</li>
         </ul>
       </LegalSection>
 
-      {/* 7. Intellectual Property */}
-      <LegalSection id="ip" number="7" title="Intellectual Property Rights">
+      {/* 7. IP */}
+      <LegalSection id="ip" number="7" title="Intellectual Property">
         <p>
-          The SuperCampus platform, including its software codebase, algorithms, user interface designs,
-          graphics, logos, typography, visual layouts, and documentation, is the proprietary property
-          of SuperCampus and its licensors, protected by intellectual property laws.
+          The SuperCampus software, design and brand belong to SuperCampus. You receive a personal,
+          non-transferable, revocable licence to use SuperCampus for its intended campus purposes. You may
+          not copy, modify, reverse-engineer or redistribute the software.
         </p>
+        <p>Your college&apos;s records and the content you submit remain yours or your college&apos;s.</p>
+      </LegalSection>
+
+      {/* 8. Availability */}
+      <LegalSection id="availability" number="8" title="Availability & Changes">
         <p>
-          We grant you a personal, non-exclusive, non-transferable, revocable license to access and use
-          the platform for educational campus management in accordance with these Terms. You may not
-          decompile, reverse-engineer, modify, or create derivative works of any part of the software.
+          We work to keep SuperCampus available, but it may sometimes be unavailable for maintenance,
+          updates, or failures of networks or providers outside our control. We may add, change or remove
+          features over time.
         </p>
       </LegalSection>
 
-      {/* 8. Availability & Maintenance */}
-      <LegalSection id="availability" number="8" title="Service Availability & Maintenance">
+      {/* 9. Third parties */}
+      <LegalSection id="third-parties" number="9" title="Third-Party Services">
         <p>
-          While we strive for 99.9% platform availability, SuperCampus services may occasionally be
-          interrupted or delayed due to:
+          Some features rely on third-party services, such as Razorpay for payments, WhatsApp for
+          guardian messages, and push notification services. Their own terms and policies also apply to
+          your use of those services, and we are not responsible for how they operate.
         </p>
+      </LegalSection>
+
+      {/* 10. Termination */}
+      <LegalSection id="termination" number="10" title="Suspension & Termination">
+        <p>We or your college may suspend or end your access if:</p>
         <ul className={styles.bulletList}>
-          <li>Scheduled system maintenance, database upgrades, and security patch deployments.</li>
-          <li>Unanticipated hardware failures, power outages, or third-party cloud infrastructure outages.</li>
-          <li>Campus local network interruptions or telecommunications carrier disruptions.</li>
-          <li>Force majeure events beyond reasonable commercial control.</li>
+          <li>you breach these Terms or your college&apos;s rules;</li>
+          <li>you are no longer a student or staff member of the college; or</li>
+          <li>the law requires it, or continued access puts the service or other users at risk.</li>
         </ul>
         <p>
-          Where feasible, scheduled maintenance will be communicated to campus administrators in advance.
-        </p>
-      </LegalSection>
-
-      {/* 9. Third-Party Services */}
-      <LegalSection id="third-parties" number="9" title="Third-Party Integrations">
-        <p>
-          SuperCampus may integrate with third-party software, such as cloud storage, map tile providers,
-          SMS relays, and institutional single-sign-on (SSO) systems. Your use of such third-party
-          services may be subject to additional terms and privacy policies issued by those providers.
-          SuperCampus is not responsible for the performance or terms of third-party external services.
-        </p>
-      </LegalSection>
-
-      {/* 10. Suspension & Termination */}
-      <LegalSection id="termination" number="10" title="Account Suspension & Termination">
-        <p>We or your educational institution may suspend or terminate your account access if:</p>
-        <ul className={styles.bulletList}>
-          <li>You materially or repeatedly breach any provision of these Terms or the Student Code of Conduct.</li>
-          <li>Your official enrollment or employment with the partner institution terminates or expires.</li>
-          <li>Required by applicable legal, regulatory, or law enforcement mandates.</li>
-          <li>Continued access creates demonstrable security, legal, or operational vulnerabilities for the platform.</li>
-        </ul>
-        <p>
-          You may also voluntarily request deletion of your account at any time via our{' '}
-          <Link href="/delete-account" style={{ color: '#0f766e', fontWeight: 700 }}>
-            Account Deletion Page
-          </Link>.
+          You can ask to delete your account at any time from the{' '}
+          <Link href="/delete-account" style={linkStyle}>
+            account deletion page
+          </Link>
+          .
         </p>
       </LegalSection>
 
       {/* 11. Disclaimer */}
-      <LegalSection id="disclaimer" number="11" title="Disclaimer of Warranties">
+      <LegalSection id="disclaimer" number="11" title="Disclaimer">
         <p>
-          SuperCampus and its associated software are provided on an &quot;AS IS&quot; and &quot;AS
-          AVAILABLE&quot; basis, without warranties of any kind, whether express or implied, including
-          implied warranties of merchantability, fitness for a particular academic purpose, or non-infringement.
-        </p>
-        <p>
-          We do not guarantee that the services will always be completely uninterrupted, secure, error-free,
-          or that defects will be corrected immediately. Official academic standing remains verified
-          by the partner college&apos;s physical and institutional records.
+          SuperCampus is provided &quot;as is&quot; and &quot;as available&quot;. To the extent permitted by
+          law, we do not promise that it will always be uninterrupted or error-free. Your college&apos;s
+          official records are the authoritative source for your academic standing.
         </p>
       </LegalSection>
 
-      {/* 12. Limitation of Liability */}
+      {/* 12. Liability */}
       <LegalSection id="liability" number="12" title="Limitation of Liability">
         <p>
-          To the maximum extent permitted by applicable law, SuperCampus, its directors, employees,
-          partners, and agents shall not be liable for any indirect, incidental, special, consequential,
-          or punitive damages, including loss of data, profits, goodwill, academic standing, or other
-          intangible losses resulting from:
+          To the extent permitted by law, SuperCampus is not liable for indirect or consequential losses,
+          or for losses caused by events outside our reasonable control, such as network, payment
+          provider or hosting outages, or by the actions of other users. Nothing in these Terms limits
+          liability that cannot be limited under applicable law.
         </p>
-        <ul className={styles.bulletList}>
-          <li>Your access to, use of, or inability to access or use the platform.</li>
-          <li>Any conduct, communications, or content of any student or third party on the platform.</li>
-          <li>Unauthorized access, alteration, or transmission of your records.</li>
-          <li>Downtime or failure of third-party telecommunications, payment, or cloud providers.</li>
-        </ul>
       </LegalSection>
 
-      {/* 13. Changes to Terms */}
+      {/* 13. Changes */}
       <LegalSection id="changes" number="13" title="Changes to these Terms">
         <p>
-          We reserve the right to revise or update these Terms &amp; Conditions from time to time.
-          Substantial changes will be communicated via in-portal notices or emails. Your continued use
-          of SuperCampus after the effective date of revisions constitutes your agreement to the modified Terms.
+          We may update these Terms. We will change the &quot;Last updated&quot; date above and, for
+          significant changes, tell you in the app. Continuing to use SuperCampus after the change means
+          you accept the updated Terms.
         </p>
       </LegalSection>
 
-      {/* 14. Governing Law */}
-      <LegalSection id="governing-law" number="14" title="Governing Law & Dispute Resolution">
+      {/* 14. Governing law */}
+      <LegalSection id="governing-law" number="14" title="Governing Law & Jurisdiction">
         <p>
-          These Terms shall be interpreted, construed, and enforced in accordance with the laws of the
-          applicable jurisdiction, without regard to its conflict of law principles.
+          These Terms are governed by the laws of India. The courts at Chennai, Tamil Nadu, have exclusive
+          jurisdiction over any dispute arising from these Terms or your use of SuperCampus.
         </p>
         <div className={`${styles.callout} ${styles.calloutInfo}`}>
           <Info size={18} className={styles.calloutIcon} />
           <div className={styles.calloutText}>
-            <strong>Jurisdiction Specification:</strong>
-            <code>[Applicable jurisdiction to be specified]</code>
-            <p style={{ marginTop: '6px', fontSize: '13px' }}>
-              Institutional master service contracts between SuperCampus and partner universities may
-              specify localized legal jurisdictions as agreed in the relevant enterprise agreement.
-            </p>
+            A written agreement between SuperCampus and your college may contain additional terms that
+            apply to that college.
           </div>
         </div>
       </LegalSection>
 
       {/* 15. Contact */}
-      <LegalSection id="contact" number="15" title="Contact & Legal Office">
-        <p>For questions or formal legal notices concerning these Terms &amp; Conditions, contact us at:</p>
+      <LegalSection id="contact" number="15" title="Contact">
         <div className={styles.callout} style={{ background: '#f8fafc' }}>
           <Mail size={18} className={styles.calloutIcon} />
           <div className={styles.calloutText}>
-            <strong>SuperCampus Legal Office</strong>
-            <span>Legal Inquiries: </span>
-            <a href="mailto:support@supercampus.ai" style={{ color: '#0f766e', fontWeight: 700 }}>
-              support@supercampus.ai
+            <strong>Questions about these Terms</strong>
+            <span>Email: </span>
+            <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>
+              {CONTACT_EMAIL}
             </a>
             <br />
-            <span>Platform Domain: </span>
-            <strong>supercampus.ai</strong>
-            <br />
-            <span>Account Help: </span>
-            <Link href="/contact" style={{ color: '#0f766e', fontWeight: 700 }}>
-              Visit Contact & Support Page
+            <span>More help: </span>
+            <Link href="/contact" style={linkStyle}>
+              Contact &amp; Support page
             </Link>
           </div>
         </div>

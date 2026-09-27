@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { LegalPageLayout } from '@/components/legal/LegalPageLayout';
 import { DeleteAccountForm } from '@/components/legal/DeleteAccountForm';
 import { ShieldCheck, AlertTriangle, HelpCircle, Lock } from 'lucide-react';
+import { CONTACT_EMAIL } from '@/lib/legal-api';
 import styles from '@/components/legal/legal.module.css';
 
 export const metadata: Metadata = {
   title: 'Delete Your SuperCampus Account',
   description:
-    'Submit an account deletion request for your SuperCampus account and review service impacts, institutional record retention, and data purging workflows.',
+    'Request deletion of your SuperCampus account and personal data, and see what is deleted and what your college must keep.',
   alternates: {
     canonical: 'https://supercampus.ai/delete-account',
   },
@@ -18,10 +19,10 @@ export default function DeleteAccountPage() {
   return (
     <LegalPageLayout
       title="Delete Your SuperCampus Account"
-      lead="Request account deletion and review the impact on campus services, attendance records, academic transcripts, and institutional data retention requirements."
+      lead="Ask us to delete your SuperCampus account and personal data, and see what happens to your campus services and records."
       badge="Account Management & Data Rights"
       badgeType="warning"
-      lastUpdated="September 24, 2026"
+      lastUpdated="September 28, 2026"
       breadcrumbs={[{ label: 'Delete Account', href: '/delete-account' }]}
     >
       <div style={{ marginBottom: '28px' }}>
@@ -29,10 +30,12 @@ export default function DeleteAccountPage() {
           Account Deletion & Data Privacy
         </h2>
         <p style={{ fontSize: '15px', color: '#475569', lineHeight: 1.7, margin: 0 }}>
-          In accordance with Google Play Store policies and international data protection standards
-          (including GDPR and digital personal data protection frameworks), SuperCampus provides this
-          dedicated self-service portal allowing users to request the permanent deletion of their account
-          and personal credentials.
+          You can ask us to delete your SuperCampus account and personal data at any time, as provided
+          under India&apos;s Digital Personal Data Protection Act, 2023. Use the form below, or email{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: '#0f766e', fontWeight: 700 }}>
+            {CONTACT_EMAIL}
+          </a>{' '}
+          from your registered email address.
         </p>
       </div>
 
@@ -47,26 +50,22 @@ export default function DeleteAccountPage() {
 
         <div style={{ fontSize: '14px', color: '#334155', lineHeight: 1.7 }}>
           <p>
-            Because SuperCampus operates as an authorized Educational Enterprise Resource Planning (ERP)
-            system in partnership with colleges and universities, processing an account deletion request
-            involves a structured 3-tier lifecycle:
+            Your account is issued by your college, so a deletion request goes through these steps:
           </p>
 
           <ol style={{ paddingLeft: '20px', margin: '14px 0' }}>
             <li style={{ marginBottom: '10px' }}>
-              <strong>Identity Verification:</strong> To protect student safety and prevent malicious or
-              accidental account destruction, we reply to your request to confirm the account belongs
-              to you before anything is deleted.
+              <strong>We confirm it is you:</strong> we reply to your email to make sure the request
+              comes from the account holder before anything is deleted.
             </li>
             <li style={{ marginBottom: '10px' }}>
-              <strong>Institutional Clearance Audit:</strong> Your partner institution&apos;s registrar
-              or administrative office reviews pending clearances (e.g. library book dues, semester exam
-              hall-ticket archives, or unpaid fee dues).
+              <strong>Your college is informed:</strong> so that pending items such as library books or
+              unpaid fees can be settled.
             </li>
             <li style={{ marginBottom: '10px' }}>
-              <strong>Data Deletion & Credential Revocation:</strong> Your login authentication records,
-              device sessions, push tokens, and non-statutory personal data are permanently purged from
-              active production databases.
+              <strong>Your account is deleted:</strong> you are signed out everywhere, your account and
+              notification tokens are disabled, and personal data we are not required to keep is deleted
+              or anonymised.
             </li>
           </ol>
 
@@ -75,9 +74,9 @@ export default function DeleteAccountPage() {
             <div className={styles.calloutText}>
               <strong>Have Questions or Need Help?</strong>
               If you have graduated or transferred and need assistance with official transcripts, contact
-              your college administrative office. For technical assistance with this portal, email{' '}
-              <a href="mailto:privacy@supercampus.ai" style={{ color: '#0f766e', fontWeight: 700 }}>
-                privacy@supercampus.ai
+              your college administrative office. For help with a deletion request, email{' '}
+              <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: '#0f766e', fontWeight: 700 }}>
+                {CONTACT_EMAIL}
               </a>{' '}
               or reach our{' '}
               <Link href="/contact" style={{ color: '#0f766e', fontWeight: 700 }}>

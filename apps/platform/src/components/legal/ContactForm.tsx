@@ -11,7 +11,11 @@ import {
   AlertTriangle,
   ArrowRight,
 } from 'lucide-react';
-import { contactInquiryEmail, type ContactMessagePayload } from '@/lib/legal-api';
+import {
+  CONTACT_EMAIL,
+  contactInquiryEmail,
+  type ContactMessagePayload,
+} from '@/lib/legal-api';
 import styles from './legal.module.css';
 
 export function ContactForm() {
@@ -54,12 +58,12 @@ export function ContactForm() {
           <div className={styles.channelIcon}>
             <Mail size={22} />
           </div>
-          <h3 className={styles.channelTitle}>General Support</h3>
+          <h3 className={styles.channelTitle}>App Support</h3>
           <p className={styles.channelDesc}>
-            For mobile and web app glitches, password issues, timetable display, or login challenges.
+            Problems signing in, resetting your password, or using the SuperCampus app or web portal.
           </p>
-          <a href="mailto:support@supercampus.ai" className={styles.channelAction}>
-            support@supercampus.ai
+          <a href={`mailto:${CONTACT_EMAIL}`} className={styles.channelAction}>
+            {CONTACT_EMAIL}
             <ArrowRight size={13} />
           </a>
         </div>
@@ -68,13 +72,13 @@ export function ContactForm() {
           <div className={styles.channelIcon}>
             <Shield size={22} />
           </div>
-          <h3 className={styles.channelTitle}>Privacy & Data Protection</h3>
+          <h3 className={styles.channelTitle}>Privacy & Grievances</h3>
           <p className={styles.channelDesc}>
-            Questions regarding personal information handling, consent, data rights, and DPDP / GDPR
-            compliance.
+            Questions about your personal data, requests to access or correct it, and privacy
+            complaints.
           </p>
-          <a href="mailto:privacy@supercampus.ai" className={styles.channelAction}>
-            privacy@supercampus.ai
+          <a href={`mailto:${CONTACT_EMAIL}`} className={styles.channelAction}>
+            {CONTACT_EMAIL}
             <ArrowRight size={13} />
           </a>
         </div>
@@ -142,8 +146,8 @@ export function ContactForm() {
                 Send Us a Message
               </h3>
               <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-                This form prepares an email to our support or privacy team with your details filled
-                in. We typically respond to support and privacy queries within 24 to 48 hours.
+                This form prepares an email to {CONTACT_EMAIL} with your details filled in. Your
+                message reaches us once you send it, and we reply by email.
               </p>
             </div>
 

@@ -8,7 +8,7 @@ import styles from '@/components/legal/legal.module.css';
 export const metadata: Metadata = {
   title: 'SuperCampus Contact & Support',
   description:
-    'Get support for SuperCampus, report application issues, reach data protection officers, or find institutional administrative guidance.',
+    'Contact SuperCampus for app support, privacy questions, grievances and account deletion, and see which matters your college handles.',
   alternates: {
     canonical: 'https://supercampus.ai/contact',
   },
@@ -18,9 +18,9 @@ export default function ContactPage() {
   return (
     <LegalPageLayout
       title="Contact & Support"
-      lead="Need help with your SuperCampus account, have data privacy inquiries, or looking for institutional administration guidance? Reach our dedicated support team."
+      lead="Need help with your SuperCampus account, or have a question about your personal data? Here is how to reach us."
       badge="Help & Contact Center"
-      lastUpdated="September 2026"
+      lastUpdated="September 28, 2026"
       breadcrumbs={[{ label: 'Contact & Support', href: '/contact' }]}
     >
       <div style={{ marginBottom: '32px' }}>
@@ -28,8 +28,8 @@ export default function ContactPage() {
           How Can We Help You Today?
         </h2>
         <p style={{ fontSize: '15px', color: '#475569', lineHeight: 1.7, margin: 0 }}>
-          SuperCampus provides multiple support avenues depending on the nature of your inquiry.
-          Select the relevant channel below or submit a direct message to our support desk.
+          Pick the topic below, or send us a message. Signed-in users can also use Settings → Help
+          &amp; support in the app, which routes a request to the right office at your college.
         </p>
       </div>
 
@@ -50,21 +50,24 @@ export default function ContactPage() {
 
           <ul className={styles.bulletList} style={{ margin: '14px 0' }}>
             <li>
-              <strong>Attendance Disputes & Condonation:</strong> Only your course faculty, department
-              head, or dean of academics has authorization to rectify classroom attendance logs or approve
-              medical/on-duty condonation.
+              <strong>Attendance:</strong> only your faculty or department can correct attendance or
+              approve on-duty and medical leave.
             </li>
             <li>
-              <strong>Fee Payments & Scholarship Adjustments:</strong> Fee balances, challans, refunds,
-              and concession waivers are governed by your college bursar or accounts office.
+              <strong>Fees:</strong> fee amounts, refunds and concessions are handled by your college
+              accounts office.
             </li>
             <li>
-              <strong>Hostel Allotment & Mess Preferences:</strong> Room allocations, hostel mess shifts,
-              and room key deposits are managed by your campus warden.
+              <strong>Hostel & Mess:</strong> room allocation, mess and hostel rules are managed by your
+              hostel warden.
             </li>
             <li>
-              <strong>Examination Hall Tickets & Revaluation:</strong> Examination dates, arrear payments,
-              and grade recalculations are administered by the Controller of Examinations (CoE).
+              <strong>Gatepass Approvals:</strong> leave-pass and outpass approvals are decided by your
+              college&apos;s approvers, such as your class advisor or warden.
+            </li>
+            <li>
+              <strong>Marks & Examinations:</strong> marks, results and examination matters are handled
+              by your faculty and your college&apos;s examination office.
             </li>
           </ul>
 

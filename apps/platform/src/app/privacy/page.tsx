@@ -2,339 +2,346 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPageLayout, TocItem } from '@/components/legal/LegalPageLayout';
 import { LegalSection } from '@/components/legal/LegalSection';
-import { ExternalLink, Mail, AlertCircle, Info } from 'lucide-react';
+import { ExternalLink, Mail, AlertCircle, Info, MapPin } from 'lucide-react';
+import { CONTACT_EMAIL } from '@/lib/legal-api';
 import styles from '@/components/legal/legal.module.css';
 
 export const metadata: Metadata = {
   title: 'SuperCampus Privacy Policy',
   description:
-    'Comprehensive Privacy Policy for SuperCampus: how we collect, use, protect, and process personal, academic, and campus activity data.',
+    'How SuperCampus collects, uses, shares and protects personal data in its campus app and web portal, and how to exercise your rights.',
   alternates: {
     canonical: 'https://supercampus.ai/privacy',
   },
 };
 
 const TOC: TocItem[] = [
-  { id: 'intro', title: '1. Introduction & Scope' },
+  { id: 'intro', title: '1. Who We Are & Scope' },
   { id: 'collection', title: '2. Information We Collect' },
-  { id: 'automatic-data', title: '3. Automatically Collected Information' },
+  { id: 'device', title: '3. Device Permissions & Technical Data' },
   { id: 'usage', title: '4. How We Use Information' },
-  { id: 'sharing', title: '5. How We Share Information' },
-  { id: 'security', title: '6. Data Security Safeguards' },
-  { id: 'retention', title: '7. Data Retention Policies' },
-  { id: 'deletion', title: '8. Account Deletion & Rights' },
-  { id: 'student-privacy', title: "9. Children's & Students' Privacy" },
-  { id: 'third-parties', title: '10. Third-Party Services' },
-  { id: 'updates', title: '11. Changes to this Policy' },
-  { id: 'contact', title: '12. Contact & Privacy Office' },
+  { id: 'sharing', title: '5. Who We Share It With' },
+  { id: 'security', title: '6. How We Protect It' },
+  { id: 'retention', title: '7. How Long We Keep It' },
+  { id: 'rights', title: '8. Your Rights & Account Deletion' },
+  { id: 'children', title: '9. Students Under 18' },
+  { id: 'updates', title: '10. Changes to this Policy' },
+  { id: 'contact', title: '11. Contact & Grievances' },
 ];
+
+const linkStyle = { color: '#0f766e', fontWeight: 700 } as const;
 
 export default function PrivacyPolicyPage() {
   return (
     <LegalPageLayout
       title="Privacy Policy"
-      lead="This Privacy Policy explains how SuperCampus collects, protects, uses, and discloses information when you access our mobile and web campus management applications, student portals, and administrative services."
+      lead="This policy explains what personal data the SuperCampus app and web portal collect, why, who it is shared with, and the choices you have."
       badge="Data Protection & Privacy"
-      lastUpdated="September 24, 2026"
+      lastUpdated="September 28, 2026"
       breadcrumbs={[{ label: 'Privacy Policy', href: '/privacy' }]}
       tocItems={TOC}
     >
-      {/* 1. Introduction */}
-      <LegalSection id="intro" number="1" title="Introduction & Scope">
+      {/* 1. Who we are */}
+      <LegalSection id="intro" number="1" title="Who We Are & Scope">
         <p>
-          Welcome to <strong>SuperCampus</strong> (accessible at{' '}
-          <code className={styles.refBadge} style={{ padding: '2px 8px', fontSize: '13px' }}>
-            supercampus.ai
-          </code>{' '}
-          and through associated mobile and web applications). SuperCampus is a modern, unified
-          campus management platform (combining CRM and ERP systems) built specifically for colleges,
-          universities, and higher-education institutions.
+          <strong>SuperCampus</strong> (supercampus.ai) is a campus management platform used by colleges
+          for student accounts, admissions, attendance, timetables, marks, fees, gatepasses, hostel and
+          mess, library, campus stores (canteen, stationery and laundry), announcements and
+          notifications. You use it through the SuperCampus mobile app and web portal.
         </p>
         <p>
-          Our platform powers vital campus operations, including student profiles, admissions,
-          attendance tracking, academics, weekly timetables, fee records, digital gatepasses, hostel
-          allotments, canteen wallets, library operations, and institutional notifications.
-        </p>
-        <p>
-          This Privacy Policy sets out the basis on which any personal data we collect from you, or
-          that your educational institution provides to us, will be processed. By using SuperCampus,
-          you acknowledge the data handling practices described in this document.
+          This policy applies to students, parents and guardians, faculty, staff and admission applicants
+          whose data is processed through SuperCampus. We process personal data in line with applicable
+          Indian law, including the Digital Personal Data Protection Act, 2023.
         </p>
         <div className={`${styles.callout} ${styles.calloutInfo}`}>
           <Info size={18} className={styles.calloutIcon} />
           <div className={styles.calloutText}>
-            <strong>Institutional Partnership Model</strong>
-            SuperCampus serves primarily as a digital processor on behalf of partner educational
-            institutions. Your college or university controls the academic policies and institutional
-            records stored within the system.
+            <strong>Your college decides what is recorded</strong>
+            SuperCampus runs the platform on behalf of your college. Your college creates your account,
+            decides which modules are used, and owns your academic and administrative records.
           </div>
         </div>
       </LegalSection>
 
-      {/* 2. Information We Collect */}
+      {/* 2. Information we collect */}
       <LegalSection id="collection" number="2" title="Information We Collect">
+        <p>Depending on the modules your college uses, SuperCampus holds the following information:</p>
+
+        <h3 className={styles.subSectionTitle}>A. Account & profile</h3>
+        <ul className={styles.bulletList}>
+          <li>Name, email address and mobile number.</li>
+          <li>Register or roll number, department, programme, year of study and section.</li>
+          <li>Residency details (day scholar or hosteller, hostel and room) and a profile photo, if added.</li>
+          <li>
+            Your password is stored only as a one-way hash; we cannot read it. A wallet PIN and its
+            optional recovery word are also stored in a form that cannot be read back.
+          </li>
+        </ul>
+
+        <h3 className={styles.subSectionTitle}>B. Parent and guardian details</h3>
+        <ul className={styles.bulletList}>
+          <li>
+            Guardian name, relationship, mobile number and email, provided by your college, used to send
+            gatepass approvals and campus updates to guardians.
+          </li>
+        </ul>
+
+        <h3 className={styles.subSectionTitle}>C. Academic records</h3>
+        <ul className={styles.bulletList}>
+          <li>Class attendance, timetables and subject allocations.</li>
+          <li>Assessment marks and results published by your faculty.</li>
+        </ul>
+
+        <h3 className={styles.subSectionTitle}>D. Campus services</h3>
+        <ul className={styles.bulletList}>
+          <li>
+            <strong>Gatepass:</strong> leave-pass and outpass requests (destination, reason, dates),
+            approvals, and gate entry and exit scans.
+          </li>
+          <li>
+            <strong>Visitor passes:</strong> the visitor&apos;s name, mobile number and purpose of visit.
+          </li>
+          <li>
+            <strong>Hostel:</strong> service requests (such as complaints or room changes) and mess meal
+            tokens.
+          </li>
+          <li>
+            <strong>Library:</strong> book loans, due dates, renewals and slot bookings.
+          </li>
+          <li>
+            <strong>Campus stores:</strong> wallet balances, orders and wallet transactions for the
+            canteen, stationery and laundry.
+          </li>
+          <li>
+            <strong>Communication:</strong> announcements, and help requests or feedback you send through
+            the app.
+          </li>
+        </ul>
+
+        <h3 className={styles.subSectionTitle}>E. Payments</h3>
         <p>
-          To deliver a comprehensive campus ERP experience, SuperCampus processes several categories
-          of information provided directly by users or synchronized by institutional administrators:
+          Tuition fees and wallet top-ups can be paid online through Razorpay. We record the payment
+          reference, amount, purpose, status and time.
         </p>
-
-        <h3 className={styles.subSectionTitle}>A. Personal Identity Information</h3>
-        <ul className={styles.bulletList}>
-          <li><strong>Full Name & Contact Details:</strong> Name, institutional email address, personal email, and mobile phone number.</li>
-          <li><strong>Institutional Identifiers:</strong> Student roll number, registration number, employee/staff code, and department.</li>
-          <li><strong>Academic Standing:</strong> Current program, degree, branch/specialization, semester, year of study, and section.</li>
-          <li><strong>Profile Media:</strong> Profile photos or ID avatars uploaded for digital identity verification.</li>
-          <li><strong>Emergency & Guardian Contacts:</strong> Parent/guardian contact details provided for communication and hostel safety.</li>
-        </ul>
-
-        <h3 className={styles.subSectionTitle}>B. Academic Information</h3>
-        <ul className={styles.bulletList}>
-          <li><strong>Attendance Records:</strong> Classroom attendance, lecture sessions, laboratory logins, on-duty approvals, and medical leave logs.</li>
-          <li><strong>Timetable & Courses:</strong> Enrolled courses, elective selections, weekly schedule slots, and faculty assignments.</li>
-          <li><strong>Academic Performance:</strong> Internal assessment scores, semester grades, GPA/CGPA calculations, and arrear/backlog trackers.</li>
-        </ul>
-
-        <h3 className={styles.subSectionTitle}>C. Campus Activity & Operational Information</h3>
-        <ul className={styles.bulletList}>
-          <li><strong>Gatepass & Campus Access:</strong> Out-pass requests, security approvals, entry/exit timestamp scans, and visitor QR logs.</li>
-          <li><strong>Hostel & Mess Management:</strong> Hostel block, room number, bed allotment, dining mess attendance, and room maintenance complaints.</li>
-          <li><strong>Library Management:</strong> Borrowed books, due dates, renewal requests, and digital catalog reservations.</li>
-          <li><strong>Canteen & Campus Store:</strong> Digital token balances, meal orders, pre-orders, and canteen purchase histories.</li>
-          <li><strong>Institutional Communications:</strong> Campus notices, circulars, announcements, and grievance/feedback submissions.</li>
-        </ul>
-
-        <h3 className={styles.subSectionTitle}>D. Payment Information</h3>
-        <p>
-          SuperCampus enables students and parents to view fee structures, balances, and initiate
-          dues clearance (e.g. tuition, examination, hostel, transport, or library fees).
-        </p>
-        <ul className={styles.bulletList}>
-          <li><strong>Recorded Payment Data:</strong> Transaction reference IDs, invoice numbers, timestamps, amount paid, and fee clearance status.</li>
-        </ul>
-
         <div className={`${styles.callout} ${styles.calloutWarning}`}>
           <AlertCircle size={18} className={styles.calloutIcon} />
           <div className={styles.calloutText}>
-            <strong>Zero Storage of Sensitive Payment Credentials</strong>
-            SuperCampus does NOT store debit or credit card numbers, CVV codes, UPI PINs, net banking
-            passwords, or sensitive payment credentials. All payments are processed directly through
-            licensed, PCI-DSS-compliant third-party payment gateways.
+            <strong>We never see your card or UPI details</strong>
+            Card numbers, CVV, UPI PINs and net-banking passwords are entered directly with Razorpay and
+            are never sent to or stored by SuperCampus.
           </div>
         </div>
-      </LegalSection>
 
-      {/* 3. Automatically Collected Information */}
-      <LegalSection id="automatic-data" number="3" title="Automatically Collected Information">
-        <p>
-          When you access SuperCampus via our mobile applications (Android/iOS) or web portal, our
-          systems automatically record diagnostic and session information reasonably required to
-          maintain service integrity:
-        </p>
+        <h3 className={styles.subSectionTitle}>F. Admission applicants</h3>
         <ul className={styles.bulletList}>
-          <li><strong>Device & Environment Details:</strong> Device manufacturer, hardware model, operating system version, browser type, and app build version.</li>
-          <li><strong>Network Identifiers:</strong> Internet Protocol (IP) address, approximate geographic area inferred from IP, and connection type.</li>
-          <li><strong>Session & Security Logs:</strong> Authentication timestamps, failed login attempts, password update logs, and session durations.</li>
-          <li><strong>Performance & Crash Analytics:</strong> Error stack traces, unhandled exceptions, and component rendering times used to resolve software bugs.</li>
+          <li>
+            The details you enter in your college&apos;s application form, and a one-time code sent to your
+            mobile by WhatsApp or SMS to open your application.
+          </li>
         </ul>
       </LegalSection>
 
-      {/* 4. How We Use Information */}
+      {/* 3. Device permissions */}
+      <LegalSection id="device" number="3" title="Device Permissions & Technical Data">
+        <p>The mobile app asks for these permissions only when a feature needs them:</p>
+        <ul className={styles.bulletList}>
+          <li>
+            <strong>Location (precise, only while in use):</strong> used only on the Gatepass screen to
+            confirm you are on campus before your daily entry QR is issued. It is never collected in the
+            background. The most recent position used for that check is stored with your day&apos;s
+            entry pass.
+          </li>
+          <li>
+            <strong>Camera:</strong> used to scan QR codes (for example at the gate, library or store
+            counter). Camera images are not stored.
+          </li>
+          <li>
+            <strong>Photos and files:</strong> only the files you choose to upload (such as a profile
+            photo or an attachment), and to save receipts and reports you download.
+          </li>
+          <li>
+            <strong>Notifications:</strong> a push notification token so we can send you alerts, and
+            on-device reminders such as exam reminders.
+          </li>
+        </ul>
+        <p>We also keep limited technical data needed to run the service securely:</p>
+        <ul className={styles.bulletList}>
+          <li>
+            Your sign-in sessions and the device name used to sign in (SuperCampus allows one signed-in
+            device at a time), your last sign-in time, and failed sign-in counts used to lock an account
+            briefly after repeated wrong passwords.
+          </li>
+          <li>Server logs of requests and errors, used to keep the service secure and fix problems.</li>
+        </ul>
+        <p>
+          The app contains no advertising, and no third-party analytics or crash-reporting tools.
+        </p>
+      </LegalSection>
+
+      {/* 4. How we use information */}
       <LegalSection id="usage" number="4" title="How We Use Information">
-        <p>We process collected data exclusively for legitimate operational, educational, and platform purposes:</p>
         <ul className={styles.bulletList}>
-          <li><strong>Delivering Campus Services:</strong> Providing real-time timetable updates, attendance self-check, digital ID card rendering, and gatepass issuance.</li>
-          <li><strong>Authentication & Security:</strong> Verifying user identity, protecting student records against unauthorized access, and validating multi-role permissions (e.g., student vs. class advisor vs. accountant).</li>
-          <li><strong>Academic Workflow Management:</strong> Calculating semester attendance condonation thresholds, publishing internal marks, and tracking graduation eligibility.</li>
-          <li><strong>Payment Recording:</strong> Reconciling fee dues with college bank accounts and generating tamper-proof digital receipts.</li>
-          <li><strong>Campus Safety & Operations:</strong> Assisting wardens with night hostel headcounts and campus security with verified QR gatepass validation.</li>
-          <li><strong>Administrative Communication:</strong> Sending critical institutional circulars, exam schedule notifications, and emergency alerts.</li>
-          <li><strong>Platform Maintenance & Enhancement:</strong> Diagnosing performance bottlenecks, squashing software defects, and optimizing portal responsiveness.</li>
-          <li><strong>Legal & Regulatory Compliance:</strong> Fulfilling mandatory university audits, government reporting requirements, and lawful requests.</li>
+          <li>To provide the campus services your college has enabled for you.</li>
+          <li>To verify who you are, protect accounts and show each person only what their role allows.</li>
+          <li>
+            To send notifications: in-app and push notifications, emails (such as password reset links),
+            and WhatsApp messages to guardians for gatepass approvals and updates.
+          </li>
+          <li>To process payments and show receipts.</li>
+          <li>To answer help requests and fix problems.</li>
+          <li>To meet legal obligations and respond to lawful requests.</li>
         </ul>
+        <p>
+          <strong>We do not sell your personal data, and we do not use it for advertising.</strong>
+        </p>
       </LegalSection>
 
-      {/* 5. How We Share Information */}
-      <LegalSection id="sharing" number="5" title="How We Share Information">
-        <p>
-          We respect student privacy. <strong>SuperCampus does not sell, rent, or trade your personal information to advertisers or data brokers.</strong>
-        </p>
-        <p>Information is shared only under strict operational boundaries:</p>
+      {/* 5. Sharing */}
+      <LegalSection id="sharing" number="5" title="Who We Share It With">
         <ul className={styles.bulletList}>
           <li>
-            <strong>With Your Educational Institution:</strong> Authorized university administrators,
-            principals, department heads, faculty advisors, and hostel wardens have access to student
-            data strictly relevant to their administrative role.
+            <strong>Your college:</strong> authorised staff such as administrators, faculty, class
+            advisors, wardens, accountants, librarians, store operators and security see the data their
+            role requires. Guardians see information about their own ward.
           </li>
           <li>
-            <strong>With Certified Infrastructure Providers:</strong> Trusted cloud hosting, database,
-            and transactional email/SMS service providers operating under strict confidentiality and
-            data processing agreements.
+            <strong>Service providers</strong> that run parts of the service for us, and only for that
+            purpose:
+            <ul className={styles.bulletList} style={{ marginTop: '8px' }}>
+              <li>Razorpay: online payments.</li>
+              <li>Google Firebase Cloud Messaging: push notifications.</li>
+              <li>Brevo: sending emails.</li>
+              <li>Gallabox (and Twilio): WhatsApp messages; Twilio also sends SMS for admission applications.</li>
+              <li>Cloudinary: storing photos and files you upload.</li>
+              <li>
+                An AI model provider: helps staff plan timetables and assists the admissions team; only the
+                information needed for that task is sent.
+              </li>
+              <li>Our cloud server hosting provider.</li>
+            </ul>
           </li>
           <li>
-            <strong>With Regulated Payment Processors:</strong> Necessary transaction metadata (student ID,
-            fee category, bill amount) is transmitted to authorized payment gateways to complete fee transactions.
-          </li>
-          <li>
-            <strong>For Legal & Regulatory Protections:</strong> When required by court order, law
-            enforcement directive, or applicable statutory regulation, or to protect the vital physical
-            safety of students and campus staff.
+            <strong>When required by law:</strong> to comply with a court order or a lawful request from
+            authorities, or to protect someone&apos;s safety.
           </li>
         </ul>
+        <p>
+          Some of these providers may process data outside India, under their own security and privacy
+          commitments.
+        </p>
       </LegalSection>
 
-      {/* 6. Data Security */}
-      <LegalSection id="security" number="6" title="Data Security Safeguards">
-        <p>
-          We employ robust, industry-standard administrative, physical, and technical safeguards to
-          protect student and institutional data against accidental loss, unauthorized access,
-          alteration, or disclosure:
-        </p>
+      {/* 6. Security */}
+      <LegalSection id="security" number="6" title="How We Protect It">
         <ul className={styles.bulletList}>
-          <li><strong>Encryption in Transit:</strong> All HTTP traffic is strictly encrypted using Transport Layer Security (TLS 1.2+ and TLS 1.3).</li>
-          <li><strong>Encryption at Rest:</strong> Database volumes, file attachments, and backups are encrypted using AES-256 standard encryption.</li>
-          <li><strong>Role-Based Access Controls (RBAC):</strong> Strict principle-of-least-privilege boundaries prevent unauthorized cross-tenant or cross-department access.</li>
-          <li><strong>Immutable Audit Logging:</strong> Sensitive actions (such as attendance edits, grade overrides, and gatepass approvals) maintain verifiable digital audit trails.</li>
+          <li>All connections to the app and API use HTTPS (TLS).</li>
+          <li>
+            Passwords are stored as one-way hashes; sign-in tokens, QR tokens, one-time codes and wallet
+            PINs are also stored hashed.
+          </li>
+          <li>Each college&apos;s data is kept in its own database, with role-based access inside it.</li>
+          <li>
+            Repeated wrong passwords lock the account briefly, and signing in on a new device signs out
+            the previous one.
+          </li>
         </ul>
         <p style={{ fontSize: '13px', color: '#64748b' }}>
           <em>
-            Please note: While we implement rigorous safeguards, no electronic transmission over the
-            internet or cloud storage architecture can be guaranteed as 100% impenetrable. We encourage
-            users to maintain strong, unique passwords and never share their institutional login credentials.
+            No system is completely secure. Please use a strong password, never share it, and tell us
+            straight away if you think your account has been misused.
           </em>
         </p>
       </LegalSection>
 
-      {/* 7. Data Retention */}
-      <LegalSection id="retention" number="7" title="Data Retention Policies">
-        <p>
-          Information is retained only for as long as necessary to fulfill the academic, administrative,
-          and contractual purposes for which it was collected.
-        </p>
+      {/* 7. Retention */}
+      <LegalSection id="retention" number="7" title="How Long We Keep It">
         <ul className={styles.bulletList}>
+          <li>Your account data is kept while you are a member of your college on SuperCampus.</li>
           <li>
-            <strong>Active Enrollment Period:</strong> Profile, attendance, timetable, and campus
-            service records remain active throughout a student&apos;s educational program.
+            Academic records such as attendance and marks belong to your college and are kept for as
+            long as your college requires.
           </li>
+          <li>Payment records are kept for as long as tax and accounting laws require.</li>
           <li>
-            <strong>Statutory Academic Transcripts:</strong> Official semester grade transcripts, degree
-            awards, and enrollment registers are permanently maintained by the partner college in
-            accordance with university accreditation and statutory education regulations.
-          </li>
-          <li>
-            <strong>Financial & Fee Records:</strong> Tuition payment ledgers and invoice audit logs are
-            retained for statutory periods required by commercial tax and audit laws (typically 7 years).
-          </li>
-          <li>
-            <strong>Session & Security Logs:</strong> Transient app diagnostic logs, authentication logs,
-            and error traces are automatically purged on a rolling cycle (typically 30 to 90 days).
+            When your account is deleted, personal data we are not required to keep is deleted or
+            anonymised (see section 8).
           </li>
         </ul>
       </LegalSection>
 
-      {/* 8. Account Deletion */}
-      <LegalSection id="deletion" number="8" title="Account Deletion & Rights">
+      {/* 8. Rights & deletion */}
+      <LegalSection id="rights" number="8" title="Your Rights & Account Deletion">
+        <p>You can ask us to:</p>
+        <ul className={styles.bulletList}>
+          <li>tell you what personal data we hold about you and how it is used;</li>
+          <li>correct or update inaccurate data;</li>
+          <li>delete your account and personal data;</li>
+          <li>withdraw consent where we rely on it; and</li>
+          <li>address a grievance about how your data is handled.</li>
+        </ul>
         <p>
-          You have the right to request deletion of your SuperCampus account and associated personal data.
-          We provide a dedicated self-service deletion request portal:
+          Many profile details are managed by your college, so some corrections are quicker through your
+          college office. To request account deletion, use the deletion request page:
         </p>
         <div style={{ margin: '18px 0' }}>
           <Link href="/delete-account" className={styles.actionButton}>
-            <span>Go to Account Deletion Request Page</span>
+            <span>Request Account Deletion</span>
             <ExternalLink size={14} />
           </Link>
         </div>
         <p>
-          When an account deletion request is processed:
-        </p>
-        <ul className={styles.bulletList}>
-          <li>Your login credentials, push notification tokens, and personal device sessions are permanently invalidated.</li>
-          <li>Personal preferences, non-statutory activity logs, and personal profile metadata are removed or irreversibly anonymized.</li>
-          <li>
-            <strong>Institutional Record Caveat:</strong> Official academic transcripts, historical
-            exam marks, graduation records, and government-mandated attendance registers cannot be deleted
-            by SuperCampus unilaterally because they are official property of your educational institution.
-          </li>
-        </ul>
-        <p>
-          For complete instructions and service implications, review our{' '}
-          <Link href="/delete-account" style={{ color: '#0f766e', fontWeight: 700 }}>
-            Account Deletion Guide
-          </Link>.
+          We first confirm the request comes from you. We then sign you out everywhere, disable your
+          account and notification tokens, and delete or anonymise personal data we are not required to
+          keep. Records your college or the law requires us to keep, such as academic records and
+          payment records, are retained.
         </p>
       </LegalSection>
 
-      {/* 9. Children's & Students' Privacy */}
-      <LegalSection id="student-privacy" number="9" title="Children's & Students' Privacy">
+      {/* 9. Students under 18 */}
+      <LegalSection id="children" number="9" title="Students Under 18">
         <p>
-          SuperCampus is designed for college, university, and vocational campus environments. Our primary
-          users are young adults, faculty, and administrative staff. Where the platform is deployed in
-          junior colleges or secondary educational programs involving minors, access is provided under
-          the direct auspices and consent of the educational institution and parent/guardian authorizations.
-        </p>
-        <p>
-          We do not knowingly collect personal information directly from children under 13 without
-          institutional verification. If you believe student data was provided inappropriately, contact{' '}
-          <a href="mailto:privacy@supercampus.ai" style={{ color: '#0f766e', fontWeight: 700 }}>
-            privacy@supercampus.ai
-          </a>{' '}
-          for immediate review and remediation.
+          SuperCampus is built for colleges. If a student is under 18, their account is created by the
+          college, which is responsible for obtaining the consent of a parent or lawful guardian as
+          required by law. We do not use anyone&apos;s data, including minors&apos;, for tracking,
+          profiling or advertising.
         </p>
       </LegalSection>
 
-      {/* 10. Third-Party Services */}
-      <LegalSection id="third-parties" number="10" title="Third-Party Services">
+      {/* 10. Changes */}
+      <LegalSection id="updates" number="10" title="Changes to this Policy">
         <p>
-          To maintain high availability and seamless campus functionality, SuperCampus integrates with
-          vetted third-party cloud infrastructure and technical service providers:
-        </p>
-        <ul className={styles.bulletList}>
-          <li><strong>Cloud Hosting & Compute:</strong> Scalable enterprise data center providers adhering to ISO 27001 and SOC 2 Type II security standards.</li>
-          <li><strong>Payment Gateways:</strong> Regulated payment processors holding Level 1 PCI-DSS compliance certification.</li>
-          <li><strong>Transactional Notifications:</strong> SMS gateways and push notification services (e.g. Firebase Cloud Messaging) for delivery of gatepass approvals and time-critical announcements.</li>
-          <li><strong>Application Performance Monitoring:</strong> Error logging and crash reporting frameworks that assist our engineering teams in resolving software issues.</li>
-        </ul>
-        <p>
-          Third-party integrations operate under confidentiality agreements that prohibit the use of your
-          personal information for any reason other than providing the contracted service.
+          We may update this policy when the service or the law changes. We will change the &quot;Last
+          updated&quot; date above and, for significant changes, tell you in the app.
         </p>
       </LegalSection>
 
-      {/* 11. Changes to this Policy */}
-      <LegalSection id="updates" number="11" title="Changes to this Policy">
+      {/* 11. Contact */}
+      <LegalSection id="contact" number="11" title="Contact & Grievances">
         <p>
-          We may update this Privacy Policy periodically to reflect enhancements to our platform, changes
-          in statutory legal frameworks, or adjustments in our operational practices. When material updates
-          occur, we will update the &quot;Effective Date&quot; at the top of this document and notify users
-          via an in-app notice, banner, or direct email communication.
-        </p>
-        <p>
-          We encourage you to review this Privacy Policy regularly to stay informed about how we safeguard
-          your campus information.
-        </p>
-      </LegalSection>
-
-      {/* 12. Contact */}
-      <LegalSection id="contact" number="12" title="Contact & Privacy Office">
-        <p>
-          If you have questions, feedback, or requests regarding this Privacy Policy or wish to exercise
-          your privacy rights under applicable data protection laws, please contact our Privacy Team:
+          For privacy questions, requests about your data, or grievances, email us. We will confirm the
+          request is yours and reply as soon as possible.
         </p>
         <div className={styles.callout} style={{ background: '#f8fafc' }}>
           <Mail size={18} className={styles.calloutIcon} />
           <div className={styles.calloutText}>
-            <strong>SuperCampus Privacy Office</strong>
-            <span>Official Email: </span>
-            <a href="mailto:privacy@supercampus.ai" style={{ color: '#0f766e', fontWeight: 700 }}>
-              privacy@supercampus.ai
+            <strong>SuperCampus Grievance &amp; Privacy Contact</strong>
+            <span>Email: </span>
+            <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>
+              {CONTACT_EMAIL}
             </a>
             <br />
-            <span>Platform Domain: </span>
-            <strong>supercampus.ai</strong>
-            <br />
-            <span>General Inquiries: </span>
-            <Link href="/contact" style={{ color: '#0f766e', fontWeight: 700 }}>
-              Visit Contact & Support Page
+            <span>More help: </span>
+            <Link href="/contact" style={linkStyle}>
+              Contact &amp; Support page
             </Link>
+          </div>
+        </div>
+        <div className={styles.callout} style={{ background: '#f8fafc' }}>
+          <MapPin size={18} className={styles.calloutIcon} />
+          <div className={styles.calloutText}>
+            If you are not satisfied with our response, you may approach the Data Protection Board of
+            India under the Digital Personal Data Protection Act, 2023.
           </div>
         </div>
       </LegalSection>

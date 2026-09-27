@@ -15,7 +15,7 @@ import {
   CheckCircle,
   Mail,
 } from 'lucide-react';
-import { accountDeletionEmail } from '@/lib/legal-api';
+import { accountDeletionEmail, PRIVACY_EMAIL } from '@/lib/legal-api';
 import { ConfirmationState } from './ConfirmationState';
 import styles from './legal.module.css';
 
@@ -83,28 +83,27 @@ export function DeleteAccountForm() {
         <div className={`${styles.comparisonCard} ${styles.comparisonDeletable}`}>
           <h4>
             <CheckCircle size={18} />
-            <span>Eligible for Deletion & Purging</span>
+            <span>Deleted or Anonymised</span>
           </h4>
           <ul>
-            <li>User profile information (avatar, bio, display preferences)</li>
-            <li>Mobile and web app push notification tokens and device sessions</li>
-            <li>Direct login credentials (passwords, biometrics authentication keys)</li>
-            <li>Non-regulatory activity logs and temporary app cache</li>
-            <li>Personal communication preferences and notification history</li>
+            <li>Your sign-in access, password and all signed-in sessions</li>
+            <li>Push notification tokens and device details</li>
+            <li>Profile details such as your photo, phone number and preferences</li>
+            <li>Your wallet PIN and recovery word</li>
+            <li>Notification history and help requests you sent</li>
           </ul>
         </div>
 
         <div className={`${styles.comparisonCard} ${styles.comparisonRetained}`}>
           <h4>
             <ShieldAlert size={18} />
-            <span>Institutionally & Legally Retained Records</span>
+            <span>Kept by Your College or by Law</span>
           </h4>
           <ul>
-            <li>Official academic transcripts, semester marks, and GPA records</li>
-            <li>Campus attendance logs and exam eligibility audits</li>
-            <li>Financial ledgers, tuition payments, and statutory GST receipts</li>
-            <li>Hostel occupancy logs and campus security gatepass audit trails</li>
-            <li>Library return records and disciplinary archive registers</li>
+            <li>Attendance, marks and results</li>
+            <li>Fee payments, wallet transactions and receipts</li>
+            <li>Gatepass and campus entry records</li>
+            <li>Hostel and library records, including unreturned books</li>
           </ul>
         </div>
       </div>
@@ -125,8 +124,8 @@ export function DeleteAccountForm() {
               <Clock size={16} />
             </div>
             <div className={styles.moduleInfo}>
-              <h4>Attendance & Classes</h4>
-              <p>Loss of direct self-check view, subject attendance tracking, and leave requests.</p>
+              <h4>Attendance & Marks</h4>
+              <p>Your attendance, marks and results will no longer be visible to you in the app.</p>
             </div>
           </div>
 
@@ -136,7 +135,7 @@ export function DeleteAccountForm() {
             </div>
             <div className={styles.moduleInfo}>
               <h4>Timetable & Schedule</h4>
-              <p>Inability to view real-time class periods, room allotments, and faculty updates.</p>
+              <p>You will not be able to view your class timetable.</p>
             </div>
           </div>
 
@@ -146,7 +145,7 @@ export function DeleteAccountForm() {
             </div>
             <div className={styles.moduleInfo}>
               <h4>Gatepass & Campus QR</h4>
-              <p>Inability to generate digital gatepasses, QR scan credentials, or out-pass approvals.</p>
+              <p>You will not be able to apply for leave passes or outpasses, or get a campus entry QR.</p>
             </div>
           </div>
 
@@ -156,7 +155,7 @@ export function DeleteAccountForm() {
             </div>
             <div className={styles.moduleInfo}>
               <h4>Hostel & Mess</h4>
-              <p>Loss of room allotment details, mess menu, night attendance, and complaints desk.</p>
+              <p>You will lose access to mess tokens and hostel service requests.</p>
             </div>
           </div>
 
@@ -166,7 +165,7 @@ export function DeleteAccountForm() {
             </div>
             <div className={styles.moduleInfo}>
               <h4>Fees & Payments</h4>
-              <p>Loss of in-app payment receipts, balance breakdowns, and online dues clearance.</p>
+              <p>You will not be able to view fee details, pay fees online, or open receipts in the app.</p>
             </div>
           </div>
 
@@ -175,8 +174,11 @@ export function DeleteAccountForm() {
               <Coffee size={16} />
             </div>
             <div className={styles.moduleInfo}>
-              <h4>Canteen & Store</h4>
-              <p>Termination of student canteen wallet, pre-order history, and cashless tokens.</p>
+              <h4>Canteen & Stores</h4>
+              <p>
+                Canteen, stationery and laundry wallets close. Use or settle any remaining balance with
+                your college before requesting deletion.
+              </p>
             </div>
           </div>
 
@@ -185,8 +187,8 @@ export function DeleteAccountForm() {
               <BookOpen size={16} />
             </div>
             <div className={styles.moduleInfo}>
-              <h4>Library & Documents</h4>
-              <p>Borrowing clearances, digital book reservations, and document request tracker.</p>
+              <h4>Library</h4>
+              <p>You will not be able to borrow, renew or book through the app. Return any books first.</p>
             </div>
           </div>
         </div>
@@ -194,10 +196,9 @@ export function DeleteAccountForm() {
         <div className={`${styles.callout} ${styles.calloutWarning}`} style={{ margin: '16px 0 0' }}>
           <AlertTriangle size={18} className={styles.calloutIcon} />
           <div className={styles.calloutText}>
-            <strong>Need temporary time off rather than permanent deletion?</strong>
-            If you are currently enrolled, your college administration controls official student
-            enrollment. Contact your college administration desk or choose to log out of the mobile app
-            rather than deleting official records.
+            <strong>Still studying at your college?</strong>
+            Your college may need your account for official services. If you only want to stop using
+            the app for a while, sign out instead, or check with your college office first.
           </div>
         </div>
       </div>
@@ -209,9 +210,9 @@ export function DeleteAccountForm() {
             Account Deletion Request Form
           </h3>
           <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-            This form prepares an email to privacy@supercampus.ai with your details filled in. Your
-            request reaches us once you send that email, and nothing is deleted before we have
-            verified that the account is yours.
+            This form prepares an email to {PRIVACY_EMAIL} with your details filled in. Your request
+            reaches us once you send that email, and nothing is deleted before we have verified that
+            the account is yours.
           </p>
         </div>
 
@@ -357,8 +358,8 @@ export function DeleteAccountForm() {
 
         <p style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', margin: '20px 0 0' }}>
           No email app on this device? Write to{' '}
-          <a href="mailto:privacy@supercampus.ai" style={{ color: '#0f766e', fontWeight: 700 }}>
-            privacy@supercampus.ai
+          <a href={`mailto:${PRIVACY_EMAIL}`} style={{ color: '#0f766e', fontWeight: 700 }}>
+            {PRIVACY_EMAIL}
           </a>{' '}
           or visit our <Link href="/contact" style={{ color: '#0f766e', fontWeight: 700 }}>Contact Page</Link>.
         </p>
